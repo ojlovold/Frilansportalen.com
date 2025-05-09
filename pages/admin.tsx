@@ -1,9 +1,9 @@
 import Head from "next/head";
-import Header from "../components/Header"; // Riktig relativ import
+import Header from "../components/Header";
 import { isAdmin } from "../lib/auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import LoginHelper from "../components/LoginHelper"; // Bruk samme regel her
+import LoginHelper from "../components/LoginHelper";
 
 export default function Admin() {
   const router = useRouter();
