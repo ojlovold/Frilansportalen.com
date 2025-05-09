@@ -22,4 +22,14 @@ export default function Meldinger() {
         {!suggestionAccepted && (
           <SuggestionBox
             suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt og tilgjengelig denne uken.'"
-            onAccept={() => set
+            onAccept={() => setSuggestionAccepted(true)}
+          />
+        )}
+
+        {showError && <ErrorBox message="Kunne ikke hente meldingene. Prøv igjen senere." />}
+
+        <ReportBox />
+      </main>
+    </>
+  );
+}
