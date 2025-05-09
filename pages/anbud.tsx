@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Header from "@/components/Header";
+import Header from "../components/Header";
 import { useState } from "react";
 
 export default function Anbud() {
@@ -11,9 +11,9 @@ export default function Anbud() {
 
   const beregn = (e: React.FormEvent) => {
     e.preventDefault();
-    const kmPris = parseFloat(km) * 4.2; // bom, ferge, slitasje
+    const kmPris = parseFloat(km) * 4.2;
     const tidsPris = parseFloat(timer) * parseFloat(timepris);
-    const drivstoff = parseFloat(km) * (parseFloat(diesel) / 10); // liter per mil
+    const drivstoff = parseFloat(km) * (parseFloat(diesel) / 10);
     const sum = kmPris + tidsPris + drivstoff;
     setPris(Math.round(sum));
   };
