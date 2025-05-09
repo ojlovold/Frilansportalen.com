@@ -1,9 +1,9 @@
 import Head from "next/head";
-import Header from "@/components/Header";
-import { isAdmin } from "@/lib/auth";
+import Header from "../components/Header"; // Riktig relativ import
+import { isAdmin } from "../lib/auth";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import LoginHelper from "@/components/LoginHelper";
+import LoginHelper from "../components/LoginHelper"; // Bruk samme regel her
 
 export default function Admin() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!isAdmin()) {
-      setSjekket(true); // viser testknapp hvis ikke admin
+      setSjekket(true);
     } else {
       setGodkjent(true);
     }
