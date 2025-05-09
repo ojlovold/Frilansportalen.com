@@ -15,7 +15,9 @@ export default function Meldinger() {
         <title>Meldinger | Frilansportalen</title>
         <meta name="description" content="Send og motta meldinger direkte i Frilansportalen" />
       </Head>
+
       <Header />
+
       <main className="min-h-screen bg-portalGul text-black p-8">
         <h1 className="text-3xl font-bold mb-4">Meldinger</h1>
 
@@ -26,7 +28,9 @@ export default function Meldinger() {
           />
         )}
 
-        {showError && <ErrorBox message="Kunne ikke hente meldingene. Prøv igjen senere." />}
+        {showError && (
+          <ErrorBox message="Kunne ikke hente meldingene. Prøv igjen senere." />
+        )}
 
         <ReportBox />
       </main>
