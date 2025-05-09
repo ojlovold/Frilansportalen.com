@@ -10,7 +10,7 @@ export default function Meldinger() {
   const [suggestionAccepted, setSuggestionAccepted] = useState(false);
 
   return (
-  
+    <div>
       <Head>
         <title>Meldinger | Frilansportalen</title>
         <meta name="description" content="Send og motta meldinger direkte i Frilansportalen" />
@@ -30,6 +30,6 @@ export default function Meldinger() {
 
         <ReportBox />
       </main>
-    </>
+    </div>
   );
 }
