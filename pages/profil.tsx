@@ -1,6 +1,6 @@
 import Head from "next/head";
-import Header from "@/components/Header";
-import SuggestionBox from "@/components/SuggestionBox";
+import Header from "../components/Header";
+import SuggestionBox from "../components/SuggestionBox";
 import { useState } from "react";
 
 export default function Profil() {
@@ -15,7 +15,7 @@ export default function Profil() {
       </Head>
       <Header />
       <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-4">Min profil</h1>
+        <h1 className="text-3xl font-bold mb-6">Min profil</h1>
 
         {showSuggestion && (
           <SuggestionBox
