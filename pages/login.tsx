@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Header from "@/components/Header";
+import Header from "../components/Header";
 import { useState } from "react";
 
 export default function Login() {
@@ -9,9 +9,9 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Koble til backend for ekte innlogging
-    if (email === "demo@frilansportalen.com" && passord === "1234") {
-      setStatus("Innlogging vellykket!");
+    if (email === "admin@frilansportalen.com" && passord === "1234") {
+      localStorage.setItem("user_email", email);
+      setStatus("Innlogging vellykket! Du har nå admin-tilgang.");
     } else {
       setStatus("Feil e-post eller passord.");
     }
