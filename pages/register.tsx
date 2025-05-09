@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Header from "@/components/Header";
+import Header from "../components/Header";
 import { useState } from "react";
 
 export default function Register() {
@@ -10,7 +10,6 @@ export default function Register() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Koble til backend for ekte registrering
     console.log("Ny bruker registrert:", { navn, epost });
     setStatus("Bruker registrert! Du kan nå logge inn.");
     setNavn("");
