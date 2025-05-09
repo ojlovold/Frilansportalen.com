@@ -9,6 +9,8 @@ export default function Header() {
         <Link href="/stillinger" className="hover:underline">Stillinger</Link>
         <Link href="/tjenester" className="hover:underline">Tjenester</Link>
         <Link href="/gjenbruk" className="hover:underline">Gjenbruk</Link>
+        <Link href="/kurs" className="hover:underline">Kurs</Link>
+        <Link href="/dashboard" className="hover:underline">Dashboard</Link>
         <Link href="/admin" className="hover:underline">Admin</Link>
       </nav>
     </header>
