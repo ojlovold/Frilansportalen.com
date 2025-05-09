@@ -1,8 +1,8 @@
 import Head from "next/head";
-import Header from "@/components/Header";
-import ReportBox from "@/components/ReportBox";
-import SuggestionBox from "@/components/SuggestionBox";
-import ErrorBox from "@/components/ErrorBox";
+import Header from "../components/Header";
+import ReportBox from "../components/ReportBox";
+import SuggestionBox from "../components/SuggestionBox";
+import ErrorBox from "../components/ErrorBox";
 import { useState } from "react";
 
 export default function Meldinger() {
@@ -22,14 +22,4 @@ export default function Meldinger() {
         {!suggestionAccepted && (
           <SuggestionBox
             suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt og tilgjengelig denne uken.'"
-            onAccept={() => setSuggestionAccepted(true)}
-          />
-        )}
-
-        {showError && <ErrorBox message="Kunne ikke hente meldingene. Prøv igjen senere." />}
-
-        <ReportBox />
-      </main>
-    </>
-  );
-}
+            onAccept={() => set
