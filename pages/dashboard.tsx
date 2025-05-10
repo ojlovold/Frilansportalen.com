@@ -1,28 +1,37 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { supabase } from "../utils/supabaseClient";
+
+const Map = dynamic(() => import("../components/Map"), { ssr: false });
 
 export default function Dashboard() {
+  const [markører, setMarkører] = useState<any[]>([]);
   const [brukernavn, setBrukernavn] = useState("");
-  const [varsler, setVarsler] = useState<any[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      const { data: bruker } = await supabase.auth.getUser();
-      const uid = bruker.user?.id;
-
-      const profil = await supabase.from("profiler").select("navn").eq("id", uid).single();
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+      const profil = await supabase.from("profiler").select("navn").eq("id", id).single();
       if (profil.data?.navn) setBrukernavn(profil.data.navn);
 
-      const { data: varselliste } = await supabase
-        .from("varsler")
-        .select("*")
-        .eq("bruker_id", uid)
-        .order("opprettet_dato", { ascending: false });
+      const [stillinger, gjenbruk] = await Promise.all([
+        supabase.from("stillinger").select("tittel, sted").limit(10),
+        supabase.from("gjenbruk").select("tittel, sted").limit(10),
+      ]);
 
-      setVarsler(varselliste || []);
+      const samlet = [...(stillinger.data || []), ...(gjenbruk.data || [])];
+      const konvertert = await Promise.all(
+        samlet.filter((s) => s.sted).map(async (s) => {
+          const geo = await fetch(`/api/geokode?adresse=${encodeURIComponent(s.sted)}`).then((r) => r.json());
+          return { tittel: s.tittel, lat: geo.lat, lng: geo.lng };
+        })
+      );
+
+      setMarkører(konvertert);
     };
 
     hent();
@@ -34,63 +43,21 @@ export default function Dashboard() {
         <title>Dashboard | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Hei {brukernavn || "!"}</h1>
+      <div className="max-w-5xl mx-auto py-10">
+        <h1 className="text-3xl font-bold mb-6">Hei {brukernavn || "!"}</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-        <Link
-          href="/faktura"
-          className="bg-white border border-black rounded p-6 hover:bg-gray-50 transition"
-        >
-          <h2 className="font-semibold text-lg mb-1">Faktura</h2>
-          <p className="text-sm text-gray-600">Opprett og send fakturaer</p>
-        </Link>
-        <Link
-          href="/kjorebok"
-          className="bg-white border border-black rounded p-6 hover:bg-gray-50 transition"
-        >
-          <h2 className="font-semibold text-lg mb-1">Kjørebok</h2>
-          <p className="text-sm text-gray-600">Registrer turer og kjøregodtgjørelse</p>
-        </Link>
-        <Link
-          href="/mva"
-          className="bg-white border border-black rounded p-6 hover:bg-gray-50 transition"
-        >
-          <h2 className="font-semibold text-lg mb-1">MVA</h2>
-          <p className="text-sm text-gray-600">Håndter MVA og fradrag</p>
-        </Link>
-        <Link
-          href="/profil"
-          className="bg-white border border-black rounded p-6 hover:bg-gray-50 transition"
-        >
-          <h2 className="font-semibold text-lg mb-1">Profil</h2>
-          <p className="text-sm text-gray-600">Rediger navn, bilde og rolle</p>
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 text-sm">
+          <Link href="/mva" className="bg-white border p-4 rounded shadow-sm">MVA-rapportering</Link>
+          <Link href="/kjorebok" className="bg-white border p-4 rounded shadow-sm">Kjørebok</Link>
+          <Link href="/rapportarkiv" className="bg-white border p-4 rounded shadow-sm">Rapportarkiv</Link>
+          <Link href="/altinn" className="bg-white border p-4 rounded shadow-sm">Send til Altinn</Link>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-4">Oppdrag og tjenester på kart</h2>
+        <div className="h-[400px] border rounded overflow-hidden">
+          <Map markører={markører} />
+        </div>
       </div>
-
-      <h2 className="text-xl font-semibold mb-2">Varsler</h2>
-
-      {varsler.length === 0 ? (
-        <p className="text-sm text-gray-600">Ingen varsler akkurat nå.</p>
-      ) : (
-        <ul className="space-y-2 text-sm">
-          {varsler.map((v) => (
-            <li key={v.id} className="border p-3 bg-white rounded shadow-sm">
-              <p className="text-gray-500 text-xs mb-1">
-                {new Date(v.opprettet_dato).toLocaleString("no-NO")}
-              </p>
-              <p>{v.tekst}</p>
-              {v.lenke && (
-                <Link
-                  href={v.lenke}
-                  className="text-xs underline text-blue-600 hover:text-blue-800"
-                >
-                  Gå til
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
     </Layout>
   );
 }
