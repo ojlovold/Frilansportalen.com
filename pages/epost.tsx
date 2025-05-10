@@ -35,11 +35,22 @@ export default function Epost() {
     const original = meldinger.find((m) => m.id === valgtId);
     if (!original) return;
 
+    const til = original.fra === fra ? original.til : original.fra;
+
+    const tekstTrimmet = svar.trim();
+
     await supabase.from("meldinger").insert({
       fra,
-      til: original.fra === fra ? original.til : original.fra,
-      tekst: svar,
+      til,
+      tekst: tekstTrimmet,
       tidspunkt: new Date().toISOString(),
+    });
+
+    // Lag varsling til mottaker
+    await supabase.from("varsler").insert({
+      bruker_id: til,
+      tekst: "Du har fått en ny melding",
+      lenke: "/epost",
     });
 
     setSvar("");
