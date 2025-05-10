@@ -1,10 +1,27 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function DieselKalkulator() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
   const [km, setKm] = useState(0);
-  const [forbruk, setForbruk] = useState(0.7); // liter per mil
+  const [forbruk, setForbruk] = useState(0.7);
   const [literpris, setLiterpris] = useState(22.0);
   const [kostnad, setKostnad] = useState<number | null>(null);
 
@@ -14,6 +31,8 @@ export default function DieselKalkulator() {
     const sum = liter * literpris;
     setKostnad(Math.round(sum));
   };
+
+  if (loading) return <Layout><p className="text-sm">Laster kalkulator...</p></Layout>;
 
   return (
     <Layout>
