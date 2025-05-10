@@ -1,8 +1,28 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
 
 export default function Kontrakter() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster kontrakter...</p></Layout>;
+
   const kontrakter = [
     { navn: "Oppdrag Oslo", motpart: "MediaHuset", status: "Venter på signatur" },
     { navn: "Designjobb Stavanger", motpart: "Kari AS", status: "Signert" },
