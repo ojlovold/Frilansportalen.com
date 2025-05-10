@@ -1,8 +1,8 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import ReportBox from "../components/ReportBox";
+import Layout from "../components/Layout";
 import SuggestionBox from "../components/SuggestionBox";
 import ErrorBox from "../components/ErrorBox";
+import ReportBox from "../components/ReportBox";
 import { useState } from "react";
 
 export default function Meldinger() {
@@ -10,26 +10,28 @@ export default function Meldinger() {
   const [suggestionAccepted, setSuggestionAccepted] = useState(false);
 
   return (
-    <div>
+    <Layout>
       <Head>
         <title>Meldinger | Frilansportalen</title>
-        <meta name="description" content="Send og motta meldinger direkte i Frilansportalen" />
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-4">Meldinger</h1>
 
-        {!suggestionAccepted && (
-          <SuggestionBox
-            suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt og tilgjengelig denne uken.'"
-            onAccept={() => setSuggestionAccepted(true)}
-          />
-        )}
+      <h1 className="text-3xl font-bold mb-6">Meldinger</h1>
 
-        {showError && <ErrorBox message="Kunne ikke hente meldingene. Prøv igjen senere." />}
+      {!suggestionAccepted && (
+        <SuggestionBox
+          suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt og kan starte allerede denne uken.'"
+          onAccept={() => setSuggestionAccepted(true)}
+        />
+      )}
 
-        <ReportBox />
-      </main>
-    </div>
+      {showError && (
+        <ErrorBox
+          message="Noe gikk galt under sending. Prøv igjen senere."
+          onClose={() => setShowError(false)}
+        />
+      )}
+
+      <ReportBox onSend={() => setShowError(true)} />
+    </Layout>
   );
 }
