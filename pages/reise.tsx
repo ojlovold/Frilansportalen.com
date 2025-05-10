@@ -11,7 +11,7 @@ export default function Reise() {
   const [pris, setPris] = useState<number | null>(null);
 
   const beregn = () => {
-    const total = 'ferge' + bom + kilometer * 4.2;
+    const total = ferge + bom + kilometer * 4,2;
     setPris(Math.round(total));
   };
 
