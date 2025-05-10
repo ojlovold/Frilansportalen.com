@@ -1,38 +1,45 @@
 import Head from "next/head";
-import Header from "../components/Header";
-
-interface Fil {
-  navn: string;
-  type: string;
-  dato: string;
-}
-
-const filer: Fil[] = [
-  { navn: "Kontrakt – Logojobb.pdf", type: "PDF", dato: "2024-04-02" },
-  { navn: "Faktura_103.pdf", type: "PDF", dato: "2024-03-28" },
-  { navn: "Bilde_arbeid.jpg", type: "JPG", dato: "2024-02-19" },
-];
+import Layout from "../components/Layout";
+import Link from "next/link";
 
 export default function Arkiv() {
-  return (
-    <>
-      <Head>
-        <title>Mitt arkiv | Frilansportalen</title>
-        <meta name="description" content="Lagre og se dine filer og dokumenter" />
-      </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Mitt arkiv</h1>
+  const filer = [
+    { navn: "Kontrakt_Oppdrag_Stavanger.pdf", type: "PDF", dato: "01.05.2025" },
+    { navn: "Kvittering_faktura_421.jpg", type: "Bilde", dato: "28.04.2025" },
+    { navn: "Arbeidsattest.docx", type: "Word", dato: "12.03.2025" },
+  ];
 
-        <ul className="space-y-4">
-          {filer.map((fil, i) => (
-            <li key={i} className="bg-white p-4 rounded shadow">
-              <p className="font-semibold">{fil.navn}</p>
-              <p className="text-sm text-gray-600">{fil.type} – Lagt til: {fil.dato}</p>
-            </li>
+  return (
+    <Layout>
+      <Head>
+        <title>Arkiv | Frilansportalen</title>
+      </Head>
+
+      <h1 className="text-3xl font-bold mb-6">Ditt dokumentarkiv</h1>
+
+      <table className="w-full text-sm border border-black bg-white">
+        <thead>
+          <tr className="bg-black text-white text-left">
+            <th className="p-2">Filnavn</th>
+            <th className="p-2">Type</th>
+            <th className="p-2">Dato</th>
+            <th className="p-2">Handling</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filer.map(({ navn, type, dato }, i) => (
+            <tr key={i} className="border-t border-black">
+              <td className="p-2">{navn}</td>
+              <td className="p-2">{type}</td>
+              <td className="p-2">{dato}</td>
+              <td className="p-2 space-x-2">
+                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Last ned</Link>
+                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Send igjen</Link>
+              </td>
+            </tr>
           ))}
-        </ul>
-      </main>
-    </>
+        </tbody>
+      </table>
+    </Layout>
   );
 }
