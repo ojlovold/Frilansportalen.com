@@ -1,56 +1,91 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import SuggestionBox from "../components/SuggestionBox";
-import ErrorBox from "../components/ErrorBox";
-import ReportBox from "../components/ReportBox";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import PdfExport from "../components/PdfExport";
+import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
+import { useRouter } from "next/router";
 
-export default function Meldinger() {
-  const [showError, setShowError] = useState(false);
-  const [suggestionAccepted, setSuggestionAccepted] = useState(false);
+export default function Faktura() {
+  const [fakturaer, setFakturaer] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
+    const hentFaktura = async () => {
+      const bruker = await supabase.auth.getUser();
+      const brukerId = bruker.data.user?.id;
+
+      if (!brukerId) {
         router.push("/login");
-      } else {
-        setLoading(false);
+        return;
       }
+
+      const { data } = await supabase
+        .from("fakturaer")
+        .select("*")
+        .eq("opprettet_av", brukerId)
+        .order("opprettet_dato", { ascending: false });
+
+      setFakturaer(data || []);
+      setLoading(false);
     };
-    sjekkInnlogging();
+
+    hentFaktura();
   }, [router]);
 
-  if (loading) return <Layout><p className="text-sm">Laster meldinger...</p></Layout>;
+  const kolonner = ["Faktura #", "Til", "Beløp", "Status"];
+  const rader = fakturaer.map((f, i) => [
+    `F${String(i + 1).padStart(4, "0")}`,
+    f.til,
+    `${f.belop} kr`,
+    f.status,
+  ]);
 
   return (
     <Layout>
       <Head>
-        <title>Meldinger | Frilansportalen</title>
-        <meta name="description" content="Send og motta meldinger direkte i Frilansportalen" />
+        <title>Fakturaer | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Meldinger</h1>
+      <h1 className="text-3xl font-bold mb-6">Fakturaoversikt</h1>
 
-      {!suggestionAccepted && (
-        <SuggestionBox
-          suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt og kan starte allerede denne uken.'"
-          onAccept={() => setSuggestionAccepted(true)}
-        />
+      {loading ? (
+        <p className="text-sm">Laster fakturaer...</p>
+      ) : fakturaer.length === 0 ? (
+        <p className="text-sm text-gray-600">Ingen fakturaer registrert.</p>
+      ) : (
+        <>
+          <table className="w-full text-sm border border-black bg-white mb-6">
+            <thead>
+              <tr className="bg-black text-white text-left">
+                <th className="p-2">Faktura #</th>
+                <th className="p-2">Til</th>
+                <th className="p-2">Beløp</th>
+                <th className="p-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fakturaer.map((f, i) => (
+                <tr key={i} className="border-t border-black">
+                  <td className="p-2">F{String(i + 1).padStart(4, "0")}</td>
+                  <td className="p-2">{f.til}</td>
+                  <td className="p-2">{f.belop} kr</td>
+                  <td className="p-2">{f.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex justify-end">
+            <PdfExport
+              tittel="Fakturaoversikt"
+              filnavn="faktura"
+              kolonner={kolonner}
+              rader={rader}
+            />
+          </div>
+        </>
       )}
-
-      {showError && (
-        <ErrorBox
-          message="Noe gikk galt under sending. Prøv igjen senere."
-          onClose={() => setShowError(false)}
-        />
-      )}
-
-      <ReportBox onSend={() => setShowError(true)} />
     </Layout>
   );
 }
