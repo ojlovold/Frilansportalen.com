@@ -8,6 +8,8 @@ import { useRouter } from "next/router";
 export default function OppdaterProfil() {
   const [navn, setNavn] = useState("");
   const [bilde, setBilde] = useState("");
+  const [epost, setEpost] = useState("");
+  const [rolle, setRolle] = useState("");
   const [lagret, setLagret] = useState(false);
   const router = useRouter();
 
@@ -21,6 +23,8 @@ export default function OppdaterProfil() {
       if (data) {
         setNavn(data.navn || "");
         setBilde(data.bilde || "");
+        setEpost(data.epost || "");
+        setRolle(data.rolle || "");
       }
     };
 
@@ -35,9 +39,13 @@ export default function OppdaterProfil() {
       return;
     }
 
-    await supabase
-      .from("profiler")
-      .upsert({ id, navn, bilde });
+    await supabase.from("profiler").upsert({
+      id,
+      navn,
+      bilde,
+      epost,
+      rolle,
+    });
 
     setLagret(true);
   };
@@ -53,11 +61,29 @@ export default function OppdaterProfil() {
       <div className="max-w-lg grid gap-4">
         <input
           type="text"
-          placeholder="Navn"
+          placeholder="Visningsnavn"
           value={navn}
           onChange={(e) => setNavn(e.target.value)}
           className="p-2 border rounded"
         />
+
+        <input
+          type="email"
+          placeholder="Personlig e-post"
+          value={epost}
+          onChange={(e) => setEpost(e.target.value)}
+          className="p-2 border rounded"
+        />
+
+        <select
+          value={rolle}
+          onChange={(e) => setRolle(e.target.value)}
+          className="p-2 border rounded"
+        >
+          <option value="">Velg rolle</option>
+          <option value="frilanser">Frilanser</option>
+          <option value="jobbsøker">Jobbsøker</option>
+        </select>
 
         <FileUploadProfil onUpload={(url) => setBilde(url)} />
 
