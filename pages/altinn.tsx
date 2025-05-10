@@ -1,66 +1,38 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+import jsPDF from "jspdf";
 
-export default function Altinn() {
-  const [data, setData] = useState<any>({
-    inntekt: 0,
-    fradrag: 0,
-    kjore: 0,
-  });
+export default function AltinnRapport() {
+  const sendTilAltinn = async () => {
+    const doc = new jsPDF();
+    doc.text("Frilansportalen årsoppgjør", 20, 20);
+    const pdf = doc.output("arraybuffer");
 
-  useEffect(() => {
-    const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
+    const base64 = Buffer.from(pdf).toString("base64");
 
-      const { data: mva } = await supabase.from("mva").select("inntekt, fradrag").eq("bruker_id", id);
-      const { data: kjore } = await supabase.from("kjorebok").select("km, sats").eq("bruker_id", id);
+    const res = await fetch("/api/altinn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ base64pdf: base64, filename: "rapport.pdf" }),
+    });
 
-      const inntektTotal = mva?.reduce((acc, r) => acc + Number(r.inntekt || 0), 0);
-      const fradragTotal = mva?.reduce((acc, r) => acc + Number(r.fradrag || 0), 0);
-      const kjoreSum = kjore?.reduce((acc, r) => acc + (r.km * r.sats), 0);
-
-      setData({
-        inntekt: inntektTotal || 0,
-        fradrag: fradragTotal || 0,
-        kjore: kjoreSum || 0,
-      });
-    };
-
-    hent();
-  }, []);
-
-  const sendTilAltinn = () => {
-    alert("Simulert innsending til Altinn. Integrasjon kobles på senere.");
+    const txt = await res.text();
+    alert("Svar fra Altinn:\n" + txt);
   };
-
-  const grunnlag = data.inntekt - data.fradrag - data.kjore;
-  const skatt = grunnlag * 0.22;
 
   return (
     <Layout>
       <Head>
-        <title>Rapporter til Altinn | Frilansportalen</title>
+        <title>Altinn-rapport | Frilansportalen</title>
       </Head>
 
-      <div className="max-w-xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Rapporter til Altinn</h1>
-
-        <ul className="text-sm space-y-2 mb-6">
-          <li>Total inntekt: <strong>{data.inntekt.toFixed(2)} kr</strong></li>
-          <li>Fradrag: <strong>{data.fradrag.toFixed(2)} kr</strong></li>
-          <li>Kjøregodtgjørelse: <strong>{data.kjore.toFixed(2)} kr</strong></li>
-          <li>Skattbart grunnlag: <strong>{grunnlag.toFixed(2)} kr</strong></li>
-          <li>Anslått skatt: <strong>{skatt.toFixed(2)} kr</strong></li>
-        </ul>
-
+      <div className="max-w-xl mx-auto py-10 text-center">
+        <h1 className="text-2xl font-bold mb-6">Send årsoppgjør til Altinn</h1>
         <button
           onClick={sendTilAltinn}
           className="bg-black text-white px-6 py-3 rounded text-sm hover:bg-gray-800"
         >
-          Send til Altinn
+          Send rapport
         </button>
       </div>
     </Layout>
