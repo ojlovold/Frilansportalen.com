@@ -5,13 +5,13 @@ export default function Header() {
     <header className="bg-black text-white py-4 px-6 shadow-md flex justify-between items-center">
       <h1 className="text-xl font-bold">Frilansportalen</h1>
       <nav className="flex space-x-4">
-        <Link href="/" className="hover:underline">Hjem</Link>
-        <Link href="/stillinger" className="hover:underline">Stillinger</Link>
-        <Link href="/tjenester" className="hover:underline">Tjenester</Link>
-        <Link href="/gjenbruk" className="hover:underline">Gjenbruk</Link>
-        <Link href="/kurs" className="hover:underline">Kurs</Link>
-        <Link href="/dashboard" className="hover:underline">Dashboard</Link>
-        <Link href="/admin" className="hover:underline">Admin</Link>
+        <Link href="/"><a className="hover:underline">Hjem</a></Link>
+        <Link href="/stillinger"><a className="hover:underline">Stillinger</a></Link>
+        <Link href="/tjenester"><a className="hover:underline">Tjenester</a></Link>
+        <Link href="/gjenbruk"><a className="hover:underline">Gjenbruk</a></Link>
+        <Link href="/kurs"><a className="hover:underline">Kurs</a></Link>
+        <Link href="/dashboard"><a className="hover:underline">Dashboard</a></Link>
+        <Link href="/admin"><a className="hover:underline">Admin</a></Link>
       </nav>
     </header>
   );
