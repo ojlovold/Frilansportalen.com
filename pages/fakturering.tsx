@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import jsPDF from "jspdf";
 import { useState } from "react";
 import { supabase } from "../utils/supabaseClient";
+import SuccessBox from "../components/SuccessBox";
 
 export default function Fakturering() {
   const [mottaker, setMottaker] = useState("");
@@ -15,16 +16,22 @@ export default function Fakturering() {
     const profil = await supabase.from("profiler").select("*").eq("id", bruker.data.user?.id).single();
     const p = profil.data;
 
+    // Hent fakturanummer
+    const fakturanrRes = await fetch("/api/fakturanr");
+    const { fakturanr } = await fakturanrRes.json();
+
+    // Lag PDF
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text("Faktura", 20, 20);
     doc.setFontSize(10);
-    doc.text(`Fra: ${p?.firmanavn || p?.navn}`, 20, 35);
-    doc.text(`Til: ${mottaker}`, 20, 42);
-    doc.text(`Tjeneste: ${tjeneste}`, 20, 50);
-    doc.text(`Beløp: ${belop.toFixed(2)} kr`, 20, 58);
-    doc.text(`Kontonummer: ${p?.kontonr || "-"}`, 20, 66);
-    doc.text(`Referanse: ${p?.fakturareferanse || "-"}`, 20, 74);
+    doc.text(`Fakturanr: ${fakturanr}`, 20, 28);
+    doc.text(`Fra: ${p?.firmanavn || p?.navn}`, 20, 36);
+    doc.text(`Til: ${mottaker}`, 20, 44);
+    doc.text(`Tjeneste: ${tjeneste}`, 20, 52);
+    doc.text(`Beløp: ${belop.toFixed(2)} kr`, 20, 60);
+    doc.text(`Kontonummer: ${p?.kontonr || "-"}`, 20, 68);
+    doc.text(`Referanse: ${p?.fakturareferanse || "-"}`, 20, 76);
 
     const filnavn = `faktura-${Date.now()}.pdf`;
     const pdf = doc.output("arraybuffer");
@@ -47,41 +54,17 @@ export default function Fakturering() {
 
   return (
     <Layout>
-      <Head>
-        <title>Fakturering | Frilansportalen</title>
-      </Head>
-
+      <Head><title>Fakturering | Frilansportalen</title></Head>
       <div className="max-w-xl mx-auto py-10">
         <h1 className="text-2xl font-bold mb-6">Send faktura</h1>
 
-        <input
-          value={mottaker}
-          onChange={(e) => setMottaker(e.target.value)}
-          placeholder="Mottaker"
-          className="w-full p-2 border rounded mb-3"
-        />
-        <input
-          value={tjeneste}
-          onChange={(e) => setTjeneste(e.target.value)}
-          placeholder="Tjeneste / oppdrag"
-          className="w-full p-2 border rounded mb-3"
-        />
-        <input
-          type="number"
-          value={belop}
-          onChange={(e) => setBelop(Number(e.target.value))}
-          placeholder="Beløp (kr)"
-          className="w-full p-2 border rounded mb-3"
-        />
+        <input value={mottaker} onChange={(e) => setMottaker(e.target.value)} placeholder="Mottaker" className="w-full p-2 border rounded mb-3" />
+        <input value={tjeneste} onChange={(e) => setTjeneste(e.target.value)} placeholder="Tjeneste / oppdrag" className="w-full p-2 border rounded mb-3" />
+        <input type="number" value={belop} onChange={(e) => setBelop(Number(e.target.value))} placeholder="Beløp (kr)" className="w-full p-2 border rounded mb-3" />
 
-        <button
-          onClick={send}
-          className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800"
-        >
-          Send faktura
-        </button>
+        <button onClick={send} className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800">Send faktura</button>
 
-        {melding && <p className="text-green-600 text-sm mt-4">{melding}</p>}
+        <SuccessBox melding={melding} />
       </div>
     </Layout>
   );
