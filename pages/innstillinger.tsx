@@ -1,10 +1,30 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Innstillinger() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster innstillinger...</p></Layout>;
+
   const orgnr = "935 411 343";
   const portaltittel = "Frilansportalen";
-  const kontakt = "post@frilansportalen.com";
+  const kontakt = "ole@frilansportalen.com";
 
   return (
     <Layout>
