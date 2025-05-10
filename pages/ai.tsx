@@ -1,10 +1,8 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useState } from "react";
+import Link from "next/link";
 
 export default function AI() {
-  const [klar, setKlar] = useState(false);
-
   return (
     <Layout>
       <Head>
@@ -15,19 +13,18 @@ export default function AI() {
 
       <div className="bg-white border border-black rounded p-4 text-sm max-w-lg">
         <p className="mb-4">
-          Her kan du få hjelp av en intelligent assistent til å skrive stillingsannonser, svare på meldinger, lage fakturaer og mye mer.
+          Frilansportalens AI-assistent er aktiv. Du kan bruke den til å skrive meldinger, lage stillingsannonser, foreslå fakturaer, og mer.
         </p>
 
-        <div className={`mb-4 p-3 rounded text-white ${klar ? "bg-green-600" : "bg-yellow-600"}`}>
-          Status: {klar ? "AI er aktivert" : "AI er ikke aktivert ennå"}
+        <div className="mb-4 p-3 rounded text-white bg-green-600">
+          Status: AI er aktiv og klar til bruk
         </div>
 
-        <button
-          onClick={() => setKlar(true)}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
-        >
-          {klar ? "Start samtale" : "Aktiver AI-assistent"}
-        </button>
+        <Link href="/meldinger">
+          <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
+            Start assistent i meldinger
+          </button>
+        </Link>
       </div>
     </Layout>
   );
