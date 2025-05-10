@@ -28,30 +28,58 @@ export default function Reise() {
         <div className="grid gap-4">
           <div>
             <label className="block font-semibold">Fra:</label>
-            <input type="text" value={fra} onChange={(e) => setFra(e.target.value)} className="w-full p-2 border rounded" />
+            <input
+              type="text"
+              value={fra}
+              onChange={(e) => setFra(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
           <div>
             <label className="block font-semibold">Til:</label>
-            <input type="text" value={til} onChange={(e) => setTil(e.target.value)} className="w-full p-2 border rounded" />
+            <input
+              type="text"
+              value={til}
+              onChange={(e) => setTil(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
           <div>
             <label className="block font-semibold">Kilometer:</label>
-            <input type="number" value={kilometer} onChange={(e) => setKilometer(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
+            <input
+              type="number"
+              value={kilometer}
+              onChange={(e) => setKilometer(parseInt(e.target.value || "0"))}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
           <div>
             <label className="block font-semibold">Fergekostnad (kr):</label>
-            <input type="number" value={fergePris} onChange={(e) => setFergePris(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
+            <input
+              type="number"
+              value={fergePris}
+              onChange={(e) => setFergePris(parseInt(e.target.value || "0"))}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
           <div>
             <label className="block font-semibold">Bomkostnad (kr):</label>
-            <input type="number" value={bom} onChange={(e) => setBom(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
+            <input
+              type="number"
+              value={bom}
+              onChange={(e) => setBom(parseInt(e.target.value || "0"))}
+              className="w-full p-2 border rounded"
+            />
           </div>
 
-          <button onClick={beregn} className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
+          <button
+            onClick={beregn}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+          >
             Beregn kostnad
           </button>
 
