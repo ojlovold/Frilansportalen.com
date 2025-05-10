@@ -12,6 +12,7 @@ export default function NyMelding() {
 
   const sendInn = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const bruker = await supabase.auth.getUser();
     const fraId = bruker.data.user?.id;
 
@@ -20,6 +21,7 @@ export default function NyMelding() {
       return;
     }
 
+    // Lagre meldingen
     const { error } = await supabase.from("meldinger").insert({
       fra: fraId,
       til,
@@ -27,6 +29,13 @@ export default function NyMelding() {
     });
 
     if (!error) {
+      // Lag varsel til mottaker
+      await supabase.from("varsler").insert({
+        bruker_id: til,
+        tekst: "Du har mottatt en ny melding.",
+        lenke: "/meldinger/inbox",
+      });
+
       setSendt(true);
     }
   };
@@ -41,7 +50,7 @@ export default function NyMelding() {
 
       {sendt ? (
         <div className="bg-green-100 border border-green-400 text-green-800 rounded p-4 text-sm">
-          Melding sendt!
+          Melding sendt og varsel aktivert.
         </div>
       ) : (
         <form onSubmit={sendInn} className="grid gap-4 max-w-lg">
