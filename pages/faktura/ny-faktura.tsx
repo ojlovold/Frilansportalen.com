@@ -3,11 +3,13 @@ import Layout from "../../components/Layout";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../../utils/supabaseClient";
+import FileUpload from "../../components/FileUpload";
 
 export default function NyFaktura() {
   const [til, setTil] = useState("");
   const [belop, setBelop] = useState("");
   const [status, setStatus] = useState("Ubetalt");
+  const [filUrl, setFilUrl] = useState("");
   const [sendt, setSendt] = useState(false);
   const router = useRouter();
 
@@ -25,6 +27,7 @@ export default function NyFaktura() {
       til,
       belop: parseFloat(belop),
       status,
+      fil: filUrl,
       opprettet_av: brukerId,
     });
 
@@ -54,6 +57,9 @@ export default function NyFaktura() {
             <option value="Sendt">Sendt</option>
             <option value="Betalt">Betalt</option>
           </select>
+
+          <FileUpload onUpload={(url) => setFilUrl(url)} />
+
           <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
             Lagre faktura
           </button>
