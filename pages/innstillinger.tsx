@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 
 export default function Innstillinger() {
-  const [språk, setSpråk] = useState("no");
-  const [modus, setModus] = useState("lys");
-  const [tilgjengelighet, setTilgjengelighet] = useState(false);
+  const [data, setData] = useState<any>({});
   const [melding, setMelding] = useState("");
 
   useEffect(() => {
@@ -15,16 +13,21 @@ export default function Innstillinger() {
       const id = bruker.data.user?.id;
       if (!id) return;
 
-      const { data } = await supabase.from("profiler").select("*").eq("id", id).single();
-      if (data) {
-        setSpråk(data.språk ?? "no");
-        setModus(data.modus ?? "lys");
-        setTilgjengelighet(data.tilgjengelighet ?? false);
-      }
+      const { data: profil } = await supabase
+        .from("profiler")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (profil) setData(profil);
     };
 
     hent();
   }, []);
+
+  const oppdater = (felt: string, verdi: any) => {
+    setData((prev: any) => ({ ...prev, [felt]: verdi }));
+  };
 
   const lagre = async () => {
     const bruker = await supabase.auth.getUser();
@@ -33,14 +36,10 @@ export default function Innstillinger() {
 
     const { error } = await supabase
       .from("profiler")
-      .update({ språk, modus, tilgjengelighet })
+      .update(data)
       .eq("id", id);
 
-    if (error) {
-      setMelding("Feil under lagring");
-    } else {
-      setMelding("Innstillinger lagret");
-    }
+    setMelding(error ? "Feil under lagring" : "Innstillinger lagret.");
   };
 
   return (
@@ -49,51 +48,72 @@ export default function Innstillinger() {
         <title>Innstillinger | Frilansportalen</title>
       </Head>
 
-      <div className="max-w-lg mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Innstillinger</h1>
+      <div className="max-w-xl mx-auto py-10 text-sm">
+        <h1 className="text-2xl font-bold mb-6">Innstillinger og kontroll</h1>
 
-        <div className="space-y-4 text-sm">
-          <label className="block">
-            Språk:
-            <select
-              value={språk}
-              onChange={(e) => setSpråk(e.target.value)}
-              className="w-full p-2 border rounded mt-1"
-            >
-              <option value="no">Norsk</option>
-              <option value="en">English</option>
-              <option value="sv">Svenska</option>
-              <option value="da">Dansk</option>
-            </select>
-          </label>
+        <div className="space-y-4">
+          <input
+            value={data.firmanavn || ""}
+            onChange={(e) => oppdater("firmanavn", e.target.value)}
+            placeholder="Firmanavn"
+            className="w-full p-2 border rounded"
+          />
+          <input
+            value={data.orgnr || ""}
+            onChange={(e) => oppdater("orgnr", e.target.value)}
+            placeholder="Organisasjonsnummer"
+            className="w-full p-2 border rounded"
+          />
+          <input
+            value={data.adresse || ""}
+            onChange={(e) => oppdater("adresse", e.target.value)}
+            placeholder="Adresse"
+            className="w-full p-2 border rounded"
+          />
+          <input
+            value={data.poststed || ""}
+            onChange={(e) => oppdater("poststed", e.target.value)}
+            placeholder="Poststed"
+            className="w-full p-2 border rounded"
+          />
+          <input
+            value={data.kontonr || ""}
+            onChange={(e) => oppdater("kontonr", e.target.value)}
+            placeholder="Kontonummer"
+            className="w-full p-2 border rounded"
+          />
+          <input
+            value={data.fakturareferanse || ""}
+            onChange={(e) => oppdater("fakturareferanse", e.target.value)}
+            placeholder="Fakturareferanse"
+            className="w-full p-2 border rounded"
+          />
 
           <label className="block">
-            Visningsmodus:
-            <select
-              value={modus}
-              onChange={(e) => setModus(e.target.value)}
-              className="w-full p-2 border rounded mt-1"
-            >
-              <option value="lys">Lys</option>
-              <option value="mørk">Mørk</option>
-            </select>
+            <input
+              type="checkbox"
+              checked={data.samtykke_ai ?? true}
+              onChange={(e) => oppdater("samtykke_ai", e.target.checked)}
+              className="mr-2"
+            />
+            Tillat AI å gi forslag basert på mine data
           </label>
 
           <label className="block">
             <input
               type="checkbox"
-              checked={tilgjengelighet}
-              onChange={(e) => setTilgjengelighet(e.target.checked)}
+              checked={data.samtykke_deling ?? true}
+              onChange={(e) => oppdater("samtykke_deling", e.target.checked)}
               className="mr-2"
             />
-            Aktiver tale-til-tekst og større tekst
+            Tillat at profilen kan vises for andre
           </label>
 
           <button
             onClick={lagre}
             className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800"
           >
-            Lagre
+            Lagre innstillinger
           </button>
 
           {melding && <p className="text-green-600 mt-2">{melding}</p>}
