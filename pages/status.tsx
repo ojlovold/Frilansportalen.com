@@ -1,7 +1,27 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Status() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster status...</p></Layout>;
+
   const moduler = [
     { navn: "Dashboard", status: "Ferdig" },
     { navn: "Meldinger", status: "Ferdig" },
@@ -46,7 +66,10 @@ export default function Status() {
           {moduler.map(({ navn, status }, i) => (
             <tr key={i} className="border-t border-black">
               <td className="p-2">{navn}</td>
-              <td className={`p-2 font-semibold ${status === "Ferdig" ? "text-green-700" : status === "Delvis" ? "text-yellow-600" : "text-red-600"}`}>
+              <td className={`p-2 font-semibold ${
+                status === "Ferdig" ? "text-green-700" :
+                status === "Delvis" ? "text-yellow-600" : "text-red-600"
+              }`}>
                 {status}
               </td>
             </tr>
