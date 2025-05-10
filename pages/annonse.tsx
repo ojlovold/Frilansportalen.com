@@ -1,45 +1,64 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../utils/supabaseClient";
 
-export default function Annonse() {
-  const [input, setInput] = useState("");
-  const [visning, setVisning] = useState<string | null>(null);
+export default function Annonser() {
+  const [annonser, setAnnonser] = useState<any[]>([]);
+  const [kategori, setKategori] = useState("alle");
 
-  const generer = () => {
-    // Midlertidig eksempel. Erstattes av ekte AI-integrasjon.
-    const annonse = `Vi søker ${input.toLowerCase()} som kan bidra med sin erfaring, arbeidsvilje og fleksibilitet. Oppstart etter avtale.`;
-    setVisning(annonse);
-  };
+  useEffect(() => {
+    const hent = async () => {
+      const [stillinger, gjenbruk] = await Promise.all([
+        supabase.from("stillinger").select("id, tittel, sted, type, bransje, opprettet_dato, 'stilling'::text as kategori"),
+        supabase.from("gjenbruk").select("id, tittel, sted, '' as type, '' as bransje, opprettet_dato, 'gjenbruk'::text as kategori"),
+      ]);
+
+      setAnnonser([
+        ...(stillinger.data || []),
+        ...(gjenbruk.data || []),
+      ]);
+    };
+
+    hent();
+  }, []);
+
+  const filtrert = kategori === "alle"
+    ? annonser
+    : annonser.filter((a) => a.kategori === kategori);
 
   return (
     <Layout>
       <Head>
-        <title>Lag stillingsannonse | Frilansportalen</title>
+        <title>Alle annonser | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Lag stillingsannonse med AI</h1>
+      <div className="max-w-4xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Alle annonser</h1>
 
-      <div className="grid gap-4 max-w-lg">
-        <input
-          placeholder="F.eks. fotograf, snekker, regnskapsfører"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="p-2 border rounded"
-        />
-        <button
-          onClick={generer}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
+        <select
+          value={kategori}
+          onChange={(e) => setKategori(e.target.value)}
+          className="mb-6 p-2 border rounded"
         >
-          Generer annonse
-        </button>
+          <option value="alle">Alle kategorier</option>
+          <option value="stilling">Stillinger</option>
+          <option value="gjenbruk">Gjenbruk</option>
+        </select>
 
-        {visning && (
-          <div className="bg-blue-100 border border-blue-400 text-blue-800 rounded p-4 text-sm mt-2">
-            <h2 className="font-semibold mb-2">Forslag:</h2>
-            <p>{visning}</p>
-          </div>
+        {filtrert.length === 0 ? (
+          <p className="text-sm text-gray-600">Ingen annonser funnet.</p>
+        ) : (
+          <ul className="space-y-4 text-sm">
+            {filtrert.map((a, i) => (
+              <li key={i} className="bg-white border p-4 rounded shadow-sm">
+                <h2 className="text-lg font-semibold">{a.tittel}</h2>
+                <p className="text-xs text-gray-600">
+                  {a.sted} · {a.bransje || a.kategori} · {new Date(a.opprettet_dato).toLocaleDateString("no-NO")}
+                </p>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </Layout>
