@@ -45,7 +45,7 @@ export default function AccessibilityPanel({
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onresult = (e: SpeechRecognitionEvent) => {
+    recognition.onresult = (e: any) => {
       const inn = e.results[0][0].transcript;
       if (onDiktert) onDiktert(inn);
       setLytter(false);
