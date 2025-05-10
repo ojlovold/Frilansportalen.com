@@ -1,65 +1,42 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import PdfExport from "../components/PdfExport";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
-import { useRouter } from "next/router";
 
 export default function Arsoppgjor() {
-  const [poster, setPoster] = useState<any[]>([]);
-  const [år, setÅr] = useState(new Date().getFullYear());
-  const [resultat, setResultat] = useState("");
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [sumInntekt, setSumInntekt] = useState(0);
+  const [sumFradrag, setSumFradrag] = useState(0);
+  const [kjorebok, setKjorebok] = useState(0);
 
   useEffect(() => {
     const hent = async () => {
       const bruker = await supabase.auth.getUser();
       const id = bruker.data.user?.id;
-      if (!id) {
-        router.push("/login");
-        return;
-      }
 
-      const { data } = await supabase
-        .from("arsoppgjor")
-        .select("*")
-        .eq("bruker_id", id)
-        .order("år", { ascending: false });
+      const { data: mva } = await supabase
+        .from("mva")
+        .select("inntekt, fradrag")
+        .eq("bruker_id", id);
 
-      setPoster(data || []);
-      setLoading(false);
+      const { data: kmLogg } = await supabase
+        .from("kjorebok")
+        .select("km, sats")
+        .eq("bruker_id", id);
+
+      const inntektTotal = mva?.reduce((acc, r) => acc + Number(r.inntekt || 0), 0);
+      const fradragTotal = mva?.reduce((acc, r) => acc + Number(r.fradrag || 0), 0);
+      const kjoreSum = kmLogg?.reduce((acc, r) => acc + (r.km * r.sats), 0);
+
+      setSumInntekt(inntektTotal || 0);
+      setSumFradrag(fradragTotal || 0);
+      setKjorebok(kjoreSum || 0);
     };
 
     hent();
-  }, [router]);
+  }, []);
 
-  const lagre = async () => {
-    const bruker = await supabase.auth.getUser();
-    const id = bruker.data.user?.id;
-    if (!id) return;
-
-    const tall = parseFloat(resultat);
-
-    await supabase.from("arsoppgjor").upsert({
-      bruker_id: id,
-      år,
-      resultat: tall,
-      levert: false,
-    });
-
-    setResultat("");
-    router.reload();
-  };
-
-  const total = poster.reduce((sum, p) => sum + (p.resultat || 0), 0);
-  const kolonner = ["År", "Resultat", "Levert", "Dato"];
-  const rader = poster.map((p) => [
-    p.år,
-    `${p.resultat?.toFixed(2)} kr`,
-    p.levert ? "✔️" : "❌",
-    p.levert_dato?.split("T")[0] || "–",
-  ]);
+  const skattbart = sumInntekt - sumFradrag - kjorebok;
+  const skatt = skattbart * 0.22;
 
   return (
     <Layout>
@@ -67,70 +44,17 @@ export default function Arsoppgjor() {
         <title>Årsoppgjør | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Årsoppgjør</h1>
+      <div className="max-w-xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Årsoppgjør</h1>
 
-      <div className="max-w-lg space-y-4 mb-10">
-        <input
-          type="number"
-          placeholder="Årstall"
-          value={år}
-          onChange={(e) => setÅr(Number(e.target.value))}
-          className="p-2 border rounded w-full"
-        />
-        <input
-          placeholder="Resultat (kr)"
-          value={resultat}
-          onChange={(e) => setResultat(e.target.value)}
-          className="p-2 border rounded w-full"
-          type="number"
-        />
-        <button
-          onClick={lagre}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
-        >
-          Lagre årsoppgjør
-        </button>
+        <ul className="space-y-3 text-sm">
+          <li>Total inntekt: <strong>{sumInntekt.toFixed(2)} kr</strong></li>
+          <li>Fradrag: <strong>{sumFradrag.toFixed(2)} kr</strong></li>
+          <li>Kjøregodtgjørelse: <strong>{kjorebok.toFixed(2)} kr</strong></li>
+          <li className="mt-2 border-t pt-3">Skattbart grunnlag: <strong>{skattbart.toFixed(2)} kr</strong></li>
+          <li>Forventet skatt (22%): <strong>{skatt.toFixed(2)} kr</strong></li>
+        </ul>
       </div>
-
-      {loading ? (
-        <p className="text-sm">Laster årsoppgjør...</p>
-      ) : poster.length === 0 ? (
-        <p className="text-sm text-gray-600">Ingen registrerte årsoppgjør ennå.</p>
-      ) : (
-        <>
-          <table className="w-full text-sm border border-black bg-white mb-6">
-            <thead>
-              <tr className="bg-black text-white text-left">
-                <th className="p-2">År</th>
-                <th className="p-2">Resultat</th>
-                <th className="p-2">Levert</th>
-                <th className="p-2">Dato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {poster.map((p, i) => (
-                <tr key={i} className="border-t border-black">
-                  <td className="p-2">{p.år}</td>
-                  <td className="p-2">{p.resultat?.toFixed(2)} kr</td>
-                  <td className="p-2">{p.levert ? "✔️" : "❌"}</td>
-                  <td className="p-2">{p.levert_dato?.split("T")[0] || "–"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Total resultat: {total.toFixed(2)} kr</p>
-
-            <PdfExport
-              tittel="Årsoppgjør"
-              filnavn="arsoppgjor"
-              kolonner={kolonner}
-              rader={rader}
-            />
-          </div>
-        </>
-      )}
     </Layout>
   );
 }
