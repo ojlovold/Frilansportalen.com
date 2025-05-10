@@ -2,17 +2,20 @@ import Link from "next/link";
 
 export default function Header() {
   return (
-    <header className="bg-black text-white py-4 px-6 shadow-md flex justify-between items-center">
-      <h1 className="text-xl font-bold">Frilansportalen</h1>
-      <nav className="flex space-x-4">
-        <Link href="/"><a className="hover:underline">Hjem</a></Link>
-        <Link href="/stillinger"><a className="hover:underline">Stillinger</a></Link>
-        <Link href="/tjenester"><a className="hover:underline">Tjenester</a></Link>
-        <Link href="/gjenbruk"><a className="hover:underline">Gjenbruk</a></Link>
-        <Link href="/kurs"><a className="hover:underline">Kurs</a></Link>
-        <Link href="/dashboard"><a className="hover:underline">Dashboard</a></Link>
-        <Link href="/admin"><a className="hover:underline">Admin</a></Link>
-      </nav>
+    <header className="bg-black text-white sticky top-0 z-50 shadow-md">
+      <div className="flex justify-between items-center max-w-6xl mx-auto px-6 py-4">
+        <h1 className="text-xl font-bold">Frilansportalen</h1>
+        <nav className="flex flex-wrap gap-4 text-sm">
+          <Link href="/">Hjem</Link>
+          <Link href="/reise">Reise</Link>
+          <Link href="/stillinger">Stillinger</Link>
+          <Link href="/tjenester">Tjenester</Link>
+          <Link href="/gjenbruk">Gjenbruk</Link>
+          <Link href="/kurs">Kurs</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/admin">Admin</Link>
+        </nav>
+      </div>
     </header>
   );
 }
