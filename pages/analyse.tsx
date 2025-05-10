@@ -1,7 +1,27 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Analyse() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster analyse...</p></Layout>;
+
   const sisteHandlinger = [
     { tid: "13:47", bruker: "Kari AS", aktivitet: "Sendte melding" },
     { tid: "13:42", bruker: "Jonas B", aktivitet: "La ut ny tjeneste" },
