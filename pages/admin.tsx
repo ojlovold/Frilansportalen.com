@@ -1,46 +1,47 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import { isAdmin } from "../lib/auth";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import LoginHelper from "../components/LoginHelper";
+import Layout from "../components/Layout";
+import { useState } from "react";
 
 export default function Admin() {
-  const router = useRouter();
-  const [godkjent, setGodkjent] = useState(false);
-  const [sjekket, setSjekket] = useState(false);
-
-  useEffect(() => {
-    if (!isAdmin()) {
-      setSjekket(true);
-    } else {
-      setGodkjent(true);
-    }
-  }, []);
-
-  if (!godkjent && !sjekket) return null;
+  const [klar, setKlar] = useState(false);
+  const [lansert, setLansert] = useState(false);
 
   return (
-    <>
+    <Layout>
       <Head>
-        <title>Admin | Frilansportalen</title>
-        <meta name="description" content="Adminpanel for Frilansportalen – kun for administrator" />
+        <title>Adminpanel | Frilansportalen</title>
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        {!godkjent && sjekket ? (
-          <div className="max-w-md mx-auto bg-white p-6 rounded shadow">
-            <h1 className="text-xl font-bold mb-4">Adgang nødvendig</h1>
-            <p className="mb-4">Trykk på knappen under for å logge inn som admin på denne enheten:</p>
-            <LoginHelper />
-          </div>
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold mb-4">Adminpanel</h1>
-            <p>Du er nå logget inn som administrator.</p>
-          </>
-        )}
-      </main>
-    </>
+
+      <h1 className="text-3xl font-bold mb-6">Adminpanel</h1>
+
+      <div className="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-sm text-yellow-800 rounded">
+        Vipps er ikke på plass ennå, men vil bli det snart.
+      </div>
+
+      <div className={`mb-6 p-4 rounded text-white text-sm ${
+        klar ? "bg-green-600" : "bg-red-600"
+      }`}>
+        Systemstatus: {klar ? "KLAR FOR LANSERING" : "IKKE KLAR"}
+      </div>
+
+      <button
+        onClick={() => {
+          if (klar) {
+            setLansert(true);
+          } else {
+            setKlar(true);
+          }
+        }}
+        className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 text-sm"
+      >
+        {klar ? "Start portalen" : "Klargjør for lansering"}
+      </button>
+
+      {lansert && (
+        <div className="mt-6 p-4 bg-green-100 border border-green-400 text-green-800 text-sm rounded">
+          Portalen er lansert! Gratulerer.
+        </div>
+      )}
+    </Layout>
   );
 }
