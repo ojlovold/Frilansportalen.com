@@ -1,47 +1,79 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import { useState } from "react";
-
-const svarforslag = [
-  "Hei! Jeg er interessert og tilgjengelig.",
-  "Takk for meldingen – jeg svarer mer utfyllende snart.",
-  "Beklager, jeg har ikke kapasitet akkurat nå.",
-];
+import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Hurtigsvar() {
-  const [valgt, setValgt] = useState<string | null>(null);
+  const [liste, setListe] = useState<any[]>([]);
+  const [nytt, setNytt] = useState("");
+  const [melding, setMelding] = useState("");
+
+  useEffect(() => {
+    const hent = async () => {
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+
+      const { data } = await supabase
+        .from("hurtigsvar")
+        .select("*")
+        .eq("bruker_id", id)
+        .order("opprettet_dato", { ascending: false });
+
+      setListe(data || []);
+    };
+
+    hent();
+  }, []);
+
+  const leggTil = async () => {
+    const bruker = await supabase.auth.getUser();
+    const id = bruker.data.user?.id;
+    if (!nytt.trim() || !id) return;
+
+    const { error } = await supabase.from("hurtigsvar").insert({
+      bruker_id: id,
+      tekst: nytt,
+    });
+
+    if (error) {
+      setMelding("Feil ved lagring.");
+    } else {
+      setMelding("Hurtigsvar lagret.");
+      setNytt("");
+      window.location.reload();
+    }
+  };
 
   return (
-    <>
+    <Layout>
       <Head>
         <title>Hurtigsvar | Frilansportalen</title>
-        <meta name="description" content="Svar raskt med ferdigformulerte AI-forslag" />
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8 max-w-xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Hurtigsvar</h1>
 
-        <ul className="space-y-4">
-          {svarforslag.map((tekst, i) => (
-            <li key={i} className="bg-white p-4 rounded shadow flex justify-between items-center">
-              <p>{tekst}</p>
-              <button
-                onClick={() => setValgt(tekst)}
-                className="ml-4 bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
-              >
-                Bruk
-              </button>
-            </li>
+      <div className="max-w-xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Mine hurtigsvar</h1>
+
+        <textarea
+          value={nytt}
+          onChange={(e) => setNytt(e.target.value)}
+          placeholder="Skriv nytt hurtigsvar..."
+          className="w-full h-24 p-2 border rounded mb-3 resize-none"
+        />
+        <button
+          onClick={leggTil}
+          className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800"
+        >
+          Legg til hurtigsvar
+        </button>
+
+        {melding && <p className="text-sm text-green-600 mt-2">{melding}</p>}
+
+        <ul className="mt-6 space-y-3 text-sm">
+          {liste.map((s: any, i: number) => (
+            <li key={i} className="bg-white border p-3 rounded shadow-sm">{s.tekst}</li>
           ))}
         </ul>
-
-        {valgt && (
-          <div className="mt-6 bg-green-100 border border-green-400 text-green-800 p-4 rounded">
-            <p><strong>Valgt svar:</strong> {valgt}</p>
-            <p className="text-sm mt-2">Svar er nå sendt (simulert)</p>
-          </div>
-        )}
-      </main>
-    </>
+      </div>
+    </Layout>
   );
 }
