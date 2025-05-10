@@ -1,44 +1,51 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import { useState } from "react";
-
-interface Favoritt {
-  tittel: string;
-  type: "stilling" | "tjeneste" | "kurs";
-}
-
-const dummyFavoritter: Favoritt[] = [
-  { tittel: "Webutvikler – 50%", type: "stilling" },
-  { tittel: "HMS for frilansere", type: "kurs" },
-  { tittel: "Frisør, Oslo", type: "tjeneste" },
-];
+import Layout from "../components/Layout";
 
 export default function Favoritter() {
-  const [favoritter, setFavoritter] = useState(dummyFavoritter);
+  const annonser = [
+    { tittel: "Fotojobb i Ålesund", type: "Stillingsannonse" },
+    { tittel: "Jonas B – Vaskehjelp", type: "Tjenestetilbyder" },
+  ];
+
+  const hurtigsvar = [
+    "Hei, jeg er interessert!",
+    "Er stillingen fortsatt ledig?",
+    "Når ønskes oppstart?",
+    "Kan vi ta en prat?",
+  ];
 
   return (
-    <>
+    <Layout>
       <Head>
-        <title>Mine favoritter | Frilansportalen</title>
-        <meta name="description" content="Lagrede stillinger, tjenester og kurs" />
+        <title>Favoritter og hurtigsvar | Frilansportalen</title>
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Mine favoritter</h1>
 
-        {favoritter.length === 0 ? (
-          <p>Du har ikke lagret noen favoritter ennå.</p>
-        ) : (
-          <ul className="space-y-4">
-            {favoritter.map((fav, i) => (
-              <li key={i} className="bg-white p-4 rounded shadow">
-                <span className="text-sm text-gray-600 capitalize">{fav.type}</span>
-                <h2 className="text-lg font-semibold">{fav.tittel}</h2>
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
-    </>
+      <h1 className="text-3xl font-bold mb-6">Favoritter og hurtigsvar</h1>
+
+      <div className="mb-8">
+        <h2 className="font-semibold text-lg mb-2">Lagrede annonser</h2>
+        <ul className="text-sm bg-white border border-black rounded p-4">
+          {annonser.map(({ tittel, type }, i) => (
+            <li key={i} className="mb-2">
+              <strong>{tittel}</strong> <span className="text-gray-600">({type})</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h2 className="font-semibold text-lg mb-2">Hurtigsvar</h2>
+        <div className="flex flex-wrap gap-2">
+          {hurtigsvar.map((svar, i) => (
+            <button
+              key={i}
+              className="bg-black text-white px-3 py-1 rounded hover:bg-gray-800 text-sm"
+            >
+              {svar}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Layout>
   );
 }
