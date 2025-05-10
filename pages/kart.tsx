@@ -10,16 +10,32 @@ export default function Kart() {
 
   useEffect(() => {
     const hent = async () => {
-      const [stillinger, gjenbruk] = await Promise.all([
-        // Fiktiv koordinatbruk
-        { data: [{ tittel: "Fotograf Oslo", lat: 59.9139, lng: 10.7522 }] },
-        { data: [{ tittel: "Gis bort: kontorstol", lat: 60.3913, lng: 5.3221 }] },
-      ]);
+      const stillinger = await fetchAnnonser("stillinger");
+      const gjenbruk = await fetchAnnonser("gjenbruk");
 
-      setMarkører([
-        ...(stillinger.data || []).map((s) => ({ ...s, type: "Stilling" })),
-        ...(gjenbruk.data || []).map((g) => ({ ...g, type: "Gjenbruk" })),
-      ]);
+      const kombinert = [...stillinger, ...gjenbruk];
+      setMarkører(kombinert);
+    };
+
+    const fetchAnnonser = async (tabell: string) => {
+      const res = await fetch(`/api/supabase-proxy?table=${tabell}`);
+      const data = await res.json();
+
+      const medKoordinater = await Promise.all(
+        data
+          .filter((d: any) => d.sted)
+          .map(async (d: any) => {
+            const geo = await fetch(`/api/geokode?adresse=${encodeURIComponent(d.sted)}`).then((r) => r.json());
+            return {
+              tittel: d.tittel || "(Uten tittel)",
+              lat: geo.lat,
+              lng: geo.lng,
+              type: tabell === "stillinger" ? "Stilling" : "Gjenbruk",
+            };
+          })
+      );
+
+      return medKoordinater;
     };
 
     hent();
@@ -32,7 +48,7 @@ export default function Kart() {
       </Head>
 
       <div className="max-w-5xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Oppdrag og tjenester på kart</h1>
+        <h1 className="text-2xl font-bold mb-6">Annonser på kart</h1>
         <div className="h-[500px] rounded overflow-hidden">
           <Map markører={markører} />
         </div>
