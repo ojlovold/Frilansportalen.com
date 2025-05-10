@@ -1,8 +1,27 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Arkiv() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster arkiv...</p></Layout>;
+
   const filer = [
     { navn: "Kontrakt_Oppdrag_Stavanger.pdf", type: "PDF", dato: "01.05.2025" },
     { navn: "Kvittering_faktura_421.jpg", type: "Bilde", dato: "28.04.2025" },
@@ -33,8 +52,8 @@ export default function Arkiv() {
               <td className="p-2">{type}</td>
               <td className="p-2">{dato}</td>
               <td className="p-2 space-x-2">
-                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Last ned</Link>
-                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Send igjen</Link>
+                <a href="#" className="underline text-blue-600 hover:text-blue-800">Last ned</a>
+                <a href="#" className="underline text-blue-600 hover:text-blue-800">Send igjen</a>
               </td>
             </tr>
           ))}
