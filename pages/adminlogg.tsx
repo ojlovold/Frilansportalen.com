@@ -1,7 +1,27 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Adminlogg() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
+  if (loading) return <Layout><p className="text-sm">Laster adminlogg...</p></Layout>;
+
   const logg = [
     { tid: "10.05.2025 08:03", bruker: "Ole Gründer", handling: "Trykket på Start lansering" },
     { tid: "10.05.2025 07:40", bruker: "System", handling: "Backup-portal verifisert OK" },
