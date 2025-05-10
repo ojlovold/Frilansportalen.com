@@ -1,34 +1,39 @@
 import Head from "next/head";
-import Header from "../components/Header";
-
-const hendelser = [
-  { type: "Betaling", tekst: "Stillingsannonse kjøpt av bruker123", tid: "21. mai kl. 13:04" },
-  { type: "Innlogging", tekst: "Admin logget inn fra ny IP", tid: "21. mai kl. 12:37" },
-  { type: "Varsel", tekst: "Melding ikke levert til bruker456", tid: "20. mai kl. 18:22" },
-  { type: "Feilrapport", tekst: "404-feil på /kursdetaljer", tid: "19. mai kl. 23:14" },
-];
+import Layout from "../components/Layout";
 
 export default function Adminlogg() {
-  return (
-    <>
-      <Head>
-        <title>Systemlogg | Frilansportalen</title>
-        <meta name="description" content="Se hendelser og systemstatus – kun for administrator" />
-      </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8 max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Systemlogg</h1>
+  const logg = [
+    { tid: "10.05.2025 08:03", bruker: "Ole Gründer", handling: "Trykket på Start lansering" },
+    { tid: "10.05.2025 07:40", bruker: "System", handling: "Backup-portal verifisert OK" },
+    { tid: "09.05.2025 23:15", bruker: "Admin", handling: "Publiserte stilling for MediaHuset" },
+  ];
 
-        <ul className="space-y-4">
-          {hendelser.map((h, i) => (
-            <li key={i} className="bg-white p-4 rounded shadow">
-              <p className="font-semibold">{h.type}</p>
-              <p>{h.tekst}</p>
-              <p className="text-sm text-gray-600">{h.tid}</p>
-            </li>
+  return (
+    <Layout>
+      <Head>
+        <title>Adminlogg | Frilansportalen</title>
+      </Head>
+
+      <h1 className="text-3xl font-bold mb-6">Systemlogg</h1>
+
+      <table className="w-full text-sm border border-black bg-white">
+        <thead>
+          <tr className="bg-black text-white text-left">
+            <th className="p-2">Tid</th>
+            <th className="p-2">Bruker</th>
+            <th className="p-2">Handling</th>
+          </tr>
+        </thead>
+        <tbody>
+          {logg.map(({ tid, bruker, handling }, i) => (
+            <tr key={i} className="border-t border-black">
+              <td className="p-2">{tid}</td>
+              <td className="p-2">{bruker}</td>
+              <td className="p-2">{handling}</td>
+            </tr>
           ))}
-        </ul>
-      </main>
-    </>
+        </tbody>
+      </table>
+    </Layout>
   );
 }
