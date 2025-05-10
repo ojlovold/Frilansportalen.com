@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import PdfExport from "../components/PdfExport";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 import { useRouter } from "next/router";
@@ -59,6 +60,14 @@ export default function Mva() {
   };
 
   const totalt = poster.reduce((sum, p) => sum + (p.mva_oppgjør || 0), 0);
+  const kolonner = ["Periode", "Omsetning", "Fradrag", "Å betale", "Levert"];
+  const rader = poster.map((p) => [
+    p.periode,
+    `${p.omsetning} kr`,
+    `${p.fradrag} kr`,
+    `${p.mva_oppgjør?.toFixed(2)} kr`,
+    p.levert ? "✔️" : "❌",
+  ]);
 
   return (
     <Layout>
@@ -103,33 +112,44 @@ export default function Mva() {
       ) : poster.length === 0 ? (
         <p className="text-sm text-gray-600">Ingen registrerte MVA-oppgjør ennå.</p>
       ) : (
-        <table className="w-full text-sm border border-black bg-white mb-8">
-          <thead>
-            <tr className="bg-black text-white text-left">
-              <th className="p-2">Periode</th>
-              <th className="p-2">Omsetning</th>
-              <th className="p-2">Fradrag</th>
-              <th className="p-2">Å betale</th>
-              <th className="p-2">Levert</th>
-            </tr>
-          </thead>
-          <tbody>
-            {poster.map((p, i) => (
-              <tr key={i} className="border-t border-black">
-                <td className="p-2">{p.periode}</td>
-                <td className="p-2">{p.omsetning} kr</td>
-                <td className="p-2">{p.fradrag} kr</td>
-                <td className="p-2 font-semibold">{p.mva_oppgjør?.toFixed(2)} kr</td>
-                <td className="p-2">{p.levert ? "✔️" : "❌"}</td>
+        <>
+          <table className="w-full text-sm border border-black bg-white mb-6">
+            <thead>
+              <tr className="bg-black text-white text-left">
+                <th className="p-2">Periode</th>
+                <th className="p-2">Omsetning</th>
+                <th className="p-2">Fradrag</th>
+                <th className="p-2">Å betale</th>
+                <th className="p-2">Levert</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {poster.map((p, i) => (
+                <tr key={i} className="border-t border-black">
+                  <td className="p-2">{p.periode}</td>
+                  <td className="p-2">{p.omsetning} kr</td>
+                  <td className="p-2">{p.fradrag} kr</td>
+                  <td className="p-2 font-semibold">{p.mva_oppgjør?.toFixed(2)} kr</td>
+                  <td className="p-2">{p.levert ? "✔️" : "❌"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      <p className="text-sm font-semibold text-right">
-        Total MVA å betale: {totalt.toFixed(2)} kr
-      </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">
+              Totalt MVA: {totalt.toFixed(2)} kr
+            </p>
+
+            <PdfExport
+              tittel="MVA-oppgjør"
+              filnavn="mva"
+              kolonner={kolonner}
+              rader={rader}
+            />
+          </div>
+        </>
+      )}
     </Layout>
   );
 }
