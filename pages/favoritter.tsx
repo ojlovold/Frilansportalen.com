@@ -1,70 +1,58 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
+import Link from "next/link";
 
 export default function Favoritter() {
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [favoritter, setFavoritter] = useState<any[]>([]);
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
-      }
+    const hent = async () => {
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+      if (!id) return;
+
+      const { data } = await supabase
+        .from("favoritter")
+        .select("*")
+        .eq("bruker_id", id)
+        .order("lagret", { ascending: false });
+
+      setFavoritter(data || []);
     };
-    sjekkInnlogging();
-  }, [router]);
 
-  if (loading) return <Layout><p className="text-sm">Laster favoritter...</p></Layout>;
-
-  const annonser = [
-    { tittel: "Fotojobb i Ålesund", type: "Stillingsannonse" },
-    { tittel: "Jonas B – Vaskehjelp", type: "Tjenestetilbyder" },
-  ];
-
-  const hurtigsvar = [
-    "Hei, jeg er interessert!",
-    "Er stillingen fortsatt ledig?",
-    "Når ønskes oppstart?",
-    "Kan vi ta en prat?",
-  ];
+    hent();
+  }, []);
 
   return (
     <Layout>
       <Head>
-        <title>Favoritter og hurtigsvar | Frilansportalen</title>
+        <title>Mine favoritter | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Favoritter og hurtigsvar</h1>
+      <div className="max-w-3xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Lagrede annonser</h1>
 
-      <div className="mb-8">
-        <h2 className="font-semibold text-lg mb-2">Lagrede annonser</h2>
-        <ul className="text-sm bg-white border border-black rounded p-4">
-          {annonser.map(({ tittel, type }, i) => (
-            <li key={i} className="mb-2">
-              <strong>{tittel}</strong> <span className="text-gray-600">({type})</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <h2 className="font-semibold text-lg mb-2">Hurtigsvar</h2>
-        <div className="flex flex-wrap gap-2">
-          {hurtigsvar.map((svar, i) => (
-            <button
-              key={i}
-              className="bg-black text-white px-3 py-1 rounded hover:bg-gray-800 text-sm"
-            >
-              {svar}
-            </button>
-          ))}
-        </div>
+        {favoritter.length === 0 ? (
+          <p className="text-sm text-gray-600">Du har ikke lagret noen annonser ennå.</p>
+        ) : (
+          <ul className="space-y-4 text-sm">
+            {favoritter.map((f) => (
+              <li key={f.id} className="bg-white border p-4 rounded shadow-sm">
+                <p className="font-semibold">{f.tittel}</p>
+                <p className="text-xs text-gray-600">{f.type} · {f.kilde}</p>
+                <Link
+                  href={f.lenke}
+                  className="text-blue-600 underline text-xs hover:text-blue-800"
+                  target="_blank"
+                >
+                  Gå til annonse
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </Layout>
   );
