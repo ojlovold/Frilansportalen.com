@@ -1,28 +1,42 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
 
 export default function Admin() {
-  const [klar, setKlar] = useState(false);
-  const [lansert, setLansert] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [moduler, setModuler] = useState<any[]>([]);
+  const [melding, setMelding] = useState("");
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
-      }
-    };
-    sjekkInnlogging();
-  }, [router]);
+    const hent = async () => {
+      const { data, error } = await supabase
+        .from("moduler")
+        .select("*")
+        .order("navn");
 
-  if (loading) return <Layout><p className="text-sm">Laster adminpanel...</p></Layout>;
+      if (!error && data) setModuler(data);
+    };
+
+    hent();
+  }, []);
+
+  const toggle = async (id: string, aktiv: boolean) => {
+    const { error } = await supabase
+      .from("moduler")
+      .update({ aktiv: !aktiv, sist_endret: new Date().toISOString() })
+      .eq("id", id);
+
+    if (!error) {
+      setModuler((m) =>
+        m.map((modul) =>
+          modul.id === id ? { ...modul, aktiv: !aktiv } : modul
+        )
+      );
+      setMelding("Endring lagret");
+    } else {
+      setMelding("Feil under lagring");
+    }
+  };
 
   return (
     <Layout>
@@ -30,36 +44,30 @@ export default function Admin() {
         <title>Adminpanel | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Adminpanel</h1>
+      <div className="max-w-2xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Modulkontroll</h1>
 
-      <div className="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-sm text-yellow-800 rounded">
-        Vipps er ikke på plass ennå, men vil bli det snart.
+        {melding && <p className="text-sm text-green-600 mb-4">{melding}</p>}
+
+        <ul className="space-y-4 text-sm">
+          {moduler.map((m) => (
+            <li key={m.id} className="bg-white border rounded p-4 shadow-sm flex justify-between items-center">
+              <div>
+                <p className="font-semibold">{m.navn}</p>
+                <p className="text-gray-600 text-xs">{m.beskrivelse}</p>
+              </div>
+              <button
+                onClick={() => toggle(m.id, m.aktiv)}
+                className={`px-4 py-1 rounded text-sm ${
+                  m.aktiv ? "bg-green-600 text-white" : "bg-gray-300"
+                }`}
+              >
+                {m.aktiv ? "Aktiv" : "Inaktiv"}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-
-      <div className={`mb-6 p-4 rounded text-white text-sm ${
-        klar ? "bg-green-600" : "bg-red-600"
-      }`}>
-        Systemstatus: {klar ? "KLAR FOR LANSERING" : "IKKE KLAR"}
-      </div>
-
-      <button
-        onClick={() => {
-          if (klar) {
-            setLansert(true);
-          } else {
-            setKlar(true);
-          }
-        }}
-        className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 text-sm"
-      >
-        {klar ? "Start portalen" : "Klargjør for lansering"}
-      </button>
-
-      {lansert && (
-        <div className="mt-6 p-4 bg-green-100 border border-green-400 text-green-800 text-sm rounded">
-          Portalen er lansert! Gratulerer.
-        </div>
-      )}
     </Layout>
   );
 }
