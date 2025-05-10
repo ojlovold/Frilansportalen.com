@@ -6,27 +6,37 @@ import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
 
 export default function Kontrakter() {
+  const [kontrakter, setKontrakter] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
+    const hent = async () => {
+      const bruker = await supabase.auth.getUser();
+      const brukerId = bruker.data.user?.id;
+
+      if (!brukerId) {
         router.push("/login");
-      } else {
-        setLoading(false);
+        return;
       }
+
+      const { data, error } = await supabase
+        .from("kontrakter")
+        .select("id, navn, motpart, status, fil")
+        .eq("opprettet_av", brukerId)
+        .order("opprettet_dato", { ascending: false });
+
+      if (!error && data) {
+        setKontrakter(data);
+      }
+
+      setLoading(false);
     };
-    sjekkInnlogging();
+
+    hent();
   }, [router]);
 
   if (loading) return <Layout><p className="text-sm">Laster kontrakter...</p></Layout>;
-
-  const kontrakter = [
-    { navn: "Oppdrag Oslo", motpart: "MediaHuset", status: "Venter på signatur" },
-    { navn: "Designjobb Stavanger", motpart: "Kari AS", status: "Signert" },
-  ];
 
   return (
     <Layout>
@@ -42,23 +52,34 @@ export default function Kontrakter() {
             <th className="p-2">Navn</th>
             <th className="p-2">Motpart</th>
             <th className="p-2">Status</th>
-            <th className="p-2">Handling</th>
+            <th className="p-2">Fil</th>
           </tr>
         </thead>
         <tbody>
-          {kontrakter.map(({ navn, motpart, status }, i) => (
-            <tr key={i} className="border-t border-black">
+          {kontrakter.map(({ id, navn, motpart, status, fil }) => (
+            <tr key={id} className="border-t border-black">
               <td className="p-2">{navn}</td>
               <td className="p-2">{motpart}</td>
               <td className="p-2">{status}</td>
-              <td className="p-2 space-x-2">
-                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Signer</Link>
-                <Link href="#" className="underline text-blue-600 hover:text-blue-800">Se</Link>
+              <td className="p-2">
+                {fil ? (
+                  <a href={fil} target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800">
+                    Last ned
+                  </a>
+                ) : (
+                  <span className="text-gray-500 text-xs">Ingen fil</span>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <div className="mt-8">
+        <Link href="/kontrakter/ny-kontrakt" className="underline text-sm hover:text-black">
+          Last opp ny kontrakt
+        </Link>
+      </div>
     </Layout>
   );
 }
