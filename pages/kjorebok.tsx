@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import PdfExport from "../components/PdfExport";
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 import { useRouter } from "next/router";
@@ -63,6 +64,16 @@ export default function Kjorebok() {
 
   const total = ruter.reduce((sum, r) => sum + (r.belop || 0), 0);
 
+  const kolonner = ["Dato", "Fra", "Til", "Km", "Formål", "Beløp"];
+  const rader = ruter.map((r) => [
+    r.dato?.split("T")[0],
+    r.fra,
+    r.til,
+    r.km,
+    r.formål,
+    `${r.belop?.toFixed(2)} kr`,
+  ]);
+
   return (
     <Layout>
       <Head>
@@ -81,42 +92,51 @@ export default function Kjorebok() {
         </button>
       </div>
 
-      <h2 className="text-lg font-semibold mb-2">Dine registrerte turer</h2>
-
       {loading ? (
         <p className="text-sm">Laster...</p>
       ) : ruter.length === 0 ? (
         <p className="text-sm text-gray-600">Ingen turer registrert ennå.</p>
       ) : (
-        <table className="w-full text-sm border border-black bg-white mb-10">
-          <thead>
-            <tr className="bg-black text-white text-left">
-              <th className="p-2">Dato</th>
-              <th className="p-2">Fra</th>
-              <th className="p-2">Til</th>
-              <th className="p-2">Km</th>
-              <th className="p-2">Formål</th>
-              <th className="p-2">Beløp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ruter.map((r, i) => (
-              <tr key={i} className="border-t border-black">
-                <td className="p-2">{r.dato?.split("T")[0]}</td>
-                <td className="p-2">{r.fra}</td>
-                <td className="p-2">{r.til}</td>
-                <td className="p-2">{r.km}</td>
-                <td className="p-2">{r.formål}</td>
-                <td className="p-2">{r.belop?.toFixed(2)} kr</td>
+        <>
+          <table className="w-full text-sm border border-black bg-white mb-6">
+            <thead>
+              <tr className="bg-black text-white text-left">
+                <th className="p-2">Dato</th>
+                <th className="p-2">Fra</th>
+                <th className="p-2">Til</th>
+                <th className="p-2">Km</th>
+                <th className="p-2">Formål</th>
+                <th className="p-2">Beløp</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {ruter.map((r, i) => (
+                <tr key={i} className="border-t border-black">
+                  <td className="p-2">{r.dato?.split("T")[0]}</td>
+                  <td className="p-2">{r.fra}</td>
+                  <td className="p-2">{r.til}</td>
+                  <td className="p-2">{r.km}</td>
+                  <td className="p-2">{r.formål}</td>
+                  <td className="p-2">{r.belop?.toFixed(2)} kr</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      <p className="text-sm font-semibold text-right text-gray-800">
-        Totalt kjøregodtgjørelse: {total.toFixed(2)} kr
-      </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">
+              Totalt: {total.toFixed(2)} kr
+            </p>
+
+            <PdfExport
+              tittel="Kjørebok"
+              filnavn="kjorebok"
+              kolonner={kolonner}
+              rader={rader}
+            />
+          </div>
+        </>
+      )}
     </Layout>
   );
 }
