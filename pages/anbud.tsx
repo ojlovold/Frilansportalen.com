@@ -1,77 +1,49 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
 
 export default function Anbud() {
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [anbud, setAnbud] = useState<any[]>([]);
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
-      }
+    const hent = async () => {
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+
+      const { data } = await supabase
+        .from("anbud")
+        .select("*")
+        .eq("bruker_id", id)
+        .order("opprettet_dato", { ascending: false });
+
+      setAnbud(data || []);
     };
-    sjekkInnlogging();
-  }, [router]);
 
-  const [timer, setTimer] = useState(0);
-  const [prisPerTime, setPrisPerTime] = useState(0);
-  const [reiseKost, setReiseKost] = useState(0);
-  const [forslag, setForslag] = useState<number | null>(null);
-
-  const beregn = () => {
-    const total = timer * prisPerTime + reiseKost;
-    setForslag(Math.round(total));
-  };
-
-  if (loading) return <Layout><p className="text-sm">Laster anbudskalkulator...</p></Layout>;
+    hent();
+  }, []);
 
   return (
     <Layout>
       <Head>
-        <title>Anbudskalkulator | Frilansportalen</title>
+        <title>Anbud | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Anbudskalkulator</h1>
+      <div className="max-w-3xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Mine anbud</h1>
 
-      <div className="grid gap-4 max-w-lg">
-        <input
-          placeholder="Timer estimert"
-          type="number"
-          value={timer}
-          onChange={(e) => setTimer(parseFloat(e.target.value || "0"))}
-          className="p-2 border rounded"
-        />
-        <input
-          placeholder="Pris per time (kr)"
-          type="number"
-          value={prisPerTime}
-          onChange={(e) => setPrisPerTime(parseFloat(e.target.value || "0"))}
-          className="p-2 border rounded"
-        />
-        <input
-          placeholder="Reisekostnad (kr)"
-          type="number"
-          value={reiseKost}
-          onChange={(e) => setReiseKost(parseFloat(e.target.value || "0"))}
-          className="p-2 border rounded"
-        />
-        <button
-          onClick={beregn}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
-        >
-          Beregn prisforslag
-        </button>
-        {forslag !== null && (
-          <div className="bg-blue-100 border border-blue-400 text-blue-800 rounded p-3 text-sm">
-            Anbefalt prisforslag: <strong>{forslag} kr</strong>
-          </div>
+        {anbud.length === 0 ? (
+          <p className="text-sm text-gray-600">Du har ikke registrert noen anbud ennå.</p>
+        ) : (
+          <ul className="space-y-4 text-sm">
+            {anbud.map((a, i) => (
+              <li key={i} className="bg-white border rounded p-4 shadow-sm">
+                <p className="font-semibold text-lg mb-1">{a.tittel}</p>
+                <p>Estimert pris: {a.pris} kr</p>
+                <p className="text-xs text-gray-500">{new Date(a.opprettet_dato).toLocaleDateString("no-NO")}</p>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </Layout>
