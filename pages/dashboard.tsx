@@ -6,7 +6,9 @@ import { supabase } from "../utils/supabaseClient";
 
 export default function Dashboard() {
   const [navn, setNavn] = useState("");
-  const [antallFakturaer, setAntallFakturaer] = useState(0);
+  const [faktura, setFaktura] = useState(0);
+  const [rapporter, setRapporter] = useState(0);
+  const [kjorebok, setKjorebok] = useState(0);
 
   useEffect(() => {
     const hent = async () => {
@@ -16,8 +18,15 @@ export default function Dashboard() {
       const profil = await supabase.from("profiler").select("navn").eq("id", id).single();
       if (profil.data?.navn) setNavn(profil.data.navn);
 
-      const fakturaer = await supabase.from("fakturaer").select("id").eq("bruker_id", id);
-      setAntallFakturaer(fakturaer.data?.length || 0);
+      const [fakt, rap, kjore] = await Promise.all([
+        supabase.from("fakturaer").select("id").eq("bruker_id", id),
+        supabase.from("rapportarkiv").select("id").eq("bruker_id", id),
+        supabase.from("kjorebok").select("id").eq("bruker_id", id),
+      ]);
+
+      setFaktura(fakt.data?.length || 0);
+      setRapporter(rap.data?.length || 0);
+      setKjorebok(kjore.data?.length || 0);
     };
 
     hent();
@@ -29,17 +38,57 @@ export default function Dashboard() {
         <title>Dashboard | Frilansportalen</title>
       </Head>
 
-      <div className="max-w-5xl mx-auto py-10">
+      <div className="max-w-6xl mx-auto py-10">
         <h1 className="text-3xl font-bold mb-6">Velkommen, {navn || "bruker"}!</h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm mb-10">
           <Link href="/fakturering" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
             <p className="text-lg font-semibold mb-1">Faktura</p>
-            <p>{antallFakturaer} sendt · Send ny faktura</p>
+            <p>{faktura} sendt · Send ny</p>
           </Link>
           <Link href="/rapportarkiv" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
             <p className="text-lg font-semibold mb-1">Rapportarkiv</p>
-            <p>Lagrede PDF-rapporter og årsoppgjør</p>
+            <p>{rapporter} rapporter lagret</p>
+          </Link>
+          <Link href="/kjorebok" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Kjørebok</p>
+            <p>{kjorebok} turer registrert</p>
+          </Link>
+          <Link href="/mva" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">MVA</p>
+            <p>Oversikt og fradrag</p>
+          </Link>
+          <Link href="/arsoppgjor" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Årsoppgjør</p>
+            <p>Skatt og inntekt</p>
+          </Link>
+          <Link href="/altinn" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Altinn</p>
+            <p>Send rapport</p>
+          </Link>
+          <Link href="/pdf" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">PDF</p>
+            <p>Eksporter rapport</p>
+          </Link>
+          <Link href="/verktøy" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Verktøykasse</p>
+            <p>Alle funksjoner samlet</p>
+          </Link>
+          <Link href="/kart" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Kart</p>
+            <p>Geografisk oversikt</p>
+          </Link>
+          <Link href="/premium" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Premium</p>
+            <p>Oppgrader konto</p>
+          </Link>
+          <Link href="/betaling" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Betaling</p>
+            <p>Vipps og Stripe</p>
+          </Link>
+          <Link href="/innstillinger" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Innstillinger</p>
+            <p>Profil og faktura</p>
           </Link>
         </div>
       </div>
