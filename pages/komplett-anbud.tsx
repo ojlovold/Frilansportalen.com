@@ -1,8 +1,25 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function KomplettAnbud() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
   const [km, setKm] = useState(0);
   const [ferge, setFerge] = useState(0);
   const [bom, setBom] = useState(0);
@@ -20,6 +37,8 @@ export default function KomplettAnbud() {
     const total = arbeidKost + reiseKost;
     setResultat(Math.round(total));
   };
+
+  if (loading) return <Layout><p className="text-sm">Laster kalkulator...</p></Layout>;
 
   return (
     <Layout>
