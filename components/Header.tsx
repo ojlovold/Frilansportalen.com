@@ -1,35 +1,26 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
 import Link from "next/link";
 
-export default function Dashboard() {
-  const kort = [
-    { tittel: "Meldinger", tekst: "Du har 2 nye meldinger.", href: "/meldinger" },
-    { tittel: "Fakturaer", tekst: "3 fakturaer sendt. 1 venter på betaling.", href: "/faktura" },
-    { tittel: "Tilgjengelighet", tekst: "Du er ledig i 8 av 14 kommende dager.", href: "/kalender" },
-    { tittel: "Anbud", tekst: "Siste kalkulerte pris: 7 400 kr.", href: "/anbud" },
-  ];
-
+export default function Header() {
   return (
-    <Layout>
-      <Head>
-        <title>Dashboard | Frilansportalen</title>
-      </Head>
+    <header className="bg-black text-white sticky top-0 z-50 shadow-md">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        {/* Logo */}
+        <Link href="/" className="mb-2 sm:mb-0 block text-xl">
+          <span className="font-extrabold">FRILANS</span>
+          <span className="font-light">PORTALEN</span>
+        </Link>
 
-      <h1 className="text-3xl font-bold mb-6">Mitt dashboard</h1>
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {kort.map(({ tittel, tekst, href }, i) => (
-          <Link
-            href={href}
-            key={i}
-            className="block bg-white border border-black rounded-xl p-4 hover:bg-gray-50 transition"
-          >
-            <h2 className="font-semibold mb-1">{tittel}</h2>
-            <p className="text-sm text-gray-700">{tekst}</p>
-          </Link>
-        ))}
+        {/* Meny */}
+        <nav className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
+          <Link href="/">Hjem</Link>
+          <Link href="/stillinger">Stillinger</Link>
+          <Link href="/tjenester">Tjenester</Link>
+          <Link href="/gjenbruk">Gjenbruk</Link>
+          <Link href="/kurs">Kurs</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/ai">AI</Link>
+        </nav>
       </div>
-    </Layout>
+    </header>
   );
 }
