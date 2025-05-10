@@ -1,47 +1,48 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useState } from "react";
+import { supabase } from "../utils/supabaseClient";
 
-export default function Feilside() {
-  const [rapportert, setRapportert] = useState(false);
-  const [forslått, setForslått] = useState(false);
+export default function Feil() {
+  const [melding, setMelding] = useState("");
+  const [sendt, setSendt] = useState(false);
+
+  const send = async () => {
+    if (!melding) return;
+    await supabase.from("varsler").insert({
+      bruker_id: "admin", // Placeholder – byttes ut med faktisk admin-ID
+      tekst: `Brukerrapportert feil: ${melding}`,
+      lenke: "/feil",
+    });
+    setSendt(true);
+    setMelding("");
+  };
 
   return (
     <Layout>
       <Head>
-        <title>Feilmeldinger | Frilansportalen</title>
+        <title>Feilmelding | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Feil og forbedringsforslag</h1>
+      <h1 className="text-3xl font-bold mb-6">Rapporter en feil</h1>
 
-      {!rapportert ? (
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 text-sm">Har du oppdaget en feil?</h2>
-          <textarea className="w-full border rounded p-2 h-28 text-sm" placeholder="Beskriv feilen..."></textarea>
+      {sendt ? (
+        <p className="text-green-600 text-sm">Takk! Meldingen er sendt til administrator.</p>
+      ) : (
+        <div className="max-w-lg space-y-4">
+          <textarea
+            placeholder="Beskriv feilen du opplevde..."
+            value={melding}
+            onChange={(e) => setMelding(e.target.value)}
+            className="w-full h-32 border p-2 rounded resize-none"
+          />
           <button
-            onClick={() => setRapportert(true)}
-            className="bg-black text-white px-4 py-2 mt-2 rounded hover:bg-gray-800 text-sm"
+            onClick={send}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
           >
             Send feilmelding
           </button>
         </div>
-      ) : (
-        <p className="text-sm text-green-700 mb-6">Takk! Feilen er sendt inn.</p>
-      )}
-
-      {!forslått ? (
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 text-sm">Har du et forslag?</h2>
-          <textarea className="w-full border rounded p-2 h-28 text-sm" placeholder="Hva kan bli bedre...?"></textarea>
-          <button
-            onClick={() => setForslått(true)}
-            className="bg-black text-white px-4 py-2 mt-2 rounded hover:bg-gray-800 text-sm"
-          >
-            Send forslag
-          </button>
-        </div>
-      ) : (
-        <p className="text-sm text-blue-700">Takk for forslaget – vi vurderer det!</p>
       )}
     </Layout>
   );
