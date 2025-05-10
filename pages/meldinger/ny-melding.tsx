@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Layout from "../../components/Layout";
+import PopupAlert from "../../components/PopupAlert";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../../utils/supabaseClient";
@@ -48,35 +49,31 @@ export default function NyMelding() {
 
       <h1 className="text-3xl font-bold mb-6">Send en ny melding</h1>
 
-      {sendt ? (
-        <div className="bg-green-100 border border-green-400 text-green-800 rounded p-4 text-sm">
-          Melding sendt og varsel aktivert.
-        </div>
-      ) : (
-        <form onSubmit={sendInn} className="grid gap-4 max-w-lg">
-          <input
-            required
-            type="text"
-            placeholder="Mottakerens bruker-ID (UUID)"
-            value={til}
-            onChange={(e) => setTil(e.target.value)}
-            className="p-2 border rounded"
-          />
-          <textarea
-            required
-            placeholder="Skriv melding..."
-            value={melding}
-            onChange={(e) => setMelding(e.target.value)}
-            className="p-2 border rounded h-32 resize-none"
-          ></textarea>
-          <button
-            type="submit"
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
-          >
-            Send melding
-          </button>
-        </form>
-      )}
+      {sendt && <PopupAlert tekst="Melding sendt og varsel aktivert." />}
+
+      <form onSubmit={sendInn} className="grid gap-4 max-w-lg">
+        <input
+          required
+          type="text"
+          placeholder="Mottakerens bruker-ID (UUID)"
+          value={til}
+          onChange={(e) => setTil(e.target.value)}
+          className="p-2 border rounded"
+        />
+        <textarea
+          required
+          placeholder="Skriv melding..."
+          value={melding}
+          onChange={(e) => setMelding(e.target.value)}
+          className="p-2 border rounded h-32 resize-none"
+        ></textarea>
+        <button
+          type="submit"
+          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
+        >
+          Send melding
+        </button>
+      </form>
     </Layout>
   );
 }
