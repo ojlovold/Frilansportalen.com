@@ -1,73 +1,41 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import { useState } from "react";
+import Layout from "../components/Layout";
 
 export default function Faktura() {
-  const [mottaker, setMottaker] = useState("");
-  const [belop, setBelop] = useState("");
-  const [melding, setMelding] = useState("");
-  const [sendt, setSendt] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Faktura sendt:", { mottaker, belop, melding });
-    setSendt(true);
-    setMottaker("");
-    setBelop("");
-    setMelding("");
-  };
+  const fakturaer = [
+    { nummer: "F2024-001", til: "Ola Hansen", beløp: "4 200 kr", status: "Betalt" },
+    { nummer: "F2024-002", til: "Kari AS", beløp: "1 850 kr", status: "Sendt" },
+    { nummer: "F2024-003", til: "Mekanisk Verksted", beløp: "9 300 kr", status: "Ubetalt" },
+  ];
 
   return (
-    <>
+    <Layout>
       <Head>
-        <title>Send faktura | Frilansportalen</title>
-        <meta name="description" content="Send fakturaer direkte til arbeidsgivere via Frilansportalen" />
+        <title>Fakturaer | Frilansportalen</title>
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-4">Send faktura</h1>
 
-        {sendt ? (
-          <p className="text-green-700 font-semibold">Faktura sendt!</p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block font-semibold">Mottaker:</label>
-              <input
-                type="text"
-                value={mottaker}
-                onChange={(e) => setMottaker(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
+      <h1 className="text-3xl font-bold mb-6">Fakturaoversikt</h1>
 
-            <div>
-              <label className="block font-semibold">Beløp (kr):</label>
-              <input
-                type="number"
-                value={belop}
-                onChange={(e) => setBelop(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold">Melding (valgfritt):</label>
-              <textarea
-                value={melding}
-                onChange={(e) => setMelding(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
-              Send faktura
-            </button>
-          </form>
-        )}
-      </main>
-    </>
+      <table className="w-full text-sm border border-black bg-white">
+        <thead>
+          <tr className="bg-black text-white text-left">
+            <th className="p-2">Faktura #</th>
+            <th className="p-2">Til</th>
+            <th className="p-2">Beløp</th>
+            <th className="p-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fakturaer.map(({ nummer, til, beløp, status }, i) => (
+            <tr key={i} className="border-t border-black">
+              <td className="p-2">{nummer}</td>
+              <td className="p-2">{til}</td>
+              <td className="p-2">{beløp}</td>
+              <td className="p-2">{status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Layout>
   );
 }
