@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
+import PdfExport from "../components/PdfExport";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 import { useRouter } from "next/router";
@@ -52,6 +53,13 @@ export default function Arsoppgjor() {
   };
 
   const total = poster.reduce((sum, p) => sum + (p.resultat || 0), 0);
+  const kolonner = ["År", "Resultat", "Levert", "Dato"];
+  const rader = poster.map((p) => [
+    p.år,
+    `${p.resultat?.toFixed(2)} kr`,
+    p.levert ? "✔️" : "❌",
+    p.levert_dato?.split("T")[0] || "–",
+  ]);
 
   return (
     <Layout>
@@ -89,31 +97,40 @@ export default function Arsoppgjor() {
       ) : poster.length === 0 ? (
         <p className="text-sm text-gray-600">Ingen registrerte årsoppgjør ennå.</p>
       ) : (
-        <table className="w-full text-sm border border-black bg-white mb-8">
-          <thead>
-            <tr className="bg-black text-white text-left">
-              <th className="p-2">År</th>
-              <th className="p-2">Resultat</th>
-              <th className="p-2">Levert</th>
-              <th className="p-2">Dato</th>
-            </tr>
-          </thead>
-          <tbody>
-            {poster.map((p, i) => (
-              <tr key={i} className="border-t border-black">
-                <td className="p-2">{p.år}</td>
-                <td className="p-2">{p.resultat?.toFixed(2)} kr</td>
-                <td className="p-2">{p.levert ? "✔️" : "❌"}</td>
-                <td className="p-2">{p.levert_dato?.split("T")[0] || "–"}</td>
+        <>
+          <table className="w-full text-sm border border-black bg-white mb-6">
+            <thead>
+              <tr className="bg-black text-white text-left">
+                <th className="p-2">År</th>
+                <th className="p-2">Resultat</th>
+                <th className="p-2">Levert</th>
+                <th className="p-2">Dato</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {poster.map((p, i) => (
+                <tr key={i} className="border-t border-black">
+                  <td className="p-2">{p.år}</td>
+                  <td className="p-2">{p.resultat?.toFixed(2)} kr</td>
+                  <td className="p-2">{p.levert ? "✔️" : "❌"}</td>
+                  <td className="p-2">{p.levert_dato?.split("T")[0] || "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      <p className="text-sm font-semibold text-right">
-        Total resultat: {total.toFixed(2)} kr
-      </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Total resultat: {total.toFixed(2)} kr</p>
+
+            <PdfExport
+              tittel="Årsoppgjør"
+              filnavn="arsoppgjor"
+              kolonner={kolonner}
+              rader={rader}
+            />
+          </div>
+        </>
+      )}
     </Layout>
   );
 }
