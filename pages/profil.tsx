@@ -1,37 +1,47 @@
 import Head from "next/head";
-import Header from "../components/Header";
-import SuggestionBox from "../components/SuggestionBox";
-import { useState } from "react";
+import Layout from "../components/Layout";
+import { useEffect, useState } from "react";
+import { supabase } from "../utils/supabaseClient";
+import { useRouter } from "next/router";
 
 export default function Profil() {
-  const [showSuggestion, setShowSuggestion] = useState(true);
-  const [bio, setBio] = useState("");
+  const [navn, setNavn] = useState("");
+  const [bilde, setBilde] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const hent = async () => {
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+      if (!id) {
+        router.push("/login");
+        return;
+      }
+
+      const { data } = await supabase.from("profiler").select("*").eq("id", id).single();
+      if (data) {
+        setNavn(data.navn || "");
+        setBilde(data.bilde || "");
+      }
+    };
+
+    hent();
+  }, [router]);
 
   return (
-    <>
+    <Layout>
       <Head>
         <title>Min profil | Frilansportalen</title>
-        <meta name="description" content="Din offentlige profil – synlig for arbeidsgivere og frilansere" />
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Min profil</h1>
 
-        {showSuggestion && (
-          <SuggestionBox
-            suggestion="Legg til en kort og tydelig beskrivelse av deg selv og din erfaring."
-            onAccept={() => setShowSuggestion(false)}
-          />
+      <h1 className="text-3xl font-bold mb-6">Min profil</h1>
+
+      <div className="max-w-lg space-y-4 bg-white border border-black p-6 rounded">
+        {bilde && (
+          <img src={bilde} alt="Profilbilde" className="w-32 h-32 rounded-full object-cover" />
         )}
-
-        <label className="block mb-2 font-semibold">Om meg:</label>
-        <textarea
-          className="w-full p-2 border rounded mb-4"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          placeholder="Skriv litt om deg selv..."
-        />
-      </main>
-    </>
+        <p><strong>Navn:</strong> {navn || "–"}</p>
+      </div>
+    </Layout>
   );
 }
