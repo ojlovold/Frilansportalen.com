@@ -5,13 +5,13 @@ import { useState } from "react";
 export default function Reise() {
   const [fra, setFra] = useState("Oslo");
   const [til, setTil] = useState("Stavanger");
-  const [ferge, setFerge] = useState(350);
+  const [fergePris, setFergePris] = useState(350);
   const [bom, setBom] = useState(210);
   const [kilometer, setKilometer] = useState(500);
   const [pris, setPris] = useState<number | null>(null);
 
   const beregn = () => {
-    const total = ferge + bom + kilometer * 4.2;
+    const total = fergePris + bom + kilometer * 4.2;
     setPris(Math.round(total));
   };
 
@@ -38,17 +38,17 @@ export default function Reise() {
 
           <div>
             <label className="block font-semibold">Kilometer:</label>
-            <input type="number" value={kilometer} onChange={(e) => setKilometer(parseInt(e.target.value))} className="w-full p-2 border rounded" />
+            <input type="number" value={kilometer} onChange={(e) => setKilometer(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
           </div>
 
           <div>
             <label className="block font-semibold">Fergekostnad (kr):</label>
-            <input type="number" value={ferge} onChange={(e) => setFerge(parseInt(e.target.value))} className="w-full p-2 border rounded" />
+            <input type="number" value={fergePris} onChange={(e) => setFergePris(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
           </div>
 
           <div>
             <label className="block font-semibold">Bomkostnad (kr):</label>
-            <input type="number" value={bom} onChange={(e) => setBom(parseInt(e.target.value))} className="w-full p-2 border rounded" />
+            <input type="number" value={bom} onChange={(e) => setBom(parseInt(e.target.value || "0"))} className="w-full p-2 border rounded" />
           </div>
 
           <button onClick={beregn} className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
