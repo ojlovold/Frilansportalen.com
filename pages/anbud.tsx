@@ -1,8 +1,25 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Anbud() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const sjekkInnlogging = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    sjekkInnlogging();
+  }, [router]);
+
   const [timer, setTimer] = useState(0);
   const [prisPerTime, setPrisPerTime] = useState(0);
   const [reiseKost, setReiseKost] = useState(0);
@@ -12,6 +29,8 @@ export default function Anbud() {
     const total = timer * prisPerTime + reiseKost;
     setForslag(Math.round(total));
   };
+
+  if (loading) return <Layout><p className="text-sm">Laster anbudskalkulator...</p></Layout>;
 
   return (
     <Layout>
