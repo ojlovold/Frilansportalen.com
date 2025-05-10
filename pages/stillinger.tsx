@@ -2,6 +2,7 @@ import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
+import AccessibilityPanel from "../components/AccessibilityPanel";
 
 export default function Stillinger() {
   const [alle, setAlle] = useState<any[]>([]);
@@ -98,19 +99,26 @@ export default function Stillinger() {
         </aside>
 
         {/* Stillingsvisning */}
-        <main className="flex-1 grid gap-4">
+        <main className="flex-1 grid gap-6">
           <h1 className="text-2xl font-bold mb-2">Ledige stillinger</h1>
 
           {resultat.length === 0 ? (
             <p className="text-sm text-gray-600">Ingen stillinger funnet med disse kriteriene.</p>
           ) : (
-            resultat.map((s, i) => (
-              <div key={i} className="border border-black bg-white rounded-xl p-4 shadow">
-                <h2 className="text-lg font-semibold">{s.tittel}</h2>
-                <p className="text-sm text-gray-700">{s.sted} • {s.type} • {s.kategori}</p>
-                <p className="text-xs text-gray-500 mt-1">Publisert: {new Date(s.opprettet).toLocaleDateString()}</p>
-              </div>
-            ))
+            resultat.map((s, i) => {
+              const annonsetekst = `${s.tittel}. Lokasjon: ${s.sted}. Type: ${s.type}. Bransje: ${s.kategori}. Beskrivelse: ${s.beskrivelse || ""}`;
+              return (
+                <div key={i} className="border border-black bg-white rounded-xl p-4 shadow space-y-2">
+                  <h2 className="text-lg font-semibold">{s.tittel}</h2>
+                  <p className="text-sm text-gray-700">
+                    {s.sted} • {s.type} • {s.kategori}
+                  </p>
+                  <p className="text-xs text-gray-500">Publisert: {new Date(s.opprettet).toLocaleDateString()}</p>
+
+                  <AccessibilityPanel tekst={annonsetekst} />
+                </div>
+              );
+            })
           )}
         </main>
       </div>
