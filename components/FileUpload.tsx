@@ -3,8 +3,10 @@ import { supabase } from "../utils/supabaseClient";
 
 export default function FileUpload({
   onUpload,
+  folder = "opplastinger"
 }: {
   onUpload: (url: string) => void;
+  folder?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -19,18 +21,18 @@ export default function FileUpload({
       const file = e.target.files[0];
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `faktura/${fileName}`;
+      const filePath = `${folder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("faktura-filer")
+        .from("kontrakter")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from("faktura-filer").getPublicUrl(filePath);
+      const { data } = supabase.storage.from("kontrakter").getPublicUrl(filePath);
       if (data?.publicUrl) onUpload(data.publicUrl);
     } catch (error) {
-      alert("Feil ved opplasting");
+      alert("Feil ved opplasting.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ export default function FileUpload({
     <div className="mt-4">
       <input
         type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
         onChange={handleUpload}
         className="text-sm"
       />
