@@ -1,27 +1,17 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
-import PdfExport from "../components/PdfExport";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
-import { useRouter } from "next/router";
 
 export default function Kjorebok() {
-  const [ruter, setRuter] = useState<any[]>([]);
-  const [fra, setFra] = useState("");
-  const [til, setTil] = useState("");
-  const [km, setKm] = useState("");
-  const [formål, setFormål] = useState("");
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [tur, setTur] = useState({ fra: "", til: "", km: 0 });
+  const [logg, setLogg] = useState<any[]>([]);
+  const [sum, setSum] = useState(0);
 
   useEffect(() => {
     const hent = async () => {
       const bruker = await supabase.auth.getUser();
       const id = bruker.data.user?.id;
-      if (!id) {
-        router.push("/login");
-        return;
-      }
 
       const { data } = await supabase
         .from("kjorebok")
@@ -29,50 +19,34 @@ export default function Kjorebok() {
         .eq("bruker_id", id)
         .order("dato", { ascending: false });
 
-      setRuter(data || []);
-      setLoading(false);
+      setLogg(data || []);
     };
 
     hent();
-  }, [router]);
+  }, []);
 
   const leggTil = async () => {
     const bruker = await supabase.auth.getUser();
     const id = bruker.data.user?.id;
-    if (!id) return;
-
-    const antallKm = parseFloat(km);
-    const sats = 4.48;
-    const sum = Math.round(antallKm * sats * 100) / 100;
+    if (!id || !tur.fra || !tur.til || !tur.km) return;
 
     await supabase.from("kjorebok").insert({
       bruker_id: id,
-      fra,
-      til,
-      km: antallKm,
-      formål,
-      belop: sum,
+      fra: tur.fra,
+      til: tur.til,
+      km: tur.km,
+      sats: 4.23,
       dato: new Date().toISOString(),
     });
 
-    setFra("");
-    setTil("");
-    setKm("");
-    setFormål("");
-    router.reload();
+    setTur({ fra: "", til: "", km: 0 });
+    window.location.reload();
   };
 
-  const total = ruter.reduce((sum, r) => sum + (r.belop || 0), 0);
-
-  const kolonner = ["Dato", "Fra", "Til", "Km", "Formål", "Beløp"];
-  const rader = ruter.map((r) => [
-    r.dato?.split("T")[0],
-    r.fra,
-    r.til,
-    r.km,
-    r.formål,
-    `${r.belop?.toFixed(2)} kr`,
-  ]);
+  useEffect(() => {
+    const total = logg.reduce((acc, t) => acc + (t.km * (t.sats || 0)), 0);
+    setSum(total);
+  }, [logg]);
 
   return (
     <Layout>
@@ -80,63 +54,51 @@ export default function Kjorebok() {
         <title>Kjørebok | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Kjørebok</h1>
+      <div className="max-w-xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Kjørebok</h1>
 
-      <div className="max-w-lg space-y-4 mb-10">
-        <input placeholder="Fra" value={fra} onChange={(e) => setFra(e.target.value)} className="p-2 border rounded w-full" />
-        <input placeholder="Til" value={til} onChange={(e) => setTil(e.target.value)} className="p-2 border rounded w-full" />
-        <input placeholder="Antall km" value={km} onChange={(e) => setKm(e.target.value)} className="p-2 border rounded w-full" type="number" />
-        <input placeholder="Formål" value={formål} onChange={(e) => setFormål(e.target.value)} className="p-2 border rounded w-full" />
-        <button onClick={leggTil} className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
-          Registrer tur
+        <input
+          value={tur.fra}
+          onChange={(e) => setTur({ ...tur, fra: e.target.value })}
+          placeholder="Fra"
+          className="w-full p-2 border rounded mb-3"
+        />
+        <input
+          value={tur.til}
+          onChange={(e) => setTur({ ...tur, til: e.target.value })}
+          placeholder="Til"
+          className="w-full p-2 border rounded mb-3"
+        />
+        <input
+          type="number"
+          value={tur.km}
+          onChange={(e) => setTur({ ...tur, km: parseFloat(e.target.value) })}
+          placeholder="Kilometer"
+          className="w-full p-2 border rounded mb-3"
+        />
+
+        <button
+          onClick={leggTil}
+          className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800"
+        >
+          Legg til tur
         </button>
+
+        <h2 className="text-lg font-semibold mt-8 mb-3">Logg</h2>
+
+        <ul className="text-sm space-y-2">
+          {logg.map((t, i) => (
+            <li key={i} className="bg-white border p-3 rounded shadow-sm">
+              {t.fra} → {t.til} ({t.km} km) · {new Date(t.dato).toLocaleDateString("no-NO")}  
+              · {Math.round(t.km * (t.sats || 0))} kr
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-4 text-sm">
+          Total godtgjørelse: <strong>{sum.toFixed(2)} kr</strong>
+        </p>
       </div>
-
-      {loading ? (
-        <p className="text-sm">Laster...</p>
-      ) : ruter.length === 0 ? (
-        <p className="text-sm text-gray-600">Ingen turer registrert ennå.</p>
-      ) : (
-        <>
-          <table className="w-full text-sm border border-black bg-white mb-6">
-            <thead>
-              <tr className="bg-black text-white text-left">
-                <th className="p-2">Dato</th>
-                <th className="p-2">Fra</th>
-                <th className="p-2">Til</th>
-                <th className="p-2">Km</th>
-                <th className="p-2">Formål</th>
-                <th className="p-2">Beløp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ruter.map((r, i) => (
-                <tr key={i} className="border-t border-black">
-                  <td className="p-2">{r.dato?.split("T")[0]}</td>
-                  <td className="p-2">{r.fra}</td>
-                  <td className="p-2">{r.til}</td>
-                  <td className="p-2">{r.km}</td>
-                  <td className="p-2">{r.formål}</td>
-                  <td className="p-2">{r.belop?.toFixed(2)} kr</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">
-              Totalt: {total.toFixed(2)} kr
-            </p>
-
-            <PdfExport
-              tittel="Kjørebok"
-              filnavn="kjorebok"
-              kolonner={kolonner}
-              rader={rader}
-            />
-          </div>
-        </>
-      )}
     </Layout>
   );
 }
