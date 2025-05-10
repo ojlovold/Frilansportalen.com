@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export default function AccessibilityPanel({
   tekst,
   onDiktert,
@@ -27,7 +34,7 @@ export default function AccessibilityPanel({
   };
 
   const startDiktering = () => {
-    const Recognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) {
       alert("Talegjenkjenning støttes ikke i nettleseren.");
       return;
