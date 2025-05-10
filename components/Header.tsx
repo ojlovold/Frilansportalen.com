@@ -1,59 +1,57 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../utils/supabaseClient";
+import { useRouter } from "next/router";
 
-export default function Chat() {
-  const [loading, setLoading] = useState(true);
+export default function Header() {
+  const [harVarsel, setHarVarsel] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
+    const sjekkVarsler = async () => {
+      const bruker = await supabase.auth.getUser();
+      const id = bruker.data.user?.id;
+      if (!id) return;
+
+      const { data } = await supabase
+        .from("varsler")
+        .select("id")
+        .eq("bruker_id", id)
+        .eq("lest", false);
+
+      if (data && data.length > 0) {
+        setHarVarsel(true);
       }
     };
-    sjekkInnlogging();
+
+    sjekkVarsler();
   }, [router]);
 
-  if (loading) return <Layout><p className="text-sm">Laster chat...</p></Layout>;
-
-  const samtaler = [
-    { navn: "MediaHuset", sist: "Hei, vi er interessert!" },
-    { navn: "Kari AS", sist: "Kan du sende kontrakt?" },
-  ];
-
   return (
-    <Layout>
-      <Head>
-        <title>Chat | Frilansportalen</title>
-      </Head>
-
-      <h1 className="text-3xl font-bold mb-6">Meldinger og samtaler</h1>
-
-      <div className="grid gap-4">
-        {samtaler.map(({ navn, sist }, i) => (
-          <Link
-            key={i}
-            href="#"
-            className="block border border-black bg-white rounded-lg p-4 hover:bg-gray-50"
-          >
-            <h2 className="font-semibold">{navn}</h2>
-            <p className="text-sm text-gray-600 mt-1">{sist}</p>
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-8">
-        <Link href="/meldinger" className="text-sm underline hover:text-black">
-          Start ny melding
+    <header className="bg-black text-white sticky top-0 z-50 shadow-md">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/" className="block text-2xl font-extrabold tracking-tight">
+          <span className="mr-1">FRILANS</span>
+          <span className="font-light">PORTALEN</span>
         </Link>
+
+        <nav className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm mt-4 sm:mt-0 items-center">
+          <Link href="/stillinger">Stillinger</Link>
+          <Link href="/tjenester">Tjenester</Link>
+          <Link href="/gjenbruk">Gjenbruk</Link>
+          <Link href="/kurs">Kurs</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <div className="relative">
+            <Link href="/varsler">Varsler</Link>
+            {harVarsel && (
+              <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" title="Nytt varsel"></span>
+            )}
+          </div>
+          <Link href="/profil">
+            <button className="bg-white text-black px-3 py-1 rounded text-xs hover:bg-gray-200">Profil</button>
+          </Link>
+        </nav>
       </div>
-    </Layout>
+    </header>
   );
 }
