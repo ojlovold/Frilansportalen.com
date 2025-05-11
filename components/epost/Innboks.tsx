@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 import SvarBoks from "./SvarBoks";
 import Link from "next/link";
+import clsx from "clsx"; // valgfritt for klassekontroll
 
 interface Epost {
   id: string;
@@ -10,6 +11,7 @@ interface Epost {
   emne: string;
   innhold: string;
   opprettet: string;
+  ulest?: boolean;
   arkivert?: boolean;
   slettet?: boolean;
   vedlegg?: Vedlegg[];
@@ -24,6 +26,7 @@ interface Vedlegg {
 export default function EpostInnboks({ brukerId }: { brukerId: string }) {
   const [alleMeldinger, setAlleMeldinger] = useState<Epost[]>([]);
   const [sok, setSok] = useState("");
+  const [åpenMelding, setÅpenMelding] = useState<string | null>(null);
 
   useEffect(() => {
     const hent = async () => {
@@ -72,6 +75,14 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
     );
   });
 
+  const markerSomLest = async (id: string) => {
+    await supabase.from("epost").update({ ulest: false }).eq("id", id);
+    setAlleMeldinger((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, ulest: false } : m))
+    );
+    setÅpenMelding(id);
+  };
+
   const arkiver = async (id: string) => {
     await supabase.from("epost").update({ arkivert: true }).eq("id", id);
     setAlleMeldinger((prev) => prev.filter((m) => m.id !== id));
@@ -99,10 +110,17 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
       ) : (
         <ul className="space-y-6">
           {filtrert.map((m, i) => (
-            <li key={i} className="border p-4 rounded bg-white text-black shadow-sm">
+            <li
+              key={i}
+              className={clsx(
+                "border p-4 rounded bg-white text-black shadow-sm",
+                m.ulest && m.til === brukerId && "border-blue-500"
+              )}
+              onClick={() => m.til === brukerId && m.ulest && markerSomLest(m.id)}
+            >
               <div className="flex justify-between">
                 <div>
-                  <p><strong>Fra:</strong> {m.fra}</p>
+                  <p className={m.ulest ? "font-bold" : ""}><strong>Fra:</strong> {m.fra}</p>
                   <p><strong>Til:</strong> {m.til}</p>
                 </div>
                 <div className="text-right text-sm text-gray-500 space-x-2">
