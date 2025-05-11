@@ -12,6 +12,7 @@ interface Attest {
 
 export default function MineAttester({ brukerId }: { brukerId: string }) {
   const [attester, setAttester] = useState<Attest[]>([]);
+  const [opplasting, setOpplasting] = useState<{ [id: string]: File | null }>({});
 
   useEffect(() => {
     const hent = async () => {
@@ -34,6 +35,38 @@ export default function MineAttester({ brukerId }: { brukerId: string }) {
     return diff;
   };
 
+  const slettAttest = async (id: string) => {
+    await supabase.from("attester").delete().eq("id", id);
+    setAttester((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const erstatt = async (attest: Attest) => {
+    const ny = opplasting[attest.id];
+    if (!ny) return;
+
+    const path = `${brukerId}/${Date.now()}_${ny.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("attester")
+      .upload(path, ny, { upsert: true });
+
+    if (uploadError) return;
+
+    const url = supabase.storage.from("attester").getPublicUrl(path).data.publicUrl;
+
+    await supabase.from("attester").update({
+      url,
+      filnavn: ny.name,
+      opplastet: new Date().toISOString(),
+    }).eq("id", attest.id);
+
+    setOpplasting((prev) => ({ ...prev, [attest.id]: null }));
+    const hent = await supabase
+      .from("attester")
+      .select("*")
+      .eq("bruker_id", brukerId);
+    setAttester(hent.data || []);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">Mine attester og sertifikater</h2>
@@ -53,6 +86,30 @@ export default function MineAttester({ brukerId }: { brukerId: string }) {
                 <p><strong>Fil:</strong> <a href={a.url} target="_blank" className="underline text-blue-600">{a.filnavn}</a></p>
                 <p className={farge}><strong>Utløper:</strong> {new Date(a.utløper).toLocaleDateString()} ({diff} dager igjen)</p>
                 <p className="text-sm text-gray-500">Opplastet: {new Date(a.opplastet).toLocaleDateString()}</p>
+
+                <div className="mt-3 flex gap-4">
+                  <button onClick={() => slettAttest(a.id)} className="text-red-600 underline">
+                    Slett
+                  </button>
+
+                  <div>
+                    <input
+                      type="file"
+                      onChange={(e) =>
+                        setOpplasting((prev) => ({
+                          ...prev,
+                          [a.id]: e.target.files?.[0] || null,
+                        }))
+                      }
+                    />
+                    <button
+                      onClick={() => erstatt(a)}
+                      className="mt-1 text-blue-600 underline"
+                    >
+                      Erstatt fil
+                    </button>
+                  </div>
+                </div>
               </li>
             );
           })}
