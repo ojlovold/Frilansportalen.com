@@ -4,6 +4,7 @@ import Dashboard from "@/components/Dashboard";
 import Profilkort from "@/components/profil/Profilkort";
 import CVUpload from "@/components/profil/CVUpload";
 import Søknader from "@/components/profil/Søknader";
+import EksporterAltSomPDF from "@/components/profil/EksporterAltSomPDF";
 
 export default function ProfilSide() {
   const user = useUser();
@@ -14,10 +15,12 @@ export default function ProfilSide() {
       <Head>
         <title>Min profil | Frilansportalen</title>
       </Head>
+
       <div className="space-y-6">
         <Profilkort userId={user.id} />
         <CVUpload userId={user.id} />
         <Søknader userId={user.id} />
+        <EksporterAltSomPDF brukerId={user.id} />
       </div>
     </Dashboard>
   );
