@@ -11,6 +11,7 @@ interface Prosjekt {
   status: string;
   frist: string;
   etiketter?: string[];
+  gruppe_id?: string;
   eier_id: string;
   deltakere: { bruker_id: string; favoritt?: boolean }[];
 }
@@ -22,6 +23,8 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
   const [sortering, setSortering] = useState("frist");
   const [alleEtiketter, setAlleEtiketter] = useState<string[]>([]);
   const [etikettFilter, setEtikettFilter] = useState("alle");
+  const [alleGrupper, setAlleGrupper] = useState<any[]>([]);
+  const [gruppeFilter, setGruppeFilter] = useState("alle");
 
   useEffect(() => {
     const hent = async () => {
@@ -47,10 +50,15 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
       );
 
-      // Hent etiketter
       const etiketter = new Set<string>();
       unike.forEach((p) => (p.etiketter || []).forEach((e) => etiketter.add(e)));
       setAlleEtiketter(Array.from(etiketter));
+
+      const { data: grupper } = await supabase
+        .from("prosjektgrupper")
+        .select("*")
+        .eq("eier_id", brukerId);
+      setAlleGrupper(grupper || []);
 
       setAlle(unike);
     };
@@ -69,6 +77,10 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
       p = p.filter((x) => x.etiketter?.includes(etikettFilter));
     }
 
+    if (gruppeFilter !== "alle") {
+      p = p.filter((x) => x.gruppe_id === gruppeFilter);
+    }
+
     if (sortering === "frist") {
       p.sort((a, b) => new Date(a.frist).getTime() - new Date(b.frist).getTime());
     } else if (sortering === "navn") {
@@ -82,13 +94,13 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
     }
 
     setFiltrert(p);
-  }, [alle, statusFilter, sortering, etikettFilter, brukerId]);
+  }, [alle, statusFilter, sortering, etikettFilter, gruppeFilter, brukerId]);
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">Mine prosjekter</h2>
 
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row flex-wrap gap-4">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -118,6 +130,17 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
           <option value="alle">Alle etiketter</option>
           {alleEtiketter.map((e) => (
             <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+
+        <select
+          value={gruppeFilter}
+          onChange={(e) => setGruppeFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="alle">Alle grupper</option>
+          {alleGrupper.map((g) => (
+            <option key={g.id} value={g.id}>{g.navn}</option>
           ))}
         </select>
       </div>
