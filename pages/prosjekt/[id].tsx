@@ -6,6 +6,7 @@ import NyOppgave from "@/components/prosjekt/NyOppgave";
 import OppgaveListe from "@/components/prosjekt/OppgaveListe";
 import ProsjektChat from "@/components/prosjekt/ProsjektChat";
 import LastOppProsjektfil from "@/components/prosjekt/LastOppProsjektfil";
+import ProsjektVideo from "@/components/prosjekt/ProsjektVideo";
 
 export default function ProsjektDetalj() {
   const router = useRouter();
@@ -60,6 +61,10 @@ export default function ProsjektDetalj() {
         <OppgaveListe prosjektId={prosjekt.id} />
         <LastOppProsjektfil prosjektId={prosjekt.id} />
         <ProsjektChat prosjektId={prosjekt.id} />
+
+        {prosjekt.videorom_id && (
+          <ProsjektVideo romId={prosjekt.videorom_id} />
+        )}
       </div>
     </Dashboard>
   );
