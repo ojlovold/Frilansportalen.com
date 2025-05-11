@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../utils/supabaseClient";
+import { lagKvittering } from "../../utils/lagKvittering";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { orderId = "test-001", amount = 10000 } = req.body;
@@ -38,12 +39,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       body: JSON.stringify({
         customerInfo: {
-          mobileNumber: "4741515280", // testbruker
+          mobileNumber: "4741515280",
         },
         merchantInfo: {
           callbackPrefix: "https://frilansportalen.com/api/vipps",
-          fallBack: "https://frilansportalen.com/betaling",
-          consentRemovalPrefix: "https://frilansportalen.com/betaling",
+          fallBack: "https://frilansportalen.com/premium/kvittering",
+          consentRemovalPrefix: "https://frilansportalen.com/premium",
         },
         transaction: {
           orderId,
@@ -55,9 +56,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = await response.json();
 
-    // Hvis det er en Premium-bestilling, aktiver premium i profilen
     if (orderId.startsWith("premium-") && brukerId) {
       await supabase.from("profiler").update({ premium: true }).eq("id", brukerId);
+      await lagKvittering(brukerId, "Premium-medlemskap", 100);
     }
 
     res.status(200).json({ ...result, info: "Premium aktivert" });
