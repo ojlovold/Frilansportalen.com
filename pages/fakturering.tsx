@@ -1,9 +1,11 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import jsPDF from "jspdf";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 import useAiAssist from "../utils/useAiAssist";
+import { brukerHarPremium } from "../utils/brukerHarPremium";
+import PremiumBox from "../components/PremiumBox";
 import SuccessBox from "../components/SuccessBox";
 
 export default function Fakturering() {
@@ -11,12 +13,17 @@ export default function Fakturering() {
   const [tjeneste, setTjeneste] = useState("");
   const [belop, setBelop] = useState(0);
   const [melding, setMelding] = useState("");
+  const [premium, setPremium] = useState(false);
 
   const { getSvar, svar, laster, feil } = useAiAssist();
 
+  useEffect(() => {
+    brukerHarPremium().then(setPremium);
+  }, []);
+
   const foreslå = () => {
-    const prompt = `Brukeren ønsker å sende en faktura. Tjenesten er: ${tjeneste}. Foreslå en fakturatekst som kan brukes på fakturaen. Returner kort, formell tekst.`;
-    getSvar(prompt, "Du er en hjelpsom økonomisk assistent for frilansere.");
+    const prompt = `Tjeneste: ${tjeneste}. Foreslå fakturatekst.`;
+    getSvar(prompt, "Du er en hjelpsom fakturaassistent.");
   };
 
   const send = async () => {
@@ -58,6 +65,13 @@ export default function Fakturering() {
     setMelding("Faktura generert og lagret!");
   };
 
+  if (!premium) return (
+    <Layout>
+      <Head><title>Fakturering</title></Head>
+      <div className="max-w-xl mx-auto py-10"><PremiumBox /></div>
+    </Layout>
+  );
+
   return (
     <Layout>
       <Head><title>Fakturering | Frilansportalen</title></Head>
@@ -69,14 +83,11 @@ export default function Fakturering() {
           <input value={tjeneste} onChange={(e) => setTjeneste(e.target.value)} placeholder="Tjeneste / oppdrag" className="w-full p-2 border rounded" />
           <button onClick={foreslå} className="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-800">Foreslå med AI</button>
         </div>
-        {svar && (
-          <p className="text-xs bg-yellow-100 border px-3 py-2 rounded text-yellow-800 mb-2">{svar}</p>
-        )}
+        {svar && <p className="text-xs bg-yellow-100 border px-3 py-2 rounded text-yellow-800 mb-2">{svar}</p>}
         {feil && <p className="text-xs text-red-600 mb-2">{feil}</p>}
         <input type="number" value={belop} onChange={(e) => setBelop(Number(e.target.value))} placeholder="Beløp (kr)" className="w-full p-2 border rounded mb-3" />
 
         <button onClick={send} className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800">Send faktura</button>
-
         <SuccessBox melding={melding} />
       </div>
     </Layout>
