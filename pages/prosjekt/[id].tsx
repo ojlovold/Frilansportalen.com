@@ -4,6 +4,8 @@ import Dashboard from "@/components/Dashboard";
 import supabase from "@/lib/supabaseClient";
 import NyOppgave from "@/components/prosjekt/NyOppgave";
 import OppgaveListe from "@/components/prosjekt/OppgaveListe";
+import ProsjektChat from "@/components/prosjekt/ProsjektChat";
+import LastOppProsjektfil from "@/components/prosjekt/LastOppProsjektfil";
 
 export default function ProsjektDetalj() {
   const router = useRouter();
@@ -54,9 +56,10 @@ export default function ProsjektDetalj() {
           </ul>
         </div>
 
-        {/* Oppgavefunksjoner */}
         <NyOppgave prosjektId={prosjekt.id} />
         <OppgaveListe prosjektId={prosjekt.id} />
+        <LastOppProsjektfil prosjektId={prosjekt.id} />
+        <ProsjektChat prosjektId={prosjekt.id} />
       </div>
     </Dashboard>
   );
