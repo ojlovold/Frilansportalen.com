@@ -12,24 +12,26 @@ interface Dugnad {
   opprettet: string;
 }
 
-export default function VisDugnader() {
+export default function VisDugnader({ filterType }: { filterType?: string }) {
   const [dugnader, setDugnader] = useState<Dugnad[]>([]);
   const [sok, setSok] = useState("");
-  const [typeFilter, setTypeFilter] = useState("alle");
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [stedFilter, setStedFilter] = useState("");
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase
-        .from("dugnader")
-        .select("*")
-        .order("opprettet", { ascending: false });
+      let query = supabase.from("dugnader").select("*");
 
+      if (filterType) {
+        query = query.eq("type", filterType);
+      }
+
+      const { data } = await query.order("opprettet", { ascending: false });
       setDugnader(data || []);
     };
+
     hent();
-  }, []);
+  }, [filterType]);
 
   const filtrert = dugnader.filter((d) => {
     const matchSok =
@@ -38,36 +40,25 @@ export default function VisDugnader() {
         .toLowerCase()
         .includes(sok.toLowerCase());
 
-    const matchType = typeFilter === "alle" || d.type === typeFilter;
     const matchKategori =
       !kategoriFilter || d.kategori.toLowerCase().includes(kategoriFilter.toLowerCase());
+
     const matchSted =
       !stedFilter || d.sted.toLowerCase().includes(stedFilter.toLowerCase());
 
-    return matchSok && matchType && matchKategori && matchSted;
+    return matchSok && matchKategori && matchSted;
   });
 
   return (
     <div className="space-y-6 mt-6">
-      <h2 className="text-xl font-bold">Dugnadsoppdrag</h2>
-
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <input
           type="text"
-          placeholder="Søk etter tittel, kategori, beskrivelse..."
+          placeholder="Søk etter tittel, beskrivelse..."
           value={sok}
           onChange={(e) => setSok(e.target.value)}
           className="border p-2 rounded"
         />
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="alle">Alle typer</option>
-          <option value="ber om hjelp">Ber om hjelp</option>
-          <option value="tilbyr hjelp">Tilbyr hjelp</option>
-        </select>
         <input
           type="text"
           placeholder="Kategori (valgfritt)"
@@ -77,7 +68,7 @@ export default function VisDugnader() {
         />
         <input
           type="text"
-          placeholder="Sted (valgfritt)"
+          placeholder="Sted/by/område"
           value={stedFilter}
           onChange={(e) => setStedFilter(e.target.value)}
           className="border p-2 rounded"
