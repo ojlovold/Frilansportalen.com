@@ -1,23 +1,8 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import Link from "next/link";
-
-interface Søknad {
-  id: string;
-  melding: string;
-  status: string;
-  cv_url: string;
-  vedlegg_url: string;
-  sendt: string;
-  stilling: {
-    id: string;
-    tittel: string;
-    frist: string;
-  };
-}
 
 export default function MineSøknader({ brukerId }: { brukerId: string }) {
-  const [søknader, setSøknader] = useState<Søknad[]>([]);
+  const [søknader, setSøknader] = useState<any[]>([]);
 
   useEffect(() => {
     const hent = async () => {
@@ -32,11 +17,6 @@ export default function MineSøknader({ brukerId }: { brukerId: string }) {
 
     hent();
   }, [brukerId]);
-
-  const trekk = async (id: string) => {
-    await supabase.from("søknader").delete().eq("id", id);
-    setSøknader((prev) => prev.filter((s) => s.id !== id));
-  };
 
   return (
     <div className="space-y-6 mt-6">
@@ -61,12 +41,9 @@ export default function MineSøknader({ brukerId }: { brukerId: string }) {
               )}
 
               <div className="flex gap-4 mt-2">
-                <Link href={`/stilling/${s.stilling?.id}`} className="text-blue-600 underline text-sm">
+                <a href={`/stilling/${s.stilling?.id}`} className="text-blue-600 underline text-sm">
                   Vis stilling
-                </Link>
-                <button onClick={() => trekk(s.id)} className="text-red-600 underline text-sm">
-                  Trekk søknad
-                </button>
+                </a>
               </div>
             </li>
           ))}
