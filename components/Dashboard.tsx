@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import supabase from "@/lib/supabaseClient";
+import supabase from "../lib/supabaseClient";
 
 export default function Dashboard({ children }: { children: ReactNode }) {
   const user = useUser();
@@ -67,7 +67,6 @@ export default function Dashboard({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex">
       <aside className="w-64 bg-white border-r p-4 space-y-4">
         <h1 className="text-2xl font-bold">Frilansportalen</h1>
-
         <nav className="space-y-2">
           <Link href="/dashboard" onMouseEnter={() => les("Dashboard")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Dashboard</Link>
           <Link href="/profil" onMouseEnter={() => les("Min profil")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Min profil</Link>
