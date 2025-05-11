@@ -15,9 +15,7 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
       .from("dokumenter")
       .list(`kvitteringer/${brukerId}`, { limit: 100 });
 
-    if (!error && data) {
-      setFiler(data);
-    }
+    if (!error && data) setFiler(data);
   };
 
   useEffect(() => {
@@ -26,15 +24,13 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
 
   const slett = async (filnavn: string) => {
     const fullPath = `kvitteringer/${brukerId}/${filnavn}`;
-    const { error } = await supabase.storage
-      .from("dokumenter")
-      .remove([fullPath]);
+    const { error } = await supabase.storage.from("dokumenter").remove([fullPath]);
 
     if (!error) {
       setStatus("Kvittering slettet");
       hentKvitteringer();
     } else {
-      setStatus("Kunne ikke slette");
+      setStatus("Kunne ikke slette kvittering");
     }
   };
 
@@ -59,10 +55,7 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
               >
                 {f.name}
               </a>
-              <button
-                onClick={() => slett(f.name)}
-                className="text-red-600 text-sm underline"
-              >
+              <button onClick={() => slett(f.name)} className="text-red-600 text-sm underline">
                 Slett
               </button>
             </li>
