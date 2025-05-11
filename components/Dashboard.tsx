@@ -83,15 +83,10 @@ export default function Dashboard({ children }: { children: ReactNode }) {
 
           <hr className="my-2" />
 
-          <Link href="/dugnadsportalen" onMouseEnter={() => les("Dugnadsportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
-            Dugnadsportalen
-          </Link>
-          <Link href="/sommerjobb" onMouseEnter={() => les("Sommerjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
-            Sommerjobb
-          </Link>
-          <Link href="/smajobb" onMouseEnter={() => les("Småjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
-            Småjobb
-          </Link>
+          <Link href="/dugnadsportalen" onMouseEnter={() => les("Dugnadsportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Dugnadsportalen</Link>
+          <Link href="/sommerjobb" onMouseEnter={() => les("Sommerjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Sommerjobb</Link>
+          <Link href="/smajobb" onMouseEnter={() => les("Småjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Småjobb</Link>
+          <Link href="/marked" onMouseEnter={() => les("Sjappa")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Sjappa</Link>
 
           <hr className="my-2" />
 
@@ -101,9 +96,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/prosjektarkiv" onMouseEnter={() => les("Prosjektarkiv")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
 
           {erArbeidsgiver && (
-            <Link href="/arbeidsgiver/statistikk" onMouseEnter={() => les("Arbeidsgiverstatistikk")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
-              Arbeidsgiverstatistikk
-            </Link>
+            <Link href="/arbeidsgiver/statistikk" onMouseEnter={() => les("Arbeidsgiverstatistikk")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Arbeidsgiverstatistikk</Link>
           )}
 
           {erAdmin && (
