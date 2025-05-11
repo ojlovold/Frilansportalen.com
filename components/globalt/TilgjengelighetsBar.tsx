@@ -1,60 +1,23 @@
-import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
+import useTilgjengelighetPref from "@/hooks/useTilgjengelighetPref";
 import useAutoOpplesing from "@/hooks/useAutoOpplesing";
-import supabase from "@/lib/supabaseClient";
 
 export default function TilgjengelighetsBar() {
-  const user = useUser();
-  const [språk, setSpråk] = useState("nb");
-  const [lytter, setLytter] = useState(false);
-  const [opplesing, setOpplesing] = useState(false);
-
+  const { språk, setSpråk, opplesing, setOpplesing } = useTilgjengelighetPref();
   useAutoOpplesing();
-
-  // Hent språk og opplesingsvalg
-  useEffect(() => {
-    if (!user) return;
-    const hent = async () => {
-      const { data } = await supabase
-        .from("brukerprofiler")
-        .select("sprak, opplesing_aktivert")
-        .eq("id", user.id)
-        .single();
-
-      if (data?.sprak) setSpråk(data.sprak);
-      if (data?.opplesing_aktivert) setOpplesing(true);
-    };
-    hent();
-  }, [user]);
-
-  // Lagre språk og opplesing
-  useEffect(() => {
-    if (!user) return;
-
-    supabase
-      .from("brukerprofiler")
-      .update({ sprak: språk, opplesing_aktivert: opplesing })
-      .eq("id", user.id);
-
-    window.lesTekst = (tekst: string) => {
-      if (!opplesing || !tekst) return;
-      const u = new SpeechSynthesisUtterance(tekst);
-      u.lang = språk === "nb" ? "no-NO" : "en-US";
-      window.speechSynthesis.speak(u);
-    };
-  }, [språk, opplesing, user]);
 
   const startVoiceInput = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
     recognition.lang = språk === "nb" ? "no-NO" : "en-US";
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.onstart = () => setLytter(true);
-    recognition.onend = () => setLytter(false);
+
+    recognition.onstart = () => console.log("Lytter...");
+    recognition.onend = () => console.log("Ferdig");
     recognition.onresult = (event: any) => {
       const result = event.results[0][0].transcript;
       alert(`Talegjenkjenning: ${result}`);
     };
+
     recognition.start();
   };
 
@@ -79,7 +42,7 @@ export default function TilgjengelighetsBar() {
       </select>
 
       <button onClick={startVoiceInput} className="bg-yellow-300 px-2 py-1 rounded">
-        {lytter ? "Lytter..." : "Tale → Tekst"}
+        Tale → Tekst
       </button>
 
       <button onClick={handleSpeak} className="bg-yellow-100 px-2 py-1 rounded">
