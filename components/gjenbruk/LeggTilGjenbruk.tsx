@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useUser } from "@supabase/auth-helpers-nextjs";
-import supabase from "@/lib/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
+import supabase from "../../lib/supabaseClient";
 
 export default function LeggTilGjenbruk() {
   const user = useUser();
