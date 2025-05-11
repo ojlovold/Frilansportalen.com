@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 import SvarBoks from "./SvarBoks";
+import Link from "next/link";
 
 interface Epost {
   id: string;
@@ -9,10 +10,10 @@ interface Epost {
   emne: string;
   innhold: string;
   opprettet: string;
+  arkivert?: boolean;
+  slettet?: boolean;
   vedlegg?: Vedlegg[];
   svar?: Epost[];
-  // ulest?: boolean;
-  // arkivert?: boolean;
 }
 
 interface Vedlegg {
@@ -22,7 +23,6 @@ interface Vedlegg {
 
 export default function EpostInnboks({ brukerId }: { brukerId: string }) {
   const [alleMeldinger, setAlleMeldinger] = useState<Epost[]>([]);
-  const [filtrert, setFiltrert] = useState<Epost[]>([]);
   const [sok, setSok] = useState("");
 
   useEffect(() => {
@@ -31,6 +31,7 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
         .from("epost")
         .select("*")
         .or(`til.eq.${brukerId},fra.eq.${brukerId}`)
+        .not("slettet", "is", true)
         .order("opprettet", { ascending: false });
 
       if (!eposter) return;
@@ -43,6 +44,7 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
             .from("epost")
             .select("*")
             .eq("svar_paa", m.id)
+            .not("slettet", "is", true)
             .order("opprettet");
 
           const { data: vedlegg } = await supabase
@@ -55,23 +57,30 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
       );
 
       setAlleMeldinger(medSvarOgVedlegg);
-      setFiltrert(medSvarOgVedlegg);
     };
 
     hent();
   }, [brukerId]);
 
-  useEffect(() => {
+  const filtrert = alleMeldinger.filter((m) => {
     const q = sok.toLowerCase();
-    const filtrert = alleMeldinger.filter(
-      (m) =>
-        m.emne?.toLowerCase().includes(q) ||
-        m.innhold?.toLowerCase().includes(q) ||
-        m.fra?.toLowerCase().includes(q) ||
-        m.til?.toLowerCase().includes(q)
+    return (
+      m.emne?.toLowerCase().includes(q) ||
+      m.innhold?.toLowerCase().includes(q) ||
+      m.fra?.toLowerCase().includes(q) ||
+      m.til?.toLowerCase().includes(q)
     );
-    setFiltrert(filtrert);
-  }, [sok, alleMeldinger]);
+  });
+
+  const arkiver = async (id: string) => {
+    await supabase.from("epost").update({ arkivert: true }).eq("id", id);
+    setAlleMeldinger((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const slett = async (id: string) => {
+    await supabase.from("epost").update({ slettet: true }).eq("id", id);
+    setAlleMeldinger((prev) => prev.filter((m) => m.id !== id));
+  };
 
   return (
     <div className="space-y-6">
@@ -96,11 +105,14 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
                   <p><strong>Fra:</strong> {m.fra}</p>
                   <p><strong>Til:</strong> {m.til}</p>
                 </div>
-                {/* Fremtidig meny:
                 <div className="text-right text-sm text-gray-500 space-x-2">
-                  <button className="underline">Arkiver</button>
-                  <button className="underline text-red-600">Slett</button>
-                </div> */}
+                  <button onClick={() => arkiver(m.id)} className="underline">
+                    Arkiver
+                  </button>
+                  <button onClick={() => slett(m.id)} className="underline text-red-600">
+                    Slett
+                  </button>
+                </div>
               </div>
 
               <p><strong>Emne:</strong> {m.emne}</p>
