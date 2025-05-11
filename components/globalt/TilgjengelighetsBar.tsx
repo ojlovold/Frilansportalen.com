@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import useAutoOpplesing from "@/hooks/useAutoOpplesing";
 
 export default function TilgjengelighetsBar() {
   const [språk, setSpråk] = useState("nb");
   const [lytter, setLytter] = useState(false);
   const [opplesing, setOpplesing] = useState(false);
+
+  useAutoOpplesing();
 
   const handleSpeak = () => {
     const sel = window.getSelection()?.toString();
@@ -62,7 +65,7 @@ export default function TilgjengelighetsBar() {
           checked={opplesing}
           onChange={() => setOpplesing(!opplesing)}
         />
-        Les menyer høyt
+        Les menyer og tekst
       </label>
     </div>
   );
