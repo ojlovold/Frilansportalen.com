@@ -1,38 +1,41 @@
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-dist/
-.next/
-out/
-
-# Next.js build output
-.next/
+# Next.js output
+.next
+out
 
 # Logs
-logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 *.log
 
-# Local env files (sensitive)
+# Build
+dist
+build
+
+# Local dependencies
+node_modules
+
+# Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # System
 .DS_Store
-*.swp
+Thumbs.db
 
-# Optional: IDE-filer
-.vscode/
-.idea/
+# VSCode / IDE
+.vscode
+.idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 
-# Testing
-coverage/
+# Coverage and testing
+coverage
+jest.config.js
+
+# Frilansportalen spesifikt
 .env.local
-.env.local
-.env.*
+certs/
