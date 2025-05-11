@@ -17,15 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).end("Method not allowed");
 
   const sig = req.headers["stripe-signature"];
-  if (!sig) return res.status(400).end("Missing signature");
-
-  let event;
   const buf = await buffer(req);
 
+  let event;
   try {
     event = stripe.webhooks.constructEvent(
       buf,
-      sig,
+      sig!,
       process.env.STRIPE_WEBHOOK_SECRET as string
     );
   } catch (err) {
@@ -38,9 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const m = session.metadata;
 
     if (!m || !m.bruker_id || (m.type !== "småjobb" && m.type !== "sommerjobb")) {
-      return res.status(200).end("Ugyldig eller ikke-dugnad");
+      return res.status(200).end("Ikke relevant annonsetype");
     }
 
+    // 1. Lagre dugnad
     const { error } = await supabase.from("dugnader").insert([
       {
         opprettet_av: m.bruker_id,
@@ -53,7 +52,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     ]);
 
-    if (error) console.error("Feil ved oppretting:", error);
+    if (error) {
+      console.error("Feil ved oppretting:", error);
+      return res.status(500).json({ error: "Kunne ikke lagre dugnad" });
+    }
+
+    // 2. Lag og last opp kvittering
+    const belop = m.type === "sommerjobb" ? 100 : 50;
+    const tekst = `Kvittering for betaling\n\nType: ${m.type}\nTittel: ${m.tittel}\nBeløp: ${belop} kr\nDato: ${new Date().toLocaleString("no-NO")}`;
+    const filnavn = `kvittering_${m.type}_${Date.now()}.txt`;
+    const sti = `kvitteringer/${m.bruker_id}/${filnavn}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("dokumenter")
+      .upload(sti, tekst, {
+        contentType: "text/plain",
+      });
+
+    if (uploadError) {
+      console.error("Kunne ikke lagre kvittering:", uploadError);
+    }
   }
 
   res.status(200).json({ received: true });
