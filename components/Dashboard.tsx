@@ -72,9 +72,23 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           </Link>
           <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
-          <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
+          <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Faglitteratur</Link>
           <Link href="/stillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">Stillinger</Link>
-          <Link href="/dugnadsportalen" className="block px-4 py-2 hover:bg-yellow-100 rounded">Dugnadsportalen</Link>
+
+          <hr className="my-2" />
+
+          <Link href="/dugnadsportalen" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+            Dugnadsportalen
+          </Link>
+          <Link href="/sommerjobb" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+            Sommerjobb
+          </Link>
+          <Link href="/smajobb" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+            Småjobb
+          </Link>
+
+          <hr className="my-2" />
+
           <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">
             Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
           </Link>
