@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-nextjs";
-import useAutoOpplesing from "@/hooks/useAutoOpplesing";
-import supabase from "@/lib/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
+import supabase from "../../lib/supabaseClient";
+import useAutoOpplesing from "../../hooks/useAutoOpplesing";
 
 export default function TilgjengelighetsBar() {
   const user = useUser();
@@ -19,7 +19,6 @@ export default function TilgjengelighetsBar() {
         .select("sprak, opplesing_aktivert")
         .eq("id", user.id)
         .single();
-
       if (data?.sprak) setSpråk(data.sprak);
       if (data?.opplesing_aktivert) setOpplesing(true);
     };
