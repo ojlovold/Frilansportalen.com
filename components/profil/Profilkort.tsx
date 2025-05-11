@@ -2,57 +2,94 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 
 export default function Profilkort({ userId }: { userId: string }) {
-  const [profil, setProfil] = useState<{ navn: string; beskrivelse: string } | null>(null);
-  const [navn, setNavn] = useState("");
-  const [beskrivelse, setBeskrivelse] = useState("");
+  const [profil, setProfil] = useState<any>({
+    navn: "",
+    epost: "",
+    telefon: "",
+    adresse: ""
+  });
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    const hentProfil = async () => {
+    const hent = async () => {
       const { data } = await supabase
-        .from("profiler")
-        .select("navn, beskrivelse")
-        .eq("bruker_id", userId)
+        .from("brukerprofiler")
+        .select("*")
+        .eq("id", userId)
         .single();
-      if (data) {
-        setProfil(data);
-        setNavn(data.navn || "");
-        setBeskrivelse(data.beskrivelse || "");
-      }
+      if (data) setProfil(data);
     };
-    hentProfil();
+    hent();
   }, [userId]);
 
-  const lagre = async () => {
+  const oppdater = async () => {
     const { error } = await supabase
-      .from("profiler")
-      .upsert({ bruker_id: userId, navn, beskrivelse });
+      .from("brukerprofiler")
+      .update(profil)
+      .eq("id", userId);
+
     setStatus(error ? "Kunne ikke lagre" : "Lagret!");
   };
 
+  const les = (tekst: string) => {
+    if (typeof window !== "undefined" && window.lesTekst) {
+      window.lesTekst(tekst);
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 bg-white p-4 border rounded">
       <h2 className="text-xl font-bold">Min profil</h2>
+
       <div>
-        <label className="block">Navn:</label>
+        <label onMouseEnter={() => les("Navn")} className="block font-medium">Navn</label>
         <input
+          value={profil.navn || ""}
+          onChange={(e) => setProfil({ ...profil, navn: e.target.value })}
           className="w-full border p-2 rounded"
-          value={navn}
-          onChange={e => setNavn(e.target.value)}
+          onFocus={() => les("Skriv inn ditt navn")}
         />
       </div>
+
       <div>
-        <label className="block">Beskrivelse:</label>
-        <textarea
+        <label onMouseEnter={() => les("E-post")} className="block font-medium">E-post</label>
+        <input
+          value={profil.epost || ""}
+          onChange={(e) => setProfil({ ...profil, epost: e.target.value })}
           className="w-full border p-2 rounded"
-          value={beskrivelse}
-          onChange={e => setBeskrivelse(e.target.value)}
+          onFocus={() => les("Skriv inn din e-postadresse")}
         />
       </div>
-      <button onClick={lagre} className="bg-black text-white px-4 py-2 rounded">
-        Lagre
+
+      <div>
+        <label onMouseEnter={() => les("Telefonnummer")} className="block font-medium">Telefon</label>
+        <input
+          value={profil.telefon || ""}
+          onChange={(e) => setProfil({ ...profil, telefon: e.target.value })}
+          className="w-full border p-2 rounded"
+          onFocus={() => les("Skriv inn ditt telefonnummer")}
+        />
+      </div>
+
+      <div>
+        <label onMouseEnter={() => les("Adresse")} className="block font-medium">Adresse</label>
+        <input
+          value={profil.adresse || ""}
+          onChange={(e) => setProfil({ ...profil, adresse: e.target.value })}
+          className="w-full border p-2 rounded"
+          onFocus={() => les("Skriv inn din adresse")}
+        />
+      </div>
+
+      <button
+        onClick={oppdater}
+        onMouseEnter={() => les("Lagre profil")}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
+        Lagre profil
       </button>
-      <p>{status}</p>
+
+      <p className="text-sm text-green-600">{status}</p>
     </div>
   );
 }
