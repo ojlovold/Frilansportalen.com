@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser } from "@supabase/auth-helpers-nextjs";
 import supabase from "@/lib/supabaseClient";
 
 export default function LeggTilDugnad() {
@@ -51,7 +51,6 @@ export default function LeggTilDugnad() {
 
   const betalOgSend = async () => {
     setStatus("Starter betaling...");
-
     const api = betaling === "vipps" ? "/api/vipps" : "/api/stripe";
     const res = await fetch(api, {
       method: "POST",
@@ -71,11 +70,8 @@ export default function LeggTilDugnad() {
     });
 
     const json = await res.json();
-    if (json.url) {
-      window.location.href = json.url;
-    } else {
-      setStatus("Noe gikk galt med betalingen.");
-    }
+    if (json.url) window.location.href = json.url;
+    else setStatus("Noe gikk galt med betalingen.");
   };
 
   const send = () => {
