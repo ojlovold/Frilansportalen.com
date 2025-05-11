@@ -1,7 +1,3 @@
----
-
-### **Innhold:**
-```tsx
 export default function SuggestionBox({ forslag, onAccept }: { forslag: string, onAccept: () => void }) {
   if (!forslag) return null;
 
