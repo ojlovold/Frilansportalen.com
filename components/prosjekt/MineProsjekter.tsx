@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 import Link from "next/link";
 import ProsjektInvite from "./ProsjektInvite";
+import ProsjektFavoritt from "./ProsjektFavoritt";
 
 interface Prosjekt {
   id: string;
@@ -9,9 +10,8 @@ interface Prosjekt {
   beskrivelse: string;
   status: string;
   frist: string;
-  opprettet: string;
   eier_id: string;
-  deltakere: { bruker_id: string }[];
+  deltakere: { bruker_id: string; favoritt?: boolean }[];
 }
 
 export default function MineProsjekter({ brukerId }: { brukerId: string }) {
@@ -21,19 +21,19 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
     const hent = async () => {
       const { data: egne } = await supabase
         .from("prosjekter")
-        .select("*, deltakere:prosjektdeltakere(bruker_id)")
+        .select("*, deltakere:prosjektdeltakere(bruker_id, favoritt)")
         .eq("eier_id", brukerId);
 
       const { data: medlem } = await supabase
         .from("prosjektdeltakere")
-        .select("prosjekt_id")
+        .select("prosjekt_id, favoritt")
         .eq("bruker_id", brukerId);
 
       const medlemIds = medlem?.map((m) => m.prosjekt_id) || [];
 
       const { data: ekstra } = await supabase
         .from("prosjekter")
-        .select("*, deltakere:prosjektdeltakere(bruker_id)")
+        .select("*, deltakere:prosjektdeltakere(bruker_id, favoritt)")
         .in("id", medlemIds);
 
       const samlet = [...(egne || []), ...(ekstra || [])];
@@ -41,7 +41,13 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
       );
 
-      setProsjekter(unike);
+      const sortert = unike.sort((a, b) => {
+        const favA = a.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
+        const favB = b.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
+        return favA - favB || new Date(b.frist).getTime() - new Date(a.frist).getTime();
+      });
+
+      setProsjekter(sortert);
     };
 
     hent();
@@ -57,7 +63,11 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         <ul className="space-y-4">
           {prosjekter.map((p) => (
             <li key={p.id} className="border p-4 rounded bg-white text-black shadow-sm space-y-1">
-              <p className="text-lg font-bold">{p.navn}</p>
+              <div className="flex justify-between">
+                <p className="text-lg font-bold">{p.navn}</p>
+                <ProsjektFavoritt prosjektId={p.id} />
+              </div>
+
               <p className="text-sm text-gray-700">{p.beskrivelse}</p>
               <p className="text-sm">Status: <strong>{p.status}</strong></p>
               <p className="text-sm">Frist: {new Date(p.frist).toLocaleDateString()}</p>
@@ -72,7 +82,6 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
                 Åpne prosjekt
               </Link>
 
-              {/* Invitasjonsfunksjon */}
               <ProsjektInvite prosjektId={p.id} />
             </li>
           ))}
