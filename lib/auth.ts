@@ -1,5 +1,14 @@
-export function isAdmin(): boolean {
-  if (typeof window === "undefined") return false;
-  const email = localStorage.getItem("user_email");
-  return email === "admin@frilansportalen.com";
+import { useUser } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
+import { useEffect } from 'react'
+
+export function useAuthGuard() {
+  const { user, isLoading } = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, isLoading, router])
 }
