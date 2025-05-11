@@ -1,49 +1,87 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import Link from "next/link";
+import supabase from "@/lib/supabaseClient";
+
+interface Fagfil {
+  id: string;
+  tittel: string;
+  beskrivelse: string;
+  kategori: string;
+  url: string;
+  filnavn: string;
+  opplastet: string;
+}
 
 export default function Fagbibliotek() {
-  const [artikler, setArtikler] = useState<any[]>([]);
+  const [filer, setFiler] = useState<Fagfil[]>([]);
+  const [sok, setSok] = useState("");
+  const [kategori, setKategori] = useState("Alle");
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase.from("fagbibliotek").select("*").order("opprettet_dato", { ascending: false });
-      setArtikler(data || []);
+      const { data } = await supabase
+        .from("fagbibliotek")
+        .select("*")
+        .order("opplastet", { ascending: false });
+      setFiler(data || []);
     };
-
     hent();
   }, []);
 
+  const filtrert = filer.filter((f) => {
+    const matchKategori = kategori === "Alle" || f.kategori === kategori;
+    const matchSok =
+      f.tittel.toLowerCase().includes(sok.toLowerCase()) ||
+      f.beskrivelse.toLowerCase().includes(sok.toLowerCase());
+    return matchKategori && matchSok;
+  });
+
   return (
-    <Layout>
-      <Head>
-        <title>Fagbibliotek | Frilansportalen</title>
-      </Head>
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Fagbibliotek og skjemaer</h2>
 
-      <div className="max-w-3xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Fagbibliotek</h1>
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Søk etter tittel eller beskrivelse"
+          value={sok}
+          onChange={(e) => setSok(e.target.value)}
+          className="w-full border p-2 rounded"
+        />
 
-        {artikler.length === 0 ? (
-          <p className="text-sm text-gray-600">Ingen faginnhold er publisert ennå.</p>
-        ) : (
-          <ul className="space-y-4 text-sm">
-            {artikler.map((a, i) => (
-              <li key={i} className="bg-white border rounded p-4 shadow-sm">
-                <p className="font-semibold">{a.tittel}</p>
-                <p className="text-gray-600 text-xs mb-1">{new Date(a.opprettet_dato).toLocaleDateString("no-NO")}</p>
-                <p>{a.beskrivelse}</p>
-                {a.fil && (
-                  <Link href={a.fil} target="_blank" className="text-xs underline text-blue-600 hover:text-blue-800">
-                    Last ned
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <select
+          value={kategori}
+          onChange={(e) => setKategori(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option>Alle</option>
+          <option>Generelt</option>
+          <option>HMS</option>
+          <option>Arbeidsrett</option>
+          <option>Skjema</option>
+          <option>Bransjestandard</option>
+        </select>
       </div>
-    </Layout>
+
+      {filtrert.length === 0 ? (
+        <p>Ingen treff.</p>
+      ) : (
+        <ul className="space-y-4">
+          {filtrert.map((f) => (
+            <li key={f.id} className="border p-4 rounded bg-white text-black shadow-sm">
+              <p><strong>{f.tittel}</strong></p>
+              <p className="text-sm text-gray-700">{f.beskrivelse}</p>
+              <p className="text-sm text-gray-500">Kategori: {f.kategori}</p>
+              <a
+                href={f.url}
+                target="_blank"
+                className="text-blue-600 underline text-sm mt-1 inline-block"
+              >
+                Last ned: {f.filnavn}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
