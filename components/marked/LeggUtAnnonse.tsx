@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-nextjs";
+import { useUser } from "@supabase/auth-helpers-react";
+import supabase from "../../lib/supabaseClient";
 
 export default function LeggUtAnnonse() {
   const user = useUser();
@@ -32,7 +32,6 @@ export default function LeggUtAnnonse() {
 
   const lastOppBilder = async (): Promise<string[]> => {
     const urls: string[] = [];
-
     for (const fil of data.bilder) {
       const path = `marked/${user?.id}/${Date.now()}_${fil.name}`;
       const { error } = await supabase.storage.from("dokumenter").upload(path, fil);
@@ -41,7 +40,6 @@ export default function LeggUtAnnonse() {
         urls.push(url);
       }
     }
-
     return urls;
   };
 
