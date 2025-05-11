@@ -1,8 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import Dashboard from "components/Dashboard";
-import supabase from "lib/supabaseClient";
+import Dashboard from "@/components/Dashboard";
+import supabase from "@/lib/supabaseClient";
 
 export default function StillingDetalj() {
   const router = useRouter();
@@ -28,6 +28,12 @@ export default function StillingDetalj() {
     hent();
   }, [id]);
 
+  const les = (tekst: string) => {
+    if (typeof window !== "undefined" && window.lesTekst) {
+      window.lesTekst(tekst);
+    }
+  };
+
   const sendSøknad = async () => {
     if (!user || !id) return;
     setStatus("Sender søknad...");
@@ -51,7 +57,7 @@ export default function StillingDetalj() {
       }
     }
 
-    const { error } = await supabase.from("søknader").insert([
+    const { error: søkError } = await supabase.from("søknader").insert([
       {
         bruker_id: user.id,
         stilling_id: id,
@@ -61,8 +67,8 @@ export default function StillingDetalj() {
       },
     ]);
 
-    setStatus(error ? "Kunne ikke sende søknad" : "Søknad sendt!");
-    if (!error) {
+    setStatus(søkError ? "Kunne ikke sende søknad" : "Søknad sendt!");
+    if (!søkError) {
       setMelding("");
       setCvFil(null);
       setVedlegg(null);
@@ -82,26 +88,39 @@ export default function StillingDetalj() {
         <div className="space-y-4 bg-white p-4 border rounded">
           <h2 className="text-lg font-bold">Send søknad</h2>
 
+          <label onMouseEnter={() => les("Skriv søknadstekst")} className="block text-sm font-semibold">
+            Søknadstekst
+          </label>
           <textarea
             placeholder="Melding eller motivasjonstekst"
             value={melding}
             onChange={(e) => setMelding(e.target.value)}
             className="w-full border p-2 rounded min-h-[120px]"
+            onFocus={() => les("Skriv inn din søknad her")}
           />
 
           <div>
-            <label className="block text-sm font-medium">Last opp CV (valgfritt)</label>
+            <label onMouseEnter={() => les("Last opp CV")} className="block text-sm font-medium">
+              Last opp CV (valgfritt)
+            </label>
             <input type="file" onChange={(e) => setCvFil(e.target.files?.[0] || null)} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Vedlegg (valgfritt)</label>
+            <label onMouseEnter={() => les("Last opp vedlegg")} className="block text-sm font-medium">
+              Vedlegg (valgfritt)
+            </label>
             <input type="file" onChange={(e) => setVedlegg(e.target.files?.[0] || null)} />
           </div>
 
-          <button onClick={sendSøknad} className="bg-black text-white px-4 py-2 rounded">
+          <button
+            onClick={sendSøknad}
+            onMouseEnter={() => les("Send søknad")}
+            className="bg-black text-white px-4 py-2 rounded"
+          >
             Send søknad
           </button>
+
           <p className="text-green-600 text-sm">{status}</p>
         </div>
       </div>
