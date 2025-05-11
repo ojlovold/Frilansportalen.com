@@ -6,6 +6,7 @@ import supabase from "@/lib/supabaseClient";
 export default function Dashboard({ children }: { children: ReactNode }) {
   const user = useUser();
   const [ulestEposter, setUlestEposter] = useState(0);
+  const [erAdmin, setErAdmin] = useState(false);
 
   useEffect(() => {
     const hentUleste = async () => {
@@ -18,7 +19,19 @@ export default function Dashboard({ children }: { children: ReactNode }) {
         .not("slettet", "is", true);
       setUlestEposter(count || 0);
     };
+
+    const sjekkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("brukerprofiler")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+      setErAdmin(data?.is_admin || false);
+    };
+
     hentUleste();
+    sjekkAdmin();
   }, [user]);
 
   return (
@@ -38,6 +51,12 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
           <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
+
+          {erAdmin && (
+            <Link href="/admin/systemstatus" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+              Systemstatus
+            </Link>
+          )}
         </nav>
       </aside>
 
