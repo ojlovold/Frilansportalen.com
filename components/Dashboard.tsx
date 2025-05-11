@@ -11,8 +11,9 @@ export default function Dashboard({ children }: { children: ReactNode }) {
   const [erArbeidsgiver, setErArbeidsgiver] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
+
     const hentUleste = async () => {
-      if (!user) return;
       const { count } = await supabase
         .from("epost")
         .select("*", { count: "exact", head: true })
@@ -22,18 +23,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
       setUlestEposter(count || 0);
     };
 
-    const sjekkAdmin = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("brukerprofiler")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-      setErAdmin(data?.is_admin || false);
-    };
-
     const hentInvitasjoner = async () => {
-      if (!user) return;
       const { count } = await supabase
         .from("prosjektdeltakere")
         .select("*", { count: "exact", head: true })
@@ -42,8 +32,16 @@ export default function Dashboard({ children }: { children: ReactNode }) {
       setInvitasjoner(count || 0);
     };
 
+    const sjekkAdmin = async () => {
+      const { data } = await supabase
+        .from("brukerprofiler")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+      setErAdmin(data?.is_admin || false);
+    };
+
     const sjekkArbeidsgiver = async () => {
-      if (!user) return;
       const { count } = await supabase
         .from("stillinger")
         .select("*", { count: "exact", head: true })
@@ -52,11 +50,10 @@ export default function Dashboard({ children }: { children: ReactNode }) {
     };
 
     hentUleste();
-    sjekkAdmin();
     hentInvitasjoner();
+    sjekkAdmin();
     sjekkArbeidsgiver();
 
-    // Automatisk arkivering av utløpte stillinger
     fetch("/api/arkiver-stillinger", { method: "POST" });
   }, [user]);
 
@@ -77,6 +74,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
           <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
           <Link href="/stillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">Stillinger</Link>
+          <Link href="/dugnadsportalen" className="block px-4 py-2 hover:bg-yellow-100 rounded">Dugnadsportalen</Link>
           <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">
             Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
           </Link>
