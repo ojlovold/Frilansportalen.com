@@ -27,6 +27,8 @@ export default function Dokumenter() {
     hent();
   }, []);
 
+  const baseURL = "https://tvnwbchnvnhehuzrzqfq.supabase.co/storage/v1/object/public";
+
   const formatDato = (dato: string) =>
     new Date(dato).toLocaleDateString("no-NO");
 
@@ -45,7 +47,7 @@ export default function Dokumenter() {
             <li key={k.id} className="flex justify-between border-b pb-1">
               <span>{k.type} ({formatDato(k.dato)})</span>
               <a
-                href={`https://<prosjekt>.supabase.co/storage/v1/object/public/kvitteringer/${k.navn}`}
+                href={`${baseURL}/kvitteringer/${k.navn}`}
                 className="text-blue-600 underline"
                 target="_blank"
               >
@@ -62,7 +64,7 @@ export default function Dokumenter() {
             <li key={i} className="flex justify-between border-b pb-1">
               <span>{f.tjeneste} ({formatDato(f.opprettet_dato)})</span>
               <a
-                href={`https://<prosjekt>.supabase.co/storage/v1/object/public/faktura-filer/${f.filnavn}`}
+                href={`${baseURL}/faktura-filer/${f.filnavn}`}
                 className="text-blue-600 underline"
                 target="_blank"
               >
@@ -79,7 +81,7 @@ export default function Dokumenter() {
             <li key={i} className="flex justify-between border-b pb-1">
               <span>Årsrapport ({formatDato(r.opprettet_dato)})</span>
               <a
-                href={`https://<prosjekt>.supabase.co/storage/v1/object/public/faktura-filer/${r.navn}`}
+                href={`${baseURL}/faktura-filer/${r.navn}`}
                 className="text-blue-600 underline"
                 target="_blank"
               >
