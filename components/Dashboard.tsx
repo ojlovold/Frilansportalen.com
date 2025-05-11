@@ -36,7 +36,6 @@ export default function Dashboard({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
-      {/* Sidepanel */}
       <aside className="w-64 bg-white border-r p-4 space-y-4">
         <h1 className="text-2xl font-bold">Frilansportalen</h1>
 
@@ -51,6 +50,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
           <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
+          <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjekter</Link>
 
           {erAdmin && (
             <>
@@ -65,7 +65,6 @@ export default function Dashboard({ children }: { children: ReactNode }) {
         </nav>
       </aside>
 
-      {/* Innholdsområde */}
       <main className="flex-1 bg-portalGul text-black p-6">
         {children}
       </main>
