@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TilgjengelighetsBar() {
   const [språk, setSpråk] = useState("nb");
   const [lytter, setLytter] = useState(false);
+  const [opplesing, setOpplesing] = useState(false);
 
   const handleSpeak = () => {
     const sel = window.getSelection()?.toString();
     if (sel) {
-      const utterance = new SpeechSynthesisUtterance(sel);
-      utterance.lang = språk === "nb" ? "no-NO" : "en-US";
-      window.speechSynthesis.speak(utterance);
+      const utter = new SpeechSynthesisUtterance(sel);
+      utter.lang = språk === "nb" ? "no-NO" : "en-US";
+      window.speechSynthesis.speak(utter);
     }
   };
 
@@ -27,24 +28,42 @@ export default function TilgjengelighetsBar() {
     recognition.start();
   };
 
+  useEffect(() => {
+    window.lesTekst = (tekst: string) => {
+      if (!opplesing || !tekst) return;
+      const u = new SpeechSynthesisUtterance(tekst);
+      u.lang = språk === "nb" ? "no-NO" : "en-US";
+      window.speechSynthesis.speak(u);
+    };
+  }, [opplesing, språk]);
+
   return (
-    <div className="fixed top-2 right-2 bg-white shadow p-2 rounded flex gap-3 items-center z-50 text-sm">
+    <div className="fixed top-2 right-2 bg-white shadow p-2 rounded flex gap-2 items-center z-50 text-sm">
       <select
         value={språk}
         onChange={(e) => setSpråk(e.target.value)}
         className="border rounded p-1"
       >
         <option value="nb">Norsk</option>
-        <option value="en">Engelsk</option>
+        <option value="en">English</option>
       </select>
 
       <button onClick={startVoiceInput} className="bg-yellow-300 px-2 py-1 rounded">
-        {lytter ? "Lytter..." : "Tale-til-tekst"}
+        {lytter ? "Lytter..." : "Tale → Tekst"}
       </button>
 
       <button onClick={handleSpeak} className="bg-yellow-100 px-2 py-1 rounded">
-        Les opp
+        Les markert
       </button>
+
+      <label className="flex items-center gap-1 text-xs">
+        <input
+          type="checkbox"
+          checked={opplesing}
+          onChange={() => setOpplesing(!opplesing)}
+        />
+        Les menyer høyt
+      </label>
     </div>
   );
 }
