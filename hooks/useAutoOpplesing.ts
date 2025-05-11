@@ -4,13 +4,6 @@ export default function useAutoOpplesing() {
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-    const lesTekst = (tekst: string) => {
-      if (!window.lesTekst || !tekst) return;
-      const u = new SpeechSynthesisUtterance(tekst);
-      u.lang = "no-NO"; // eller dynamisk fra bar
-      window.speechSynthesis.speak(u);
-    };
-
     const handler = (e: Event) => {
       const el = e.target as HTMLElement;
       if (!el || typeof window.lesTekst !== "function") return;
@@ -25,12 +18,22 @@ export default function useAutoOpplesing() {
       }
     };
 
+    const events = ["mouseenter", "focus", "touchstart", "keydown"];
+
+    const keyboardHandler = (e: KeyboardEvent) => {
+      if (["Enter", " "].includes(e.key)) handler(e);
+    };
+
     document.addEventListener("mouseenter", handler, true);
     document.addEventListener("focus", handler, true);
+    document.addEventListener("touchstart", handler, true);
+    document.addEventListener("keydown", keyboardHandler, true);
 
     return () => {
       document.removeEventListener("mouseenter", handler, true);
       document.removeEventListener("focus", handler, true);
+      document.removeEventListener("touchstart", handler, true);
+      document.removeEventListener("keydown", keyboardHandler, true);
     };
   }, []);
 }
