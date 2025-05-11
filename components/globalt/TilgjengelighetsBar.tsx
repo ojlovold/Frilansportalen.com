@@ -1,21 +1,44 @@
 import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
 import useAutoOpplesing from "@/hooks/useAutoOpplesing";
+import supabase from "@/lib/supabaseClient";
 
 export default function TilgjengelighetsBar() {
+  const user = useUser();
   const [språk, setSpråk] = useState("nb");
   const [lytter, setLytter] = useState(false);
   const [opplesing, setOpplesing] = useState(false);
 
   useAutoOpplesing();
 
-  const handleSpeak = () => {
-    const sel = window.getSelection()?.toString();
-    if (sel) {
-      const utter = new SpeechSynthesisUtterance(sel);
-      utter.lang = språk === "nb" ? "no-NO" : "en-US";
-      window.speechSynthesis.speak(utter);
+  useEffect(() => {
+    const hent = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("brukerprofiler")
+        .select("opplesing_aktivert")
+        .eq("id", user.id)
+        .single();
+      if (data?.opplesing_aktivert) setOpplesing(true);
+    };
+    hent();
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("brukerprofiler")
+        .update({ opplesing_aktivert: opplesing })
+        .eq("id", user.id);
     }
-  };
+
+    window.lesTekst = (tekst: string) => {
+      if (!opplesing || !tekst) return;
+      const u = new SpeechSynthesisUtterance(tekst);
+      u.lang = språk === "nb" ? "no-NO" : "en-US";
+      window.speechSynthesis.speak(u);
+    };
+  }, [opplesing, språk, user]);
 
   const startVoiceInput = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
@@ -31,14 +54,14 @@ export default function TilgjengelighetsBar() {
     recognition.start();
   };
 
-  useEffect(() => {
-    window.lesTekst = (tekst: string) => {
-      if (!opplesing || !tekst) return;
-      const u = new SpeechSynthesisUtterance(tekst);
-      u.lang = språk === "nb" ? "no-NO" : "en-US";
-      window.speechSynthesis.speak(u);
-    };
-  }, [opplesing, språk]);
+  const handleSpeak = () => {
+    const sel = window.getSelection()?.toString();
+    if (sel) {
+      const utter = new SpeechSynthesisUtterance(sel);
+      utter.lang = språk === "nb" ? "no-NO" : "en-US";
+      window.speechSynthesis.speak(utter);
+    }
+  };
 
   return (
     <div className="fixed top-2 right-2 bg-white shadow p-2 rounded flex gap-2 items-center z-50 text-sm">
