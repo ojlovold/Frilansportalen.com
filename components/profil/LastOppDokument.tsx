@@ -44,4 +44,10 @@ export default function LastOppDokument({ userId }: { userId: string }) {
         type="date"
         value={utløper}
         onChange={e => setUtløper(e.target.value)}
-        className="block w
+        className="block w-full border p-2 rounded"
+      />
+      <button onClick={lastOpp} className="bg-black text-white px-4 py-2 rounded">Last opp</button>
+      <p>{status}</p>
+    </div>
+  );
+}
