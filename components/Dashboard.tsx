@@ -18,11 +18,13 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/dokumenter" className="block px-4 py-2 hover:bg-yellow-100 rounded">
             Mine dokumenter
           </Link>
-          {/* Du kan legge til flere navigasjonspunkter her senere */}
+          <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+            Fakturainnstillinger
+          </Link>
         </nav>
       </aside>
 
-      {/* Innholdsdel */}
+      {/* Innholdsområde */}
       <main className="flex-1 bg-portalGul text-black p-6">
         {children}
       </main>
