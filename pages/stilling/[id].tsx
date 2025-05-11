@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser } from "@supabase/auth-helpers-nextjs";
 import Dashboard from "@/components/Dashboard";
 import supabase from "@/lib/supabaseClient";
 
