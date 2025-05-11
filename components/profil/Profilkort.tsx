@@ -6,7 +6,9 @@ export default function Profilkort({ userId }: { userId: string }) {
     navn: "",
     epost: "",
     telefon: "",
-    adresse: ""
+    adresse: "",
+    sprak: "nb",
+    opplesing_aktivert: false,
   });
   const [status, setStatus] = useState("");
 
@@ -27,7 +29,6 @@ export default function Profilkort({ userId }: { userId: string }) {
       .from("brukerprofiler")
       .update(profil)
       .eq("id", userId);
-
     setStatus(error ? "Kunne ikke lagre" : "Lagret!");
   };
 
@@ -47,7 +48,6 @@ export default function Profilkort({ userId }: { userId: string }) {
           value={profil.navn || ""}
           onChange={(e) => setProfil({ ...profil, navn: e.target.value })}
           className="w-full border p-2 rounded"
-          onFocus={() => les("Skriv inn ditt navn")}
         />
       </div>
 
@@ -57,7 +57,6 @@ export default function Profilkort({ userId }: { userId: string }) {
           value={profil.epost || ""}
           onChange={(e) => setProfil({ ...profil, epost: e.target.value })}
           className="w-full border p-2 rounded"
-          onFocus={() => les("Skriv inn din e-postadresse")}
         />
       </div>
 
@@ -67,7 +66,6 @@ export default function Profilkort({ userId }: { userId: string }) {
           value={profil.telefon || ""}
           onChange={(e) => setProfil({ ...profil, telefon: e.target.value })}
           className="w-full border p-2 rounded"
-          onFocus={() => les("Skriv inn ditt telefonnummer")}
         />
       </div>
 
@@ -77,8 +75,29 @@ export default function Profilkort({ userId }: { userId: string }) {
           value={profil.adresse || ""}
           onChange={(e) => setProfil({ ...profil, adresse: e.target.value })}
           className="w-full border p-2 rounded"
-          onFocus={() => les("Skriv inn din adresse")}
         />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label onMouseEnter={() => les("Språk")} className="block font-medium">Foretrukket språk</label>
+          <select
+            value={profil.sprak}
+            onChange={(e) => setProfil({ ...profil, sprak: e.target.value })}
+            className="w-full border p-2 rounded"
+          >
+            <option value="nb">Norsk</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={profil.opplesing_aktivert}
+            onChange={(e) => setProfil({ ...profil, opplesing_aktivert: e.target.checked })}
+          />
+          <label onMouseEnter={() => les("Aktiver opplesing")}>Les menyer og tekst høyt</label>
+        </div>
       </div>
 
       <button
