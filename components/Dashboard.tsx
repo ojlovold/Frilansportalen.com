@@ -6,6 +6,7 @@ import supabase from "@/lib/supabaseClient";
 export default function Dashboard({ children }: { children: ReactNode }) {
   const user = useUser();
   const [ulestEposter, setUlestEposter] = useState(0);
+  const [invitasjoner, setInvitasjoner] = useState(0);
   const [erAdmin, setErAdmin] = useState(false);
 
   useEffect(() => {
@@ -30,8 +31,19 @@ export default function Dashboard({ children }: { children: ReactNode }) {
       setErAdmin(data?.is_admin || false);
     };
 
+    const hentInvitasjoner = async () => {
+      if (!user) return;
+      const { count } = await supabase
+        .from("prosjektdeltakere")
+        .select("*", { count: "exact", head: true })
+        .eq("bruker_id", user.id)
+        .eq("bekreftet", false);
+      setInvitasjoner(count || 0);
+    };
+
     hentUleste();
     sjekkAdmin();
+    hentInvitasjoner();
   }, [user]);
 
   return (
@@ -50,7 +62,9 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
           <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
-          <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjekter</Link>
+          <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+            Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
+          </Link>
           <Link href="/prosjektarkiv" className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
 
           {erAdmin && (
