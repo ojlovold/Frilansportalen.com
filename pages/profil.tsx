@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser } from "@supabase/auth-helpers-nextjs";
 import Dashboard from "@/components/Dashboard";
 import Profilkort from "@/components/profil/Profilkort";
 import CVUpload from "@/components/profil/CVUpload";
