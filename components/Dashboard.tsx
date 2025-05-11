@@ -37,6 +37,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           </Link>
           <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
           <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
+          <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
         </nav>
       </aside>
 
