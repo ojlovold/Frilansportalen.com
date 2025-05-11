@@ -1,14 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2022-11-15",
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { userId } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).end("Method not allowed");
+  }
 
-  if (!userId) return res.status(400).json({ error: "Mangler bruker-ID" });
+  const { belop, metadata } = req.body;
+
+  if (!belop || !metadata || !metadata.bruker_id) {
+    return res.status(400).json({ error: "Ugyldig data" });
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -18,24 +24,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           price_data: {
             currency: "nok",
-            unit_amount: 10000,
             product_data: {
-              name: "Premium-medlemskap",
+              name: metadata.type === "sommerjobb" ? "Sommerjobbannonse" : "Småjobbannonse",
             },
+            unit_amount: belop * 100,
           },
           quantity: 1,
         },
       ],
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dugnadsportalen?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dugnadsportalen?cancelled=true`,
       metadata: {
-        bruker_id: userId,
-        type: "premium",
+        bruker_id: metadata.bruker_id,
+        type: metadata.type,
+        tittel: metadata.tittel,
+        beskrivelse: metadata.beskrivelse,
+        kategori: metadata.kategori,
+        sted: metadata.sted,
+        frist: metadata.frist,
       },
-      success_url: `https://frilansportalen.com/premium?status=success`,
-      cancel_url: `https://frilansportalen.com/premium?status=cancelled`,
     });
 
-    res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("Stripe-feil:", err);
+    return res.status(500).json({ error: "Stripe-feil" });
   }
 }
