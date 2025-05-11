@@ -10,6 +10,9 @@ interface Epost {
   innhold: string;
   opprettet: string;
   vedlegg?: Vedlegg[];
+  svar?: Epost[];
+  // ulest?: boolean;
+  // arkivert?: boolean;
 }
 
 interface Vedlegg {
@@ -18,7 +21,9 @@ interface Vedlegg {
 }
 
 export default function EpostInnboks({ brukerId }: { brukerId: string }) {
-  const [meldinger, setMeldinger] = useState<Epost[]>([]);
+  const [alleMeldinger, setAlleMeldinger] = useState<Epost[]>([]);
+  const [filtrert, setFiltrert] = useState<Epost[]>([]);
+  const [sok, setSok] = useState("");
 
   useEffect(() => {
     const hent = async () => {
@@ -30,34 +35,74 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
 
       if (!eposter) return;
 
-      const meldingerMedVedlegg = await Promise.all(
-        eposter.map(async (m) => {
+      const hovedmeldinger = eposter.filter((m) => !m.svar_paa);
+
+      const medSvarOgVedlegg = await Promise.all(
+        hovedmeldinger.map(async (m) => {
+          const { data: svar } = await supabase
+            .from("epost")
+            .select("*")
+            .eq("svar_paa", m.id)
+            .order("opprettet");
+
           const { data: vedlegg } = await supabase
             .from("epostvedlegg_meta")
             .select("filnavn, url")
             .eq("epost_id", m.id);
 
-          return { ...m, vedlegg: vedlegg || [] };
+          return { ...m, vedlegg: vedlegg || [], svar: svar || [] };
         })
       );
 
-      setMeldinger(meldingerMedVedlegg);
+      setAlleMeldinger(medSvarOgVedlegg);
+      setFiltrert(medSvarOgVedlegg);
     };
 
     hent();
   }, [brukerId]);
 
+  useEffect(() => {
+    const q = sok.toLowerCase();
+    const filtrert = alleMeldinger.filter(
+      (m) =>
+        m.emne?.toLowerCase().includes(q) ||
+        m.innhold?.toLowerCase().includes(q) ||
+        m.fra?.toLowerCase().includes(q) ||
+        m.til?.toLowerCase().includes(q)
+    );
+    setFiltrert(filtrert);
+  }, [sok, alleMeldinger]);
+
   return (
-    <div>
+    <div className="space-y-6">
       <h2 className="text-xl font-bold">Innboks</h2>
-      {meldinger.length === 0 ? (
-        <p>Du har ingen e-postmeldinger ennå.</p>
+
+      <input
+        type="text"
+        placeholder="Søk i e-post..."
+        className="w-full border p-2 rounded"
+        value={sok}
+        onChange={(e) => setSok(e.target.value)}
+      />
+
+      {filtrert.length === 0 ? (
+        <p>Ingen e-post matcher søket.</p>
       ) : (
-        <ul className="space-y-6 mt-4">
-          {meldinger.map((m, i) => (
+        <ul className="space-y-6">
+          {filtrert.map((m, i) => (
             <li key={i} className="border p-4 rounded bg-white text-black shadow-sm">
-              <p><strong>Fra:</strong> {m.fra}</p>
-              <p><strong>Til:</strong> {m.til}</p>
+              <div className="flex justify-between">
+                <div>
+                  <p><strong>Fra:</strong> {m.fra}</p>
+                  <p><strong>Til:</strong> {m.til}</p>
+                </div>
+                {/* Fremtidig meny:
+                <div className="text-right text-sm text-gray-500 space-x-2">
+                  <button className="underline">Arkiver</button>
+                  <button className="underline text-red-600">Slett</button>
+                </div> */}
+              </div>
+
               <p><strong>Emne:</strong> {m.emne}</p>
               <p className="mt-2 whitespace-pre-line">{m.innhold}</p>
               <p className="text-sm text-gray-500 mt-1">
@@ -79,7 +124,21 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
                 </div>
               )}
 
-              {/* Svarboks vises bare hvis brukeren er mottaker */}
+              {m.svar.length > 0 && (
+                <div className="mt-4 pl-4 border-l-2 border-gray-300 space-y-3">
+                  <strong>Tråd:</strong>
+                  {m.svar.map((svar, idx) => (
+                    <div key={idx} className="bg-gray-50 p-3 rounded">
+                      <p><strong>Fra:</strong> {svar.fra}</p>
+                      <p className="whitespace-pre-line">{svar.innhold}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {new Date(svar.opprettet).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {m.til === brukerId && (
                 <SvarBoks
                   svarFra={brukerId}
