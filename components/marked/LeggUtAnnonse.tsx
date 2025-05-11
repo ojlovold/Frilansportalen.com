@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useUser } from "@supabase/auth-helpers-nextjs";
 
 export default function LeggUtAnnonse() {
   const user = useUser();
@@ -106,14 +106,14 @@ export default function LeggUtAnnonse() {
       />
 
       <input
-        placeholder="Kategori (f.eks. verktøy, data, klær)"
+        placeholder="Kategori"
         value={data.kategori}
         onChange={(e) => setData({ ...data, kategori: e.target.value })}
         className="w-full border p-2 rounded"
       />
 
       <input
-        placeholder="Sted/by/område"
+        placeholder="Sted"
         value={data.sted}
         onChange={(e) => setData({ ...data, sted: e.target.value })}
         className="w-full border p-2 rounded"
