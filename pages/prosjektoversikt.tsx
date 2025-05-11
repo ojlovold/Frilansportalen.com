@@ -3,6 +3,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 import Dashboard from "@/components/Dashboard";
 import OpprettProsjekt from "@/components/prosjekt/OpprettProsjekt";
 import MineProsjekter from "@/components/prosjekt/MineProsjekter";
+import MineInvitasjoner from "@/components/prosjekt/MineInvitasjoner";
 
 export default function ProsjektOversikt() {
   const user = useUser();
@@ -16,6 +17,7 @@ export default function ProsjektOversikt() {
       </Head>
 
       <div className="space-y-6">
+        <MineInvitasjoner brukerId={user.id} />
         <OpprettProsjekt eierId={user.id} />
         <MineProsjekter brukerId={user.id} />
       </div>
