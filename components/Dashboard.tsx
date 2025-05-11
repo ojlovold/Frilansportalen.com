@@ -41,9 +41,14 @@ export default function Dashboard({ children }: { children: ReactNode }) {
       setInvitasjoner(count || 0);
     };
 
+    const arkiverUtløpteStillinger = async () => {
+      await fetch("/api/arkiver-stillinger", { method: "POST" });
+    };
+
     hentUleste();
     sjekkAdmin();
     hentInvitasjoner();
+    arkiverUtløpteStillinger();
   }, [user]);
 
   return (
