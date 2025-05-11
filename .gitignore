@@ -33,3 +33,4 @@ logs/
 
 # Testing
 coverage/
+.env.local
