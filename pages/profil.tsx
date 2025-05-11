@@ -7,6 +7,7 @@ import MineSøknader from "@/components/profil/MineSøknader";
 import SøkerStatistikk from "@/components/profil/SøkerStatistikk";
 import EksporterAltSomPDF from "@/components/profil/EksporterAltSomPDF";
 import EksporterGDPR from "@/components/profil/EksporterGDPR";
+import ReferanseOpplasting from "@/components/profil/ReferanseOpplasting";
 
 export default function ProfilSide() {
   const user = useUser();
@@ -21,6 +22,7 @@ export default function ProfilSide() {
       <div className="space-y-6">
         <Profilkort userId={user.id} />
         <CVUpload userId={user.id} />
+        <ReferanseOpplasting brukerId={user.id} />
         <SøkerStatistikk brukerId={user.id} />
         <MineSøknader brukerId={user.id} />
         <EksporterAltSomPDF brukerId={user.id} />
