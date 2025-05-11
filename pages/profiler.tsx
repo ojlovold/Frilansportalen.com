@@ -2,90 +2,71 @@ import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
-import Link from "next/link";
 
-export default function Profiler() {
+export default function Profilsøk() {
   const [profiler, setProfiler] = useState<any[]>([]);
-  const [filter, setFilter] = useState("");
-  const [rolle, setRolle] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [maxPris, setMaxPris] = useState<number | null>(null);
 
   useEffect(() => {
     const hent = async () => {
       const { data } = await supabase
         .from("profiler")
-        .select("id, navn, bilde, rolle, synlig_for")
-        .order("navn", { ascending: true });
+        .select("id, navn, rolle, timespris, opprettet_dato")
+        .neq("rolle", "admin");
 
-      const synlige = (data || []).filter((p) =>
-        ["alle", "frilanser", "jobbsøker"].includes(p.synlig_for || "alle")
-      );
-
-      setProfiler(synlige);
-      setLoading(false);
+      setProfiler(data || []);
     };
 
     hent();
   }, []);
 
-  const filtrert = profiler.filter((p) => {
-    const navnMatch = p.navn?.toLowerCase().includes(filter.toLowerCase());
-    const rolleMatch = !rolle || p.rolle === rolle;
-    return navnMatch && rolleMatch;
-  });
+  const filtrert = profiler.filter((p) =>
+    maxPris ? p.timespris <= maxPris : true
+  );
 
   return (
     <Layout>
       <Head>
-        <title>Brukere | Frilansportalen</title>
+        <title>Finn frilansere og jobbsøkere</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Brukeroversikt</h1>
+      <div className="max-w-4xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Profiler</h1>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 text-sm">
-        <input
-          type="text"
-          placeholder="Søk på navn..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="p-2 border rounded w-full sm:w-1/2"
-        />
-        <select
-          value={rolle}
-          onChange={(e) => setRolle(e.target.value)}
-          className="p-2 border rounded w-full sm:w-1/2"
-        >
-          <option value="">Alle roller</option>
-          <option value="frilanser">Frilansere</option>
-          <option value="jobbsøker">Jobbsøkere</option>
-        </select>
-      </div>
+        <div className="mb-6 flex gap-4 items-center">
+          <label className="text-sm">
+            Makspris (kr/t):
+            <input
+              type="number"
+              value={maxPris || ""}
+              onChange={(e) => setMaxPris(e.target.value ? parseInt(e.target.value) : null)}
+              className="ml-2 p-1 border rounded w-28"
+              placeholder="Eks. 800"
+            />
+          </label>
+        </div>
 
-      {loading ? (
-        <p className="text-sm">Laster brukere...</p>
-      ) : filtrert.length === 0 ? (
-        <p className="text-sm text-gray-600">Ingen profiler funnet.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtrert.map(({ id, navn, bilde, rolle }) => (
-            <Link
-              key={id}
-              href={`/profil/${id}`}
-              className="bg-white border border-black rounded p-4 text-sm flex items-center gap-4 hover:bg-gray-50"
-            >
-              <img
-                src={bilde || "/placeholder.png"}
-                alt={navn || "Ukjent"}
-                className="w-12 h-12 rounded-full object-cover bg-gray-200"
-              />
-              <div>
-                <p className="font-semibold">{navn}</p>
-                <p className="text-xs text-gray-600 capitalize">{rolle}</p>
-              </div>
-            </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {filtrert.map((profil, i) => (
+            <div key={i} className="bg-white border p-4 rounded shadow-sm text-sm">
+              <h2 className="font-semibold text-lg mb-1">{profil.navn}</h2>
+              <p className="text-gray-600">Rolle: {profil.rolle}</p>
+              {profil.timespris && (
+                <p className="text-gray-700">
+                  <strong>Timespris:</strong> {profil.timespris} kr/t
+                </p>
+              )}
+              <p className="text-xs text-gray-400 mt-2">
+                Sist oppdatert: {new Date(profil.opprettet_dato).toLocaleDateString("no-NO")}
+              </p>
+            </div>
           ))}
         </div>
-      )}
+
+        {filtrert.length === 0 && (
+          <p className="text-gray-500 text-sm mt-6">Ingen profiler matcher valgt filter.</p>
+        )}
+      </div>
     </Layout>
   );
 }
