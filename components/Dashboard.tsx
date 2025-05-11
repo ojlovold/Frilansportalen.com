@@ -88,6 +88,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/smajobb" onMouseEnter={() => les("Småjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Småjobb</Link>
           <Link href="/marked" onMouseEnter={() => les("Sjappa")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Sjappa</Link>
           <Link href="/sjappa/statistikk" onMouseEnter={() => les("Min statistikk i Sjappa")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Min statistikk</Link>
+          <Link href="/gjenbruksportalen" onMouseEnter={() => les("Gjenbruksportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Gjenbruksportalen</Link>
 
           <hr className="my-2" />
 
