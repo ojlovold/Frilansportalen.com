@@ -13,12 +13,14 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.28",
     "react-leaflet": "^4.2.1",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "stripe": "^12.14.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/react": "^18.0.27",
     "@types/node": "^18.11.9",
-    "@types/leaflet": "^1.9.3"
+    "@types/leaflet": "^1.9.3",
+    "@types/stripe": "^8.0.0"
   }
 }
