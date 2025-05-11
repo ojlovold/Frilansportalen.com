@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-08-16",
+  apiVersion: "2022-11-15",
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         {
           price_data: {
             currency: "nok",
-            unit_amount: 10000, // 100 kr
+            unit_amount: 10000,
             product_data: {
               name: "Premium-medlemskap",
             },
