@@ -1,15 +1,23 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
+import brukerHarPremium from "@/utils/brukerHarPremium";
 
 export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
   const [navn, setNavn] = useState("");
-  const [alder, setAlder] = useState("");
+  const [fodselsdato, setFodselsdato] = useState("");
   const [kjonn, setKjonn] = useState("");
   const [adresse, setAdresse] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [epost, setEpost] = useState("");
   const [lagret, setLagret] = useState(false);
+  const [harPremium, setHarPremium] = useState(false);
 
   useEffect(() => {
-    const hent = async () => {
+    const sjekk = async () => {
+      const premium = await brukerHarPremium(brukerId);
+      setHarPremium(premium);
+      if (!premium) return;
+
       const { data } = await supabase
         .from("brukerprofiler")
         .select("*")
@@ -18,28 +26,32 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
 
       if (data) {
         setNavn(data.navn || "");
-        setAlder(data.alder || "");
+        setFodselsdato(data.fodselsdato || "");
         setKjonn(data.kjonn || "");
         setAdresse(data.adresse || "");
+        setTelefon(data.telefon || "");
+        setEpost(data.epost || "");
         setLagret(true); // allerede fylt ut
       }
     };
-    hent();
+    sjekk();
   }, [brukerId]);
 
   const lagre = async () => {
     const { error } = await supabase.from("brukerprofiler").upsert({
       id: brukerId,
       navn,
-      alder,
+      fodselsdato,
       kjonn,
       adresse,
+      telefon,
+      epost,
     });
 
     if (!error) setLagret(true);
   };
 
-  if (lagret) return null;
+  if (!harPremium || lagret) return null;
 
   return (
     <div className="bg-yellow-100 border border-yellow-300 p-6 rounded mb-6 space-y-4">
@@ -51,13 +63,14 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
         value={navn}
         onChange={(e) => setNavn(e.target.value)}
       />
+
       <input
-        placeholder="Alder"
-        type="number"
+        type="date"
         className="w-full border p-2 rounded"
-        value={alder}
-        onChange={(e) => setAlder(e.target.value)}
+        value={fodselsdato}
+        onChange={(e) => setFodselsdato(e.target.value)}
       />
+
       <select
         className="w-full border p-2 rounded"
         value={kjonn}
@@ -68,11 +81,26 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
         <option value="Kvinne">Kvinne</option>
         <option value="Annet">Annet</option>
       </select>
+
       <input
         placeholder="Adresse"
         className="w-full border p-2 rounded"
         value={adresse}
         onChange={(e) => setAdresse(e.target.value)}
+      />
+
+      <input
+        placeholder="Telefonnummer"
+        className="w-full border p-2 rounded"
+        value={telefon}
+        onChange={(e) => setTelefon(e.target.value)}
+      />
+
+      <input
+        placeholder="E-postadresse"
+        className="w-full border p-2 rounded"
+        value={epost}
+        onChange={(e) => setEpost(e.target.value)}
       />
 
       <button
