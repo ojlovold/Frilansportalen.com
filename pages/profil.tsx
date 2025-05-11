@@ -5,6 +5,7 @@ import Profilkort from "@/components/profil/Profilkort";
 import CVUpload from "@/components/profil/CVUpload";
 import Søknader from "@/components/profil/Søknader";
 import EksporterAltSomPDF from "@/components/profil/EksporterAltSomPDF";
+import EksporterGDPR from "@/components/profil/EksporterGDPR";
 
 export default function ProfilSide() {
   const user = useUser();
@@ -21,6 +22,7 @@ export default function ProfilSide() {
         <CVUpload userId={user.id} />
         <Søknader userId={user.id} />
         <EksporterAltSomPDF brukerId={user.id} />
+        <EksporterGDPR brukerId={user.id} />
       </div>
     </Dashboard>
   );
