@@ -6,6 +6,7 @@ import MineProsjekter from "@/components/prosjekt/MineProsjekter";
 
 export default function ProsjektOversikt() {
   const user = useUser();
+
   if (!user) return <p>Du må være innlogget for å se prosjektene dine.</p>;
 
   return (
