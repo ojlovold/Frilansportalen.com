@@ -11,26 +11,30 @@ export default function TilgjengelighetsBar() {
 
   useAutoOpplesing();
 
+  // Hent språk og opplesingsvalg
   useEffect(() => {
+    if (!user) return;
     const hent = async () => {
-      if (!user) return;
       const { data } = await supabase
         .from("brukerprofiler")
-        .select("opplesing_aktivert")
+        .select("sprak, opplesing_aktivert")
         .eq("id", user.id)
         .single();
+
+      if (data?.sprak) setSpråk(data.sprak);
       if (data?.opplesing_aktivert) setOpplesing(true);
     };
     hent();
   }, [user]);
 
+  // Lagre språk og opplesing
   useEffect(() => {
-    if (user) {
-      supabase
-        .from("brukerprofiler")
-        .update({ opplesing_aktivert: opplesing })
-        .eq("id", user.id);
-    }
+    if (!user) return;
+
+    supabase
+      .from("brukerprofiler")
+      .update({ sprak: språk, opplesing_aktivert: opplesing })
+      .eq("id", user.id);
 
     window.lesTekst = (tekst: string) => {
       if (!opplesing || !tekst) return;
@@ -38,7 +42,7 @@ export default function TilgjengelighetsBar() {
       u.lang = språk === "nb" ? "no-NO" : "en-US";
       window.speechSynthesis.speak(u);
     };
-  }, [opplesing, språk, user]);
+  }, [språk, opplesing, user]);
 
   const startVoiceInput = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
