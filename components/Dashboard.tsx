@@ -8,6 +8,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
   const [ulestEposter, setUlestEposter] = useState(0);
   const [invitasjoner, setInvitasjoner] = useState(0);
   const [erAdmin, setErAdmin] = useState(false);
+  const [erArbeidsgiver, setErArbeidsgiver] = useState(false);
 
   useEffect(() => {
     const hentUleste = async () => {
@@ -41,14 +42,22 @@ export default function Dashboard({ children }: { children: ReactNode }) {
       setInvitasjoner(count || 0);
     };
 
-    const arkiverUtløpteStillinger = async () => {
-      await fetch("/api/arkiver-stillinger", { method: "POST" });
+    const sjekkArbeidsgiver = async () => {
+      if (!user) return;
+      const { count } = await supabase
+        .from("stillinger")
+        .select("*", { count: "exact", head: true })
+        .eq("arbeidsgiver_id", user.id);
+      setErArbeidsgiver((count || 0) > 0);
     };
 
     hentUleste();
     sjekkAdmin();
     hentInvitasjoner();
-    arkiverUtløpteStillinger();
+    sjekkArbeidsgiver();
+
+    // Automatisk arkivering av utløpte stillinger
+    fetch("/api/arkiver-stillinger", { method: "POST" });
   }, [user]);
 
   return (
@@ -72,6 +81,12 @@ export default function Dashboard({ children }: { children: ReactNode }) {
             Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
           </Link>
           <Link href="/prosjektarkiv" className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
+
+          {erArbeidsgiver && (
+            <Link href="/arbeidsgiver/statistikk" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+              Arbeidsgiverstatistikk
+            </Link>
+          )}
 
           {erAdmin && (
             <>
