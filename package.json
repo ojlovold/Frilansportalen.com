@@ -1,28 +1,25 @@
 {
   "name": "frilansportalen",
   "version": "1.0.0",
-  "lockfileVersion": 2,
-  "requires": true,
-  "packages": {
-    "": {
-      "name": "frilansportalen",
-      "version": "1.0.0",
-      "dependencies": {
-        "@supabase/auth-helpers-react": "0.2.7"
-      }
-    },
-    "node_modules/@supabase/auth-helpers-react": {
-      "version": "0.2.7",
-      "resolved": "https://registry.npmjs.org/@supabase/auth-helpers-react/-/auth-helpers-react-0.2.7.tgz",
-      "integrity": "sha512-fakehashfor-vercel-compatibility",
-      "dev": false
-    }
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "@supabase/auth-helpers-react": {
-      "version": "0.2.7",
-      "resolved": "https://registry.npmjs.org/@supabase/auth-helpers-react/-/auth-helpers-react-0.2.7.tgz",
-      "integrity": "sha512-fakehashfor-vercel-compatibility"
-    }
+    "@supabase/auth-helpers-nextjs": "^0.6.0",
+    "@supabase/auth-helpers-react": "0.2.7",
+    "@supabase/supabase-js": "^2.39.5",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "jspdf": "^2.5.1",
+    "next": "13.4.19",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "stripe": "^12.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
   }
 }
