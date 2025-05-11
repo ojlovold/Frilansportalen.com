@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { supabase } from "../../utils/supabaseClient";
+import { lagKvittering } from "../../utils/lagKvittering";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-08-16",
@@ -38,6 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (bruker_id) {
         await supabase.from("profiler").update({ premium: true }).eq("id", bruker_id);
+        await lagKvittering(bruker_id, "Premium-medlemskap", 100);
       }
     }
 
