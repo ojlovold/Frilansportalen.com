@@ -28,21 +28,15 @@ export default function Dashboard({ children }: { children: ReactNode }) {
         <h1 className="text-2xl font-bold">Frilansportalen</h1>
 
         <nav className="space-y-2">
-          <Link href="/dashboard" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Dashboard
-          </Link>
-          <Link href="/profil" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Min profil
-          </Link>
-          <Link href="/dokumenter" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Mine dokumenter
-          </Link>
-          <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Fakturainnstillinger
-          </Link>
+          <Link href="/dashboard" className="block px-4 py-2 hover:bg-yellow-100 rounded">Dashboard</Link>
+          <Link href="/profil" className="block px-4 py-2 hover:bg-yellow-100 rounded">Min profil</Link>
+          <Link href="/dokumenter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Mine dokumenter</Link>
+          <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fakturainnstillinger</Link>
           <Link href="/epost" className="block px-4 py-2 hover:bg-yellow-100 rounded">
             E-post{ulestEposter > 0 ? ` (${ulestEposter})` : ""}
           </Link>
+          <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
+          <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
         </nav>
       </aside>
 
