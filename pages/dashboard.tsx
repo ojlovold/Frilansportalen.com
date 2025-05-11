@@ -1,21 +1,14 @@
----
-
-### **Ekstra: AI-boks med sanntidsforslag basert på brukerdata**
-
-```tsx
 import Head from "next/head";
 import Layout from "../components/Layout";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
-import SuccessBox from "../components/SuccessBox";
 
 export default function Dashboard() {
   const [navn, setNavn] = useState("");
   const [faktura, setFaktura] = useState(0);
   const [rapporter, setRapporter] = useState(0);
   const [kjorebok, setKjorebok] = useState(0);
-  const [aiSvar, setAiSvar] = useState("");
 
   useEffect(() => {
     const hent = async () => {
@@ -34,18 +27,6 @@ export default function Dashboard() {
       setFaktura(fakt.data?.length || 0);
       setRapporter(rap.data?.length || 0);
       setKjorebok(kjore.data?.length || 0);
-
-      // Foreslå noe via AI
-      const ai = await fetch("/api/ai-forslag", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: `Brukeren har ${fakt.data?.length || 0} fakturaer, ${rap.data?.length || 0} rapporter, og ${kjore.data?.length || 0} turer i kjøreboken. Hva bør de følge opp i dag?`,
-        }),
-      });
-
-      const { forslag } = await ai.json();
-      setAiSvar(forslag);
     };
 
     hent();
@@ -53,16 +34,12 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Head><title>Dashboard | Frilansportalen</title></Head>
+      <Head>
+        <title>Dashboard | Frilansportalen</title>
+      </Head>
 
       <div className="max-w-6xl mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-4">Velkommen, {navn || "bruker"}!</h1>
-
-        {aiSvar && (
-          <div className="bg-yellow-50 border border-yellow-400 text-yellow-800 text-sm px-4 py-3 rounded mb-6">
-            <strong>AI-forslag:</strong> {aiSvar}
-          </div>
-        )}
+        <h1 className="text-3xl font-bold mb-6">Velkommen, {navn || "bruker"}!</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm mb-10">
           <Link href="/fakturering" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
@@ -76,6 +53,10 @@ export default function Dashboard() {
           <Link href="/kjorebok" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
             <p className="text-lg font-semibold mb-1">Kjørebok</p>
             <p>{kjorebok} turer registrert</p>
+          </Link>
+          <Link href="/dokumenter" className="bg-white border p-4 rounded shadow-sm hover:bg-gray-50">
+            <p className="text-lg font-semibold mb-1">Mine dokumenter</p>
+            <p>Fakturaer, rapporter og kvitteringer</p>
           </Link>
         </div>
       </div>
