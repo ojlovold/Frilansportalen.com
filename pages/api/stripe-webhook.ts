@@ -1,11 +1,7 @@
+import { buffer } from "micro";
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { supabase } from "../../utils/supabaseClient";
-import { lagKvittering } from "../../utils/lagKvittering";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
-});
+import supabase from "@/lib/supabaseClient";
 
 export const config = {
   api: {
@@ -13,39 +9,52 @@ export const config = {
   },
 };
 
-const rawBodyBuffer = async (req: any) => {
-  return await new Promise<Buffer>((resolve, reject) => {
-    const chunks: any[] = [];
-    req.on("data", (chunk: any) => chunks.push(chunk));
-    req.on("end", () => resolve(Buffer.concat(chunks)));
-    req.on("error", reject);
-  });
-};
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2022-11-15",
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const sig = req.headers["stripe-signature"]!;
-  const buf = await rawBodyBuffer(req);
+  if (req.method !== "POST") return res.status(405).end("Method not allowed");
+
+  const sig = req.headers["stripe-signature"];
+  if (!sig) return res.status(400).end("Missing signature");
+
+  let event;
+  const buf = await buffer(req);
 
   try {
-    const event = stripe.webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       buf,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET as string
     );
+  } catch (err) {
+    console.error("Webhook error:", err);
+    return res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+  }
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const bruker_id = session.metadata?.bruker_id;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const m = session.metadata;
 
-      if (bruker_id) {
-        await supabase.from("profiler").update({ premium: true }).eq("id", bruker_id);
-        await lagKvittering(bruker_id, "Premium-medlemskap", 100);
-      }
+    if (!m || !m.bruker_id || (m.type !== "småjobb" && m.type !== "sommerjobb")) {
+      return res.status(200).end("Ugyldig eller ikke-dugnad");
     }
 
-    res.status(200).json({ received: true });
-  } catch (err: any) {
-    console.error("Webhook-feil:", err.message);
-    res.status(400).send(`Webhook error: ${err.message}`);
+    const { error } = await supabase.from("dugnader").insert([
+      {
+        opprettet_av: m.bruker_id,
+        type: m.type,
+        tittel: m.tittel,
+        beskrivelse: m.beskrivelse,
+        kategori: m.kategori,
+        sted: m.sted,
+        frist: m.frist,
+      },
+    ]);
+
+    if (error) console.error("Feil ved oppretting:", error);
   }
+
+  res.status(200).json({ received: true });
 }
