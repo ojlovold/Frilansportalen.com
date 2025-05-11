@@ -35,9 +35,17 @@ export default function MineAttester({ brukerId }: { brukerId: string }) {
     return diff;
   };
 
-  const slettAttest = async (id: string) => {
-    await supabase.from("attester").delete().eq("id", id);
-    setAttester((prev) => prev.filter((a) => a.id !== id));
+  const slettAttest = async (attestId: string, type: string) => {
+    await supabase.from("attester").delete().eq("id", attestId);
+
+    await supabase
+      .from("varsler")
+      .delete()
+      .eq("bruker_id", brukerId)
+      .eq("type", "attest")
+      .like("tekst", `%${type}%`);
+
+    setAttester((prev) => prev.filter((a) => a.id !== attestId));
   };
 
   const erstatt = async (attest: Attest) => {
@@ -59,12 +67,21 @@ export default function MineAttester({ brukerId }: { brukerId: string }) {
       opplastet: new Date().toISOString(),
     }).eq("id", attest.id);
 
+    await supabase
+      .from("varsler")
+      .delete()
+      .eq("bruker_id", brukerId)
+      .eq("type", "attest")
+      .like("tekst", `%${attest.type}%`);
+
     setOpplasting((prev) => ({ ...prev, [attest.id]: null }));
-    const hent = await supabase
+
+    const { data } = await supabase
       .from("attester")
       .select("*")
       .eq("bruker_id", brukerId);
-    setAttester(hent.data || []);
+
+    setAttester(data || []);
   };
 
   return (
@@ -88,7 +105,7 @@ export default function MineAttester({ brukerId }: { brukerId: string }) {
                 <p className="text-sm text-gray-500">Opplastet: {new Date(a.opplastet).toLocaleDateString()}</p>
 
                 <div className="mt-3 flex gap-4">
-                  <button onClick={() => slettAttest(a.id)} className="text-red-600 underline">
+                  <button onClick={() => slettAttest(a.id, a.type)} className="text-red-600 underline">
                     Slett
                   </button>
 
