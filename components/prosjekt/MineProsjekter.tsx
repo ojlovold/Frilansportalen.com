@@ -10,6 +10,7 @@ interface Prosjekt {
   beskrivelse: string;
   status: string;
   frist: string;
+  etiketter?: string[];
   eier_id: string;
   deltakere: { bruker_id: string; favoritt?: boolean }[];
 }
@@ -19,6 +20,8 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
   const [filtrert, setFiltrert] = useState<Prosjekt[]>([]);
   const [statusFilter, setStatusFilter] = useState("alle");
   const [sortering, setSortering] = useState("frist");
+  const [alleEtiketter, setAlleEtiketter] = useState<string[]>([]);
+  const [etikettFilter, setEtikettFilter] = useState("alle");
 
   useEffect(() => {
     const hent = async () => {
@@ -44,6 +47,11 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
       );
 
+      // Hent etiketter
+      const etiketter = new Set<string>();
+      unike.forEach((p) => (p.etiketter || []).forEach((e) => etiketter.add(e)));
+      setAlleEtiketter(Array.from(etiketter));
+
       setAlle(unike);
     };
 
@@ -55,6 +63,10 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
 
     if (statusFilter !== "alle") {
       p = p.filter((x) => x.status === statusFilter);
+    }
+
+    if (etikettFilter !== "alle") {
+      p = p.filter((x) => x.etiketter?.includes(etikettFilter));
     }
 
     if (sortering === "frist") {
@@ -70,7 +82,7 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
     }
 
     setFiltrert(p);
-  }, [alle, statusFilter, sortering, brukerId]);
+  }, [alle, statusFilter, sortering, etikettFilter, brukerId]);
 
   return (
     <div className="space-y-6">
@@ -97,6 +109,17 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
           <option value="navn">Sorter etter navn</option>
           <option value="favoritt">Sorter etter favoritt</option>
         </select>
+
+        <select
+          value={etikettFilter}
+          onChange={(e) => setEtikettFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="alle">Alle etiketter</option>
+          {alleEtiketter.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
       </div>
 
       {filtrert.length === 0 ? (
@@ -113,6 +136,9 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
               <p className="text-sm text-gray-700">{p.beskrivelse}</p>
               <p className="text-sm">Status: <strong>{p.status}</strong></p>
               <p className="text-sm">Frist: {new Date(p.frist).toLocaleDateString()}</p>
+              {p.etiketter?.length > 0 && (
+                <p className="text-sm text-gray-500">Etiketter: {p.etiketter.join(", ")}</p>
+              )}
               <p className="text-sm text-gray-500">
                 Deltakere: {p.deltakere?.map((d) => d.bruker_id).join(", ") || "-"}
               </p>
