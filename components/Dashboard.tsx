@@ -57,53 +57,59 @@ export default function Dashboard({ children }: { children: ReactNode }) {
     fetch("/api/arkiver-stillinger", { method: "POST" });
   }, [user]);
 
+  const les = (tekst: string) => {
+    if (typeof window !== "undefined" && window.lesTekst) {
+      window.lesTekst(tekst);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 bg-white border-r p-4 space-y-4">
         <h1 className="text-2xl font-bold">Frilansportalen</h1>
 
         <nav className="space-y-2">
-          <Link href="/dashboard" className="block px-4 py-2 hover:bg-yellow-100 rounded">Dashboard</Link>
-          <Link href="/profil" className="block px-4 py-2 hover:bg-yellow-100 rounded">Min profil</Link>
-          <Link href="/dokumenter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Mine dokumenter</Link>
-          <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fakturainnstillinger</Link>
-          <Link href="/epost" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+          <Link href="/dashboard" onMouseEnter={() => les("Dashboard")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Dashboard</Link>
+          <Link href="/profil" onMouseEnter={() => les("Min profil")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Min profil</Link>
+          <Link href="/dokumenter" onMouseEnter={() => les("Mine dokumenter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Mine dokumenter</Link>
+          <Link href="/fakturainnstillinger" onMouseEnter={() => les("Fakturainnstillinger")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Fakturainnstillinger</Link>
+          <Link href="/epost" onMouseEnter={() => les("E-post")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
             E-post{ulestEposter > 0 ? ` (${ulestEposter})` : ""}
           </Link>
-          <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
-          <Link href="/attester" className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
-          <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Faglitteratur</Link>
-          <Link href="/stillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">Stillinger</Link>
+          <Link href="/kontrakter" onMouseEnter={() => les("Kontrakter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
+          <Link href="/attester" onMouseEnter={() => les("Attester")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
+          <Link href="/fagbibliotek" onMouseEnter={() => les("Faglitteratur")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Faglitteratur</Link>
+          <Link href="/stillinger" onMouseEnter={() => les("Stillinger")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Stillinger</Link>
 
           <hr className="my-2" />
 
-          <Link href="/dugnadsportalen" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+          <Link href="/dugnadsportalen" onMouseEnter={() => les("Dugnadsportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
             Dugnadsportalen
           </Link>
-          <Link href="/sommerjobb" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+          <Link href="/sommerjobb" onMouseEnter={() => les("Sommerjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
             Sommerjobb
           </Link>
-          <Link href="/smajobb" className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
+          <Link href="/smajobb" onMouseEnter={() => les("Småjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">
             Småjobb
           </Link>
 
           <hr className="my-2" />
 
-          <Link href="/prosjektoversikt" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+          <Link href="/prosjektoversikt" onMouseEnter={() => les("Prosjekter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
             Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
           </Link>
-          <Link href="/prosjektarkiv" className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
+          <Link href="/prosjektarkiv" onMouseEnter={() => les("Prosjektarkiv")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
 
           {erArbeidsgiver && (
-            <Link href="/arbeidsgiver/statistikk" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+            <Link href="/arbeidsgiver/statistikk" onMouseEnter={() => les("Arbeidsgiverstatistikk")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
               Arbeidsgiverstatistikk
             </Link>
           )}
 
           {erAdmin && (
             <>
-              <Link href="/admin/systemstatus" className="block px-4 py-2 hover:bg-yellow-100 rounded">Systemstatus</Link>
-              <Link href="/admin/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek Admin</Link>
+              <Link href="/admin/systemstatus" onMouseEnter={() => les("Systemstatus")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Systemstatus</Link>
+              <Link href="/admin/fagbibliotek" onMouseEnter={() => les("Fagbibliotek admin")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek Admin</Link>
             </>
           )}
         </nav>
