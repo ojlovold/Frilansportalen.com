@@ -21,6 +21,9 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">
             Fakturainnstillinger
           </Link>
+          <Link href="/epost" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+            E-post
+          </Link>
         </nav>
       </aside>
 
