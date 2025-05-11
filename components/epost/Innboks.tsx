@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
+import SvarBoks from "./SvarBoks";
 
 interface Epost {
   id: string;
@@ -52,7 +53,7 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
       {meldinger.length === 0 ? (
         <p>Du har ingen e-postmeldinger ennå.</p>
       ) : (
-        <ul className="space-y-4 mt-4">
+        <ul className="space-y-6 mt-4">
           {meldinger.map((m, i) => (
             <li key={i} className="border p-4 rounded bg-white text-black shadow-sm">
               <p><strong>Fra:</strong> {m.fra}</p>
@@ -76,6 +77,15 @@ export default function EpostInnboks({ brukerId }: { brukerId: string }) {
                     ))}
                   </ul>
                 </div>
+              )}
+
+              {/* Svarboks vises bare hvis brukeren er mottaker */}
+              {m.til === brukerId && (
+                <SvarBoks
+                  svarFra={brukerId}
+                  svarTil={m.fra}
+                  originalEpostId={m.id}
+                />
               )}
             </li>
           ))}
