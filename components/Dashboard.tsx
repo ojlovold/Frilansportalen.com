@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-nextjs";
+import { useUser } from "@supabase/auth-helpers-react";
 import supabase from "@/lib/supabaseClient";
 
 export default function Dashboard({ children }: { children: ReactNode }) {
