@@ -7,6 +7,7 @@ import ReferanseOpplasting from "@/components/profil/ReferanseOpplasting";
 import LagCV from "@/components/profil/LagCV";
 import SøkerStatistikk from "@/components/profil/SøkerStatistikk";
 import MineSøknader from "@/components/profil/MineSøknader";
+import MineKvitteringer from "@/components/profil/MineKvitteringer";
 import EksporterAltSomPDF from "@/components/profil/EksporterAltSomPDF";
 import EksporterGDPR from "@/components/profil/EksporterGDPR";
 
@@ -27,6 +28,7 @@ export default function ProfilSide() {
         <LagCV brukerId={user.id} />
         <SøkerStatistikk brukerId={user.id} />
         <MineSøknader brukerId={user.id} />
+        <MineKvitteringer brukerId={user.id} />
         <EksporterAltSomPDF brukerId={user.id} />
         <EksporterGDPR brukerId={user.id} />
       </div>
