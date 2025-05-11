@@ -34,3 +34,5 @@ logs/
 # Testing
 coverage/
 .env.local
+.env.local
+.env.*
