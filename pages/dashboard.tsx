@@ -1,58 +1,37 @@
-import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import Head from "next/head";
 import { useUser } from "@supabase/auth-helpers-react";
-import supabase from "@/lib/supabaseClient";
+import Dashboard from "@/components/Dashboard";
+import Varsler from "@/components/Varsler";
+import PersonaliaSkjema from "@/components/onboarding/PersonaliaSkjema";
+import { useEffect } from "react";
 
-export default function Dashboard({ children }: { children: ReactNode }) {
+export default function DashboardSide() {
   const user = useUser();
-  const [ulestEposter, setUlestEposter] = useState(0);
 
   useEffect(() => {
-    const hentUleste = async () => {
-      if (!user) return;
-      const { count } = await supabase
-        .from("epost")
-        .select("*", { count: "exact", head: true })
-        .eq("til", user.id)
-        .eq("ulest", true)
-        .not("slettet", "is", true);
-      setUlestEposter(count || 0);
-    };
-    hentUleste();
+    if (!user) return;
+
+    // Automatisk sjekk av attester ved innlogging
+    fetch("/api/sjekk-attester", {
+      method: "GET",
+    });
   }, [user]);
 
+  if (!user) return <p>Du må være innlogget for å se dashboardet.</p>;
+
   return (
-    <div className="min-h-screen flex">
-      {/* Sidepanel */}
-      <aside className="w-64 bg-white border-r p-4 space-y-4">
-        <h1 className="text-2xl font-bold">Frilansportalen</h1>
+    <Dashboard>
+      <Head>
+        <title>Dashboard | Frilansportalen</title>
+      </Head>
 
-        <nav className="space-y-2">
-          <Link href="/dashboard" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Dashboard
-          </Link>
-          <Link href="/profil" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Min profil
-          </Link>
-          <Link href="/dokumenter" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Mine dokumenter
-          </Link>
-          <Link href="/fakturainnstillinger" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Fakturainnstillinger
-          </Link>
-          <Link href="/epost" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            E-post{ulestEposter > 0 ? ` (${ulestEposter})` : ""}
-          </Link>
-          <Link href="/kontrakter" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Kontrakter
-          </Link>
-        </nav>
-      </aside>
+      <div className="space-y-6">
+        <PersonaliaSkjema brukerId={user.id} />
+        <Varsler brukerId={user.id} />
 
-      {/* Innhold */}
-      <main className="flex-1 bg-portalGul text-black p-6">
-        {children}
-      </main>
-    </div>
+        <h1 className="text-2xl font-bold">Velkommen til Frilansportalen</h1>
+        <p className="text-black">Dette er ditt personlige dashboard. Bruk menyen til venstre for å navigere.</p>
+      </div>
+    </Dashboard>
   );
 }
