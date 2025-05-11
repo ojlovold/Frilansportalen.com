@@ -1,117 +1,44 @@
-import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
-import supabase from "../lib/supabaseClient";
+import { ReactNode, useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
 
-export default function Dashboard({ children }: { children: ReactNode }) {
-  const user = useUser();
-  const [ulestEposter, setUlestEposter] = useState(0);
-  const [invitasjoner, setInvitasjoner] = useState(0);
-  const [erAdmin, setErAdmin] = useState(false);
-  const [erArbeidsgiver, setErArbeidsgiver] = useState(false);
+type DashboardProps = {
+  children: ReactNode
+}
+
+export default function Dashboard({ children }: DashboardProps) {
+  const user = useUser()
+  const [ulestEposter, setUlestEposter] = useState(0)
 
   useEffect(() => {
-    if (!user) return;
+    const hentUlestEpost = async () => {
+      if (!user?.id) return
+      const { count, error } = await supabase
+        .from('epost')
+        .select('*', { count: 'exact', head: true })
+        .eq('til', user.id)
+        .eq('ulest', true)
+        .not('slettet', 'is', true)
 
-    const hentUleste = async () => {
-      const { count } = await supabase
-        .from("epost")
-        .select("*", { count: "exact", head: true })
-        .eq("til", user.id)
-        .eq("ulest", true)
-        .not("slettet", "is", true);
-      setUlestEposter(count || 0);
-    };
-
-    const hentInvitasjoner = async () => {
-      const { count } = await supabase
-        .from("prosjektdeltakere")
-        .select("*", { count: "exact", head: true })
-        .eq("bruker_id", user.id)
-        .eq("bekreftet", false);
-      setInvitasjoner(count || 0);
-    };
-
-    const sjekkAdmin = async () => {
-      const { data } = await supabase
-        .from("brukerprofiler")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-      setErAdmin(data?.is_admin || false);
-    };
-
-    const sjekkArbeidsgiver = async () => {
-      const { count } = await supabase
-        .from("stillinger")
-        .select("*", { count: "exact", head: true })
-        .eq("arbeidsgiver_id", user.id);
-      setErArbeidsgiver((count || 0) > 0);
-    };
-
-    hentUleste();
-    hentInvitasjoner();
-    sjekkAdmin();
-    sjekkArbeidsgiver();
-
-    fetch("/api/arkiver-stillinger", { method: "POST" });
-  }, [user]);
-
-  const les = (tekst: string) => {
-    if (typeof window !== "undefined" && window.lesTekst) {
-      window.lesTekst(tekst);
+      if (!error) {
+        setUlestEposter(count || 0)
+      }
     }
-  };
+
+    hentUlestEpost()
+  }, [user])
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 bg-white border-r p-4 space-y-4">
-        <h1 className="text-2xl font-bold">Frilansportalen</h1>
-        <nav className="space-y-2">
-          <Link href="/dashboard" onMouseEnter={() => les("Dashboard")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Dashboard</Link>
-          <Link href="/profil" onMouseEnter={() => les("Min profil")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Min profil</Link>
-          <Link href="/dokumenter" onMouseEnter={() => les("Mine dokumenter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Mine dokumenter</Link>
-          <Link href="/fakturainnstillinger" onMouseEnter={() => les("Fakturainnstillinger")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Fakturainnstillinger</Link>
-          <Link href="/epost" onMouseEnter={() => les("E-post")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            E-post{ulestEposter > 0 ? ` (${ulestEposter})` : ""}
-          </Link>
-          <Link href="/kontrakter" onMouseEnter={() => les("Kontrakter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Kontrakter</Link>
-          <Link href="/attester" onMouseEnter={() => les("Attester")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Attester</Link>
-          <Link href="/fagbibliotek" onMouseEnter={() => les("Faglitteratur")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Faglitteratur</Link>
-          <Link href="/stillinger" onMouseEnter={() => les("Stillinger")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Stillinger</Link>
-
-          <hr className="my-2" />
-
-          <Link href="/dugnadsportalen" onMouseEnter={() => les("Dugnadsportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Dugnadsportalen</Link>
-          <Link href="/sommerjobb" onMouseEnter={() => les("Sommerjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Sommerjobb</Link>
-          <Link href="/smajobb" onMouseEnter={() => les("Småjobb")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Småjobb</Link>
-          <Link href="/marked" onMouseEnter={() => les("Sjappa")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Sjappa</Link>
-          <Link href="/sjappa/statistikk" onMouseEnter={() => les("Min statistikk i Sjappa")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Min statistikk</Link>
-          <Link href="/gjenbruksportalen" onMouseEnter={() => les("Gjenbruksportalen")} className="block px-4 py-2 hover:bg-yellow-100 rounded text-sm">Gjenbruksportalen</Link>
-
-          <hr className="my-2" />
-
-          <Link href="/prosjektoversikt" onMouseEnter={() => les("Prosjekter")} className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            Prosjekter{invitasjoner > 0 ? ` (${invitasjoner})` : ""}
-          </Link>
-          <Link href="/prosjektarkiv" onMouseEnter={() => les("Prosjektarkiv")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Prosjektarkiv</Link>
-
-          {erArbeidsgiver && (
-            <Link href="/arbeidsgiver/statistikk" onMouseEnter={() => les("Arbeidsgiverstatistikk")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Arbeidsgiverstatistikk</Link>
-          )}
-
-          {erAdmin && (
-            <>
-              <Link href="/admin/systemstatus" onMouseEnter={() => les("Systemstatus")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Systemstatus</Link>
-              <Link href="/admin/fagbibliotek" onMouseEnter={() => les("Fagbibliotek admin")} className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek Admin</Link>
-            </>
-          )}
-        </nav>
-      </aside>
-
-      <main className="flex-1 bg-portalGul text-black p-6 pt-[40px]">
-        {children}
-      </main>
+    <div className="min-h-screen p-8 bg-portalGul text-black">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Frilansportalen Dashboard</h1>
+        {ulestEposter > 0 && (
+          <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm">
+            {ulestEposter} uleste meldinger
+          </span>
+        )}
+      </header>
+      <main>{children}</main>
     </div>
-  );
+  )
 }
