@@ -19,6 +19,7 @@
     "stripe": "^12.5.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "@types/react": "^18.0.37"
   }
 }
