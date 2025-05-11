@@ -1,8 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import Dashboard from "@/components/Dashboard";
-import supabase from "@/lib/supabaseClient";
+import Dashboard from "components/Dashboard";
+import supabase from "lib/supabaseClient";
 
 export default function StillingDetalj() {
   const router = useRouter();
@@ -17,17 +17,14 @@ export default function StillingDetalj() {
 
   useEffect(() => {
     if (!id) return;
-
     const hent = async () => {
       const { data } = await supabase
         .from("stillinger")
         .select("*")
         .eq("id", id)
         .single();
-
       setStilling(data);
     };
-
     hent();
   }, [id]);
 
@@ -54,7 +51,7 @@ export default function StillingDetalj() {
       }
     }
 
-    const { error: søkError } = await supabase.from("søknader").insert([
+    const { error } = await supabase.from("søknader").insert([
       {
         bruker_id: user.id,
         stilling_id: id,
@@ -64,8 +61,8 @@ export default function StillingDetalj() {
       },
     ]);
 
-    setStatus(søkError ? "Kunne ikke sende søknad" : "Søknad sendt!");
-    if (!søkError) {
+    setStatus(error ? "Kunne ikke sende søknad" : "Søknad sendt!");
+    if (!error) {
       setMelding("");
       setCvFil(null);
       setVedlegg(null);
