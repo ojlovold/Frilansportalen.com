@@ -2,32 +2,41 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../utils/supabaseClient";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const iDag = new Date();
-  const om7dager = new Date(iDag.getTime() + 7 * 86400000);
+  try {
+    const { data, error } = await supabase
+      .from("attester")
+      .select("id, bruker_id, tittel, utlop")
 
-  const { data: attester } = await supabase
-    .from("attester")
-    .select("id, bruker_id, tittel, utløpsdato")
-    .lt("utløpsdato", om7dager.toISOString())
-    .gte("utløpsdato", iDag.toISOString());
+    if (error) throw error;
 
-  for (const a of attester || []) {
-    await supabase.from("varsler").insert({
-      bruker_id: a.bruker_id,
-      tekst: `Dokumentet "${a.tittel}" utløper snart.`,
-      lenke: "/attester",
-    });
+    // Sikre at typene er korrekte
+    type Attest = {
+      id: string;
+      bruker_id: string;
+      tittel: string;
+      utlop: string;
+    };
 
-    await fetch("/api/send-kopi", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fra: "system",
-        melding: `Påminnelse: Dokumentet "${a.tittel}" utløper om kort tid.`,
-        bruker_id: a.bruker_id,
-      }),
-    });
+    const attester = (data as Attest[]) || [];
+
+    for (const a of attester) {
+      const utløpsdato = new Date(a.utlop);
+      const iDag = new Date();
+
+      const dagerIgjen = Math.ceil((utløpsdato.getTime() - iDag.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (dagerIgjen <= 14) {
+        await supabase.from("varsler").insert({
+          bruker_id: a.bruker_id,
+          tekst: `Dokumentet "${a.tittel}" utløper om ${dagerIgjen} dager.`,
+          lenke: "/attester",
+        });
+      }
+    }
+
+    res.status(200).json({ status: "OK", antall: attester.length });
+  } catch (err: any) {
+    console.error("Feil:", err);
+    res.status(500).json({ error: err.message || "Ukjent feil" });
   }
-
-  res.status(200).json({ status: "Varsler sendt", antall: attester?.length || 0 });
 }
