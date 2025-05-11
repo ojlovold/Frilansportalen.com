@@ -11,10 +11,11 @@ export default function DashboardSide() {
   useEffect(() => {
     if (!user) return;
 
-    // Automatisk sjekk av attester ved innlogging
-    fetch("/api/sjekk-attester", {
-      method: "GET",
-    });
+    // Sjekk attester som utløper
+    fetch("/api/sjekk-attester", { method: "GET" });
+
+    // Automatisk import av fagfiler
+    fetch("/api/import-fagfiler", { method: "POST" });
   }, [user]);
 
   if (!user) return <p>Du må være innlogget for å se dashboardet.</p>;
