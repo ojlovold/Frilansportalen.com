@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 import Link from "next/link";
+import ProsjektInvite from "./ProsjektInvite";
 
 interface Prosjekt {
   id: string;
@@ -70,6 +71,9 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
               >
                 Åpne prosjekt
               </Link>
+
+              {/* Invitasjonsfunksjon */}
+              <ProsjektInvite prosjektId={p.id} />
             </li>
           ))}
         </ul>
