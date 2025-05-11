@@ -9,6 +9,7 @@ import LastOppProsjektfil from "@/components/prosjekt/LastOppProsjektfil";
 import ProsjektVideo from "@/components/prosjekt/ProsjektVideo";
 import ProsjektNotat from "@/components/prosjekt/ProsjektNotat";
 import ProsjektKalender from "@/components/prosjekt/ProsjektKalender";
+import ProsjektAI from "@/components/prosjekt/ProsjektAI";
 
 export default function ProsjektDetalj() {
   const router = useRouter();
@@ -65,6 +66,7 @@ export default function ProsjektDetalj() {
         <ProsjektChat prosjektId={prosjekt.id} />
         <ProsjektKalender prosjektId={prosjekt.id} />
         <ProsjektNotat prosjektId={prosjekt.id} />
+        <ProsjektAI prosjektId={prosjekt.id} />
 
         {prosjekt.videorom_id && (
           <ProsjektVideo romId={prosjekt.videorom_id} />
