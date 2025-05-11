@@ -15,6 +15,8 @@ export default function LeggTilDugnad() {
     frist: "",
   });
 
+  const [betaling, setBetaling] = useState<"stripe" | "vipps">("stripe");
+
   const getPris = () => {
     if (data.type === "sommerjobb") return 100;
     if (data.type === "småjobb") return 50;
@@ -48,8 +50,10 @@ export default function LeggTilDugnad() {
   };
 
   const betalOgSend = async () => {
-    setStatus("Sender deg til betaling ...");
-    const res = await fetch("/api/stripe", {
+    setStatus("Starter betaling...");
+
+    const api = betaling === "vipps" ? "/api/vipps" : "/api/stripe";
+    const res = await fetch(api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -66,9 +70,12 @@ export default function LeggTilDugnad() {
       }),
     });
 
-    const { url } = await res.json();
-    if (url) window.location.href = url;
-    else setStatus("Noe gikk galt med betalingen.");
+    const json = await res.json();
+    if (json.url) {
+      window.location.href = json.url;
+    } else {
+      setStatus("Noe gikk galt med betalingen.");
+    }
   };
 
   const send = () => {
@@ -99,6 +106,28 @@ export default function LeggTilDugnad() {
         <option value="sommerjobb">Sommerjobb (100 kr)</option>
         <option value="småjobb">Småjobb (50 kr)</option>
       </select>
+
+      {getPris() > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm">Velg betalingsmåte ({getPris()} kr):</p>
+          <label className="flex gap-2">
+            <input
+              type="radio"
+              checked={betaling === "stripe"}
+              onChange={() => setBetaling("stripe")}
+            />
+            Kortbetaling (Stripe)
+          </label>
+          <label className="flex gap-2">
+            <input
+              type="radio"
+              checked={betaling === "vipps"}
+              onChange={() => setBetaling("vipps")}
+            />
+            Vipps
+          </label>
+        </div>
+      )}
 
       <input
         placeholder="Tittel"
@@ -134,12 +163,6 @@ export default function LeggTilDugnad() {
         onChange={(e) => setData({ ...data, frist: e.target.value })}
         className="w-full border p-2 rounded"
       />
-
-      {getPris() > 0 && (
-        <p className="text-sm text-red-600">
-          Dette krever betaling: {getPris()} kr
-        </p>
-      )}
 
       <button onClick={send} className="bg-black text-white px-4 py-2 rounded">
         {getPris() > 0 ? "Betal og publiser" : "Publiser"}
