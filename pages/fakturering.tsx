@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import jsPDF from "jspdf";
 import { useState } from "react";
 import { supabase } from "../utils/supabaseClient";
+import useAiAssist from "../utils/useAiAssist";
 import SuccessBox from "../components/SuccessBox";
 
 export default function Fakturering() {
@@ -11,16 +12,21 @@ export default function Fakturering() {
   const [belop, setBelop] = useState(0);
   const [melding, setMelding] = useState("");
 
+  const { getSvar, svar, laster, feil } = useAiAssist();
+
+  const foreslå = () => {
+    const prompt = `Brukeren ønsker å sende en faktura. Tjenesten er: ${tjeneste}. Foreslå en fakturatekst som kan brukes på fakturaen. Returner kort, formell tekst.`;
+    getSvar(prompt, "Du er en hjelpsom økonomisk assistent for frilansere.");
+  };
+
   const send = async () => {
     const bruker = await supabase.auth.getUser();
     const profil = await supabase.from("profiler").select("*").eq("id", bruker.data.user?.id).single();
     const p = profil.data;
 
-    // Hent fakturanummer
     const fakturanrRes = await fetch("/api/fakturanr");
     const { fakturanr } = await fakturanrRes.json();
 
-    // Lag PDF
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text("Faktura", 20, 20);
@@ -59,7 +65,14 @@ export default function Fakturering() {
         <h1 className="text-2xl font-bold mb-6">Send faktura</h1>
 
         <input value={mottaker} onChange={(e) => setMottaker(e.target.value)} placeholder="Mottaker" className="w-full p-2 border rounded mb-3" />
-        <input value={tjeneste} onChange={(e) => setTjeneste(e.target.value)} placeholder="Tjeneste / oppdrag" className="w-full p-2 border rounded mb-3" />
+        <div className="mb-2 flex gap-2 items-center">
+          <input value={tjeneste} onChange={(e) => setTjeneste(e.target.value)} placeholder="Tjeneste / oppdrag" className="w-full p-2 border rounded" />
+          <button onClick={foreslå} className="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-800">Foreslå med AI</button>
+        </div>
+        {svar && (
+          <p className="text-xs bg-yellow-100 border px-3 py-2 rounded text-yellow-800 mb-2">{svar}</p>
+        )}
+        {feil && <p className="text-xs text-red-600 mb-2">{feil}</p>}
         <input type="number" value={belop} onChange={(e) => setBelop(Number(e.target.value))} placeholder="Beløp (kr)" className="w-full p-2 border rounded mb-3" />
 
         <button onClick={send} className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800">Send faktura</button>
