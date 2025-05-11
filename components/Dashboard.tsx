@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 type DashboardProps = {
@@ -7,12 +8,13 @@ type DashboardProps = {
 }
 
 export default function Dashboard({ children }: DashboardProps) {
-  const user = useUser()
+  const user = useUser() as User | null
   const [ulestEposter, setUlestEposter] = useState(0)
 
   useEffect(() => {
     const hentUlestEpost = async () => {
-      if (!user?.id) return
+      if (!user || typeof user.id !== 'string') return
+
       const { count, error } = await supabase
         .from('epost')
         .select('*', { count: 'exact', head: true })
