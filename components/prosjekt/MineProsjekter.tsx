@@ -15,7 +15,10 @@ interface Prosjekt {
 }
 
 export default function MineProsjekter({ brukerId }: { brukerId: string }) {
-  const [prosjekter, setProsjekter] = useState<Prosjekt[]>([]);
+  const [alle, setAlle] = useState<Prosjekt[]>([]);
+  const [filtrert, setFiltrert] = useState<Prosjekt[]>([]);
+  const [statusFilter, setStatusFilter] = useState("alle");
+  const [sortering, setSortering] = useState("frist");
 
   useEffect(() => {
     const hent = async () => {
@@ -41,27 +44,66 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
       );
 
-      const sortert = unike.sort((a, b) => {
-        const favA = a.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
-        const favB = b.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
-        return favA - favB || new Date(b.frist).getTime() - new Date(a.frist).getTime();
-      });
-
-      setProsjekter(sortert);
+      setAlle(unike);
     };
 
     hent();
   }, [brukerId]);
 
+  useEffect(() => {
+    let p = [...alle];
+
+    if (statusFilter !== "alle") {
+      p = p.filter((x) => x.status === statusFilter);
+    }
+
+    if (sortering === "frist") {
+      p.sort((a, b) => new Date(a.frist).getTime() - new Date(b.frist).getTime());
+    } else if (sortering === "navn") {
+      p.sort((a, b) => a.navn.localeCompare(b.navn));
+    } else if (sortering === "favoritt") {
+      p.sort((a, b) => {
+        const favA = a.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
+        const favB = b.deltakere?.find((d) => d.bruker_id === brukerId)?.favoritt ? -1 : 0;
+        return favA - favB;
+      });
+    }
+
+    setFiltrert(p);
+  }, [alle, statusFilter, sortering, brukerId]);
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">Mine prosjekter</h2>
 
-      {prosjekter.length === 0 ? (
-        <p>Du har ingen prosjekter enda.</p>
+      <div className="flex flex-col md:flex-row gap-4">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="alle">Alle statuser</option>
+          <option value="aktiv">Aktive</option>
+          <option value="fullført">Fullførte</option>
+          <option value="avbrutt">Avbrutte</option>
+        </select>
+
+        <select
+          value={sortering}
+          onChange={(e) => setSortering(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="frist">Sorter etter frist</option>
+          <option value="navn">Sorter etter navn</option>
+          <option value="favoritt">Sorter etter favoritt</option>
+        </select>
+      </div>
+
+      {filtrert.length === 0 ? (
+        <p>Ingen prosjekter matcher filtrene.</p>
       ) : (
         <ul className="space-y-4">
-          {prosjekter.map((p) => (
+          {filtrert.map((p) => (
             <li key={p.id} className="border p-4 rounded bg-white text-black shadow-sm space-y-1">
               <div className="flex justify-between">
                 <p className="text-lg font-bold">{p.navn}</p>
