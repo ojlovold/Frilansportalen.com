@@ -1,47 +1,25 @@
+import { useUser } from "@supabase/auth-helpers-react";
 import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { useRouter } from "next/router";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import CVUpload from "@/components/profil/CVUpload";
+import Søknader from "@/components/profil/Søknader";
+import Profilkort from "@/components/profil/Profilkort";
 
-export default function Profil() {
-  const [navn, setNavn] = useState("");
-  const [bilde, setBilde] = useState("");
-  const router = useRouter();
+export default function Profilside() {
+  const user = useUser();
 
-  useEffect(() => {
-    const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
-      if (!id) {
-        router.push("/login");
-        return;
-      }
-
-      const { data } = await supabase.from("profiler").select("*").eq("id", id).single();
-      if (data) {
-        setNavn(data.navn || "");
-        setBilde(data.bilde || "");
-      }
-    };
-
-    hent();
-  }, [router]);
+  if (!user) return <p>Du må være innlogget for å se denne siden.</p>;
 
   return (
-    <Layout>
+    <DashboardLayout>
       <Head>
         <title>Min profil | Frilansportalen</title>
       </Head>
-
-      <h1 className="text-3xl font-bold mb-6">Min profil</h1>
-
-      <div className="max-w-lg space-y-4 bg-white border border-black p-6 rounded">
-        {bilde && (
-          <img src={bilde} alt="Profilbilde" className="w-32 h-32 rounded-full object-cover" />
-        )}
-        <p><strong>Navn:</strong> {navn || "–"}</p>
+      <div className="p-4 space-y-6">
+        <Profilkort userId={user.id} />
+        <CVUpload userId={user.id} />
+        <Søknader userId={user.id} />
       </div>
-    </Layout>
+    </DashboardLayout>
   );
 }
