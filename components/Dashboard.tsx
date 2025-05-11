@@ -53,9 +53,14 @@ export default function Dashboard({ children }: { children: ReactNode }) {
           <Link href="/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">Fagbibliotek</Link>
 
           {erAdmin && (
-            <Link href="/admin/systemstatus" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-              Systemstatus
-            </Link>
+            <>
+              <Link href="/admin/systemstatus" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+                Systemstatus
+              </Link>
+              <Link href="/admin/fagbibliotek" className="block px-4 py-2 hover:bg-yellow-100 rounded">
+                Fagbibliotek Admin
+              </Link>
+            </>
           )}
         </nav>
       </aside>
