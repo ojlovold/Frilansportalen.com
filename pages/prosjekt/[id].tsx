@@ -8,6 +8,7 @@ import ProsjektChat from "@/components/prosjekt/ProsjektChat";
 import LastOppProsjektfil from "@/components/prosjekt/LastOppProsjektfil";
 import ProsjektVideo from "@/components/prosjekt/ProsjektVideo";
 import ProsjektNotat from "@/components/prosjekt/ProsjektNotat";
+import ProsjektKalender from "@/components/prosjekt/ProsjektKalender";
 
 export default function ProsjektDetalj() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export default function ProsjektDetalj() {
         <OppgaveListe prosjektId={prosjekt.id} />
         <LastOppProsjektfil prosjektId={prosjekt.id} />
         <ProsjektChat prosjektId={prosjekt.id} />
+        <ProsjektKalender prosjektId={prosjekt.id} />
         <ProsjektNotat prosjektId={prosjekt.id} />
 
         {prosjekt.videorom_id && (
