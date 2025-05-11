@@ -1,10 +1,12 @@
 import { useState } from "react";
 import supabase from "@/lib/supabaseClient";
+import VelgProsjektGruppe from "./VelgProsjektGruppe";
 
 export default function OpprettProsjekt({ eierId }: { eierId: string }) {
   const [navn, setNavn] = useState("");
   const [beskrivelse, setBeskrivelse] = useState("");
   const [frist, setFrist] = useState("");
+  const [gruppeId, setGruppeId] = useState<string | null>(null);
   const [status, setStatus] = useState("");
 
   const lagre = async () => {
@@ -19,6 +21,7 @@ export default function OpprettProsjekt({ eierId }: { eierId: string }) {
         beskrivelse,
         frist,
         eier_id: eierId,
+        gruppe_id: gruppeId,
       },
     ]);
 
@@ -27,6 +30,7 @@ export default function OpprettProsjekt({ eierId }: { eierId: string }) {
       setNavn("");
       setBeskrivelse("");
       setFrist("");
+      setGruppeId(null);
     }
   };
 
@@ -54,6 +58,8 @@ export default function OpprettProsjekt({ eierId }: { eierId: string }) {
         onChange={(e) => setFrist(e.target.value)}
         className="w-full border p-2 rounded"
       />
+
+      <VelgProsjektGruppe eierId={eierId} onVelg={setGruppeId} />
 
       <button onClick={lagre} className="bg-black text-white px-4 py-2 rounded">
         Lagre prosjekt
