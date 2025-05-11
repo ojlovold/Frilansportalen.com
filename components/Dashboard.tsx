@@ -1,7 +1,26 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import supabase from "@/lib/supabaseClient";
 
 export default function Dashboard({ children }: { children: ReactNode }) {
+  const user = useUser();
+  const [ulestEposter, setUlestEposter] = useState(0);
+
+  useEffect(() => {
+    const hentUleste = async () => {
+      if (!user) return;
+      const { count } = await supabase
+        .from("epost")
+        .select("*", { count: "exact", head: true })
+        .eq("til", user.id)
+        .eq("ulest", true)
+        .not("slettet", "is", true);
+      setUlestEposter(count || 0);
+    };
+    hentUleste();
+  }, [user]);
+
   return (
     <div className="min-h-screen flex">
       {/* Sidepanel */}
@@ -22,7 +41,7 @@ export default function Dashboard({ children }: { children: ReactNode }) {
             Fakturainnstillinger
           </Link>
           <Link href="/epost" className="block px-4 py-2 hover:bg-yellow-100 rounded">
-            E-post
+            E-post{ulestEposter > 0 ? ` (${ulestEposter})` : ""}
           </Link>
         </nav>
       </aside>
