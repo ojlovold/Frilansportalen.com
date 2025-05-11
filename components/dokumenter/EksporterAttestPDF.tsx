@@ -1,37 +1,61 @@
-import { jsPDF } from "jspdf";
+import Head from "next/head";
+import { useUser } from "@supabase/auth-helpers-react";
+import Dashboard from "@/components/Dashboard";
+import LastOppAttest from "@/components/dokumenter/LastOppAttest";
+import EksporterAttestPDF from "@/components/dokumenter/EksporterAttestPDF";
+import { useEffect, useState } from "react";
+import supabase from "@/lib/supabaseClient";
 
-interface Props {
-  attest: {
-    id: string;
-    type: string;
-    filnavn: string;
-    url: string;
-    utløper: string;
-    opplastet: string;
-  };
-}
+export default function AttesterSide() {
+  const user = useUser();
+  const [attester, setAttester] = useState<any[]>([]);
 
-export default function EksporterAttestPDF({ attest }: Props) {
-  const lastNed = () => {
-    const doc = new jsPDF();
+  useEffect(() => {
+    const hent = async () => {
+      if (!user) return;
 
-    doc.setFontSize(14);
-    doc.text("Attest – Frilansportalen", 10, 20);
+      const { data } = await supabase
+        .from("attester")
+        .select("*")
+        .eq("bruker_id", user.id)
+        .order("utløper");
 
-    doc.setFontSize(11);
-    doc.text(`Type: ${attest.type}`, 10, 35);
-    doc.text(`Filnavn: ${attest.filnavn}`, 10, 43);
-    doc.text(`Nedlastingslenke:`, 10, 51);
-    doc.text(attest.url, 10, 59);
-    doc.text(`Utløpsdato: ${new Date(attest.utløper).toLocaleDateString()}`, 10, 75);
-    doc.text(`Opplastet: ${new Date(attest.opplastet).toLocaleDateString()}`, 10, 83);
+      setAttester(data || []);
+    };
 
-    doc.save(`attest_${attest.id}.pdf`);
-  };
+    hent();
+  }, [user]);
+
+  if (!user) return <p>Du må være innlogget for å se attester.</p>;
 
   return (
-    <button onClick={lastNed} className="text-sm underline text-blue-600">
-      Last ned PDF
-    </button>
+    <Dashboard>
+      <Head>
+        <title>Attester og dokumenter | Frilansportalen</title>
+      </Head>
+
+      <div className="space-y-6">
+        <LastOppAttest brukerId={user.id} />
+
+        <h2 className="text-xl font-bold">Mine attester</h2>
+
+        {attester.length === 0 ? (
+          <p>Ingen attester funnet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {attester.map((a) => (
+              <li key={a.id} className="border p-4 rounded bg-white text-black shadow-sm space-y-1">
+                <p><strong>Type:</strong> {a.type}</p>
+                <p><strong>Fil:</strong> <a href={a.url} target="_blank" className="underline text-blue-600">{a.filnavn}</a></p>
+                <p>Utløper: {new Date(a.utløper).toLocaleDateString()}</p>
+                <p>Opplastet: {new Date(a.opplastet).toLocaleDateString()}</p>
+
+                <EksporterAttestPDF attest={a} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Dashboard>
   );
 }
