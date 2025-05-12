@@ -1,86 +1,56 @@
 import { useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
 import supabase from "@/lib/supabaseClient";
 
-export default function LastOppAttest({ brukerId }: { brukerId: string }) {
-  const [type, setType] = useState("Helseattest");
-  const [utløper, setUtløper] = useState("");
+export default function LastOppAttest() {
+  const { user } = useUser();
   const [fil, setFil] = useState<File | null>(null);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+
+  const håndterFilvalg = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valgt = e.target.files?.[0] || null;
+    setFil(valgt);
+  };
 
   const lastOpp = async () => {
-    if (!fil || !utløper || !type) {
-      setStatus("Alle felter må fylles ut.");
+    if (!user?.id || !fil) {
+      setStatus("Du må være logget inn og velge en fil.");
       return;
     }
 
-    const path = `${brukerId}/${Date.now()}_${fil.name}`;
-    const { error: uploadError } = await supabase.storage
+    const filsti = `${user.id}/${Date.now()}_${fil.name}`;
+
+    const { error } = await supabase.storage
       .from("attester")
-      .upload(path, fil);
+      .upload(filsti, fil, {
+        contentType: fil.type,
+        upsert: true
+      });
 
-    if (uploadError) {
-      setStatus("Opplasting feilet");
-      return;
-    }
-
-    const url = supabase.storage.from("attester").getPublicUrl(path).data.publicUrl;
-
-    const { error } = await supabase.from("attester").insert([
-      {
-        bruker_id: brukerId,
-        type,
-        utløper,
-        filnavn: fil.name,
-        url,
-      },
-    ]);
-
-    setStatus(error ? "Kunne ikke lagre" : "Attest lastet opp!");
-    if (!error) {
+    if (error) {
+      setStatus("Feil ved opplasting: " + error.message);
+    } else {
+      setStatus("Attesten er lastet opp!");
       setFil(null);
-      setType("Helseattest");
-      setUtløper("");
     }
   };
 
   return (
-    <div className="space-y-4 bg-white p-6 border rounded shadow">
-      <h2 className="text-xl font-bold text-black">Last opp attest / dokument</h2>
-
-      <select
-        className="w-full border p-2 rounded"
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-      >
-        <option>Helseattest</option>
-        <option>Førerkort</option>
-        <option>Sertifikat</option>
-        <option>HMS</option>
-        <option>Annet</option>
-      </select>
-
-      <input
-        type="date"
-        value={utløper}
-        onChange={(e) => setUtløper(e.target.value)}
-        className="w-full border p-2 rounded"
-      />
-
+    <div className="mb-4">
+      <label className="block mb-2 font-medium">Last opp attest (PDF eller bilde):</label>
       <input
         type="file"
-        onChange={(e) => setFil(e.target.files?.[0] || null)}
-        className="w-full border p-2 rounded"
-        accept=".pdf,.jpg,.png,.doc,.docx"
+        accept=".pdf,image/*"
+        onChange={håndterFilvalg}
+        className="mb-2"
       />
-
       <button
         onClick={lastOpp}
-        className="bg-black text-white px-4 py-2 rounded"
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
       >
         Last opp
       </button>
-
-      <p>{status}</p>
+      {status && <p className="mt-2 text-sm">{status}</p>}
     </div>
   );
 }
