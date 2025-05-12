@@ -25,6 +25,9 @@ export default function Header() {
           <Link href="/favoritter">
             <span className="hover:underline">Mine favoritter</span>
           </Link>
+          <Link href="/varslinger">
+            <span className="hover:underline">Varslinger</span>
+          </Link>
           <Link href="/sokehistorikk">
             <span className="hover:underline">Søkehistorikk</span>
           </Link>
