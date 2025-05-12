@@ -1,57 +1,74 @@
-// components/dokumenter/MineAttester.tsx
-import { useEffect, useState } from "react";
-import supabase from "../../lib/supabaseClient"; // ← Fikset sti
+// components/Dokumenter.tsx
+import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
 
-interface Attest {
-  id: string;
-  navn: string;
-  url: string;
-  dato: string;
+type Dokument = {
+  bucket: string
+  navn: string
+  url: string
 }
 
-export default function MineAttester() {
-  const [attester, setAttester] = useState<Attest[]>([]);
-  const [feil, setFeil] = useState("");
+const buckets = ['kvitteringer', 'rapporter', 'signerte-dokumenter']
+
+export default function Dokumenter() {
+  const user = useUser()
+  const [dokumenter, setDokumenter] = useState<Dokument[]>([])
 
   useEffect(() => {
-    const hentAttester = async () => {
-      const { data, error } = await supabase
-        .from("attester")
-        .select("*")
-        .order("dato", { ascending: false });
+    const hentDokumenter = async () => {
+      if (!user?.id) return
 
-      if (error) {
-        setFeil("Kunne ikke hente attester");
-      } else {
-        setAttester(data);
+      const samlet: Dokument[] = []
+
+      for (const bucket of buckets) {
+        const { data: filer } = await supabase.storage.from(bucket).list(`${user.id}`)
+
+        for (const fil of filer || []) {
+          const sti = `${user.id}/${fil.name}`
+          const { data: link } = supabase.storage.from(bucket).getPublicUrl(sti)
+
+          if (link?.publicUrl) {
+            samlet.push({
+              bucket,
+              navn: fil.name,
+              url: link.publicUrl,
+            })
+          }
+        }
       }
-    };
 
-    hentAttester();
-  }, []);
+      setDokumenter(samlet)
+    }
+
+    hentDokumenter()
+  }, [user])
+
+  if (!user?.id) return null
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-2">Mine attester</h2>
+    <div className="bg-white p-6 rounded shadow">
+      <h2 className="text-xl font-semibold mb-4">Mine dokumenter</h2>
 
-      {feil && <p className="text-red-600">{feil}</p>}
-
-      <ul className="space-y-2">
-        {attester.map((attest) => (
-          <li key={attest.id} className="border p-3 rounded bg-white shadow">
-            <p className="font-medium">{attest.navn}</p>
-            <p className="text-sm text-gray-600">{attest.dato}</p>
-            <a
-              href={attest.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline text-sm"
-            >
-              Åpne
-            </a>
-          </li>
-        ))}
-      </ul>
+      {dokumenter.length === 0 ? (
+        <p>Du har ingen dokumenter lagret ennå.</p>
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {dokumenter.map((d, i) => (
+            <li key={i} className="flex justify-between items-center border-b pb-1">
+              <span className="text-gray-700">{d.navn} <em className="text-xs text-gray-400">({d.bucket})</em></span>
+              <a
+                href={d.url}
+                target="_blank"
+                className="text-blue-600 underline"
+                rel="noopener noreferrer"
+              >
+                Last ned
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  );
+  )
 }
