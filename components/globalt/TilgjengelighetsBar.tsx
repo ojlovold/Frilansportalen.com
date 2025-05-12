@@ -3,6 +3,13 @@ import { useUser } from "@supabase/auth-helpers-react";
 import supabase from "../../lib/supabaseClient";
 import useAutoOpplesing from "../../hooks/useAutoOpplesing";
 
+// Utvider Window-typen med lesTekst
+declare global {
+  interface Window {
+    lesTekst: (tekst: string) => void;
+  }
+}
+
 export default function TilgjengelighetsBar() {
   const user = useUser();
   const [språk, setSpråk] = useState("nb");
