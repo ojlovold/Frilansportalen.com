@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect } from 'react'
+import type { LatLngExpression } from 'leaflet'
 
 // Fiks ikonvisning i Leaflet
 delete (L.Icon.Default as any).prototype._getIconUrl
@@ -30,9 +31,11 @@ export default function Map({ markorer }: { markorer: MarkerType[] }) {
     ? [markorer[0].lat, markorer[0].lng]
     : [60.472, 8.468] // fallback: Norge
 
+  const typedCenter: LatLngExpression = [center[0], center[1]]
+
   return (
     <MapContainer
-      center={[center[0], center[1]] as [number, number]}
+      center={typedCenter}
       zoom={6}
       scrollWheelZoom={true}
       style={{ height: '500px', width: '100%' }}
