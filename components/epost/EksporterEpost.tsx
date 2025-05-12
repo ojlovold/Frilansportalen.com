@@ -37,7 +37,7 @@ export default function EksporterEpost({ brukerId }: { brukerId: string }) {
     y += 10;
 
     doc.setFontSize(10);
-    filtrert.forEach((m: Epost, i) => {
+    filtrert.forEach((m: Epost, i: number) => {
       doc.setDrawColor(200);
       doc.line(10, y - 2, 200, y - 2);
       doc.text(`Fra: ${m.fra}`, 10, y); y += 5;
