@@ -1,41 +1,37 @@
-import Head from "next/head";
-import Header from "../components/Header";
-import { useState } from "react";
-
-interface Varsel {
-  type: "melding" | "svar" | "interesse" | "videosamtale";
-  tekst: string;
-  tid: string;
-}
-
-const varsler: Varsel[] = [
-  { type: "melding", tekst: "Du har mottatt en ny melding fra Line A.", tid: "10:42 i dag" },
-  { type: "svar", tekst: "Din søknad er besvart av Nordic Studio.", tid: "i går, 21:17" },
-  { type: "interesse", tekst: "En arbeidsgiver har vist interesse for profilen din.", tid: "i går, 08:03" },
-  { type: "videosamtale", tekst: "Ny videosamtale forespurt av Ola S.", tid: "onsdag, 15:20" },
-];
+// pages/varslinger.tsx
+import Head from 'next/head'
+import Link from 'next/link'
 
 export default function Varslinger() {
   return (
     <>
       <Head>
-        <title>Varslinger | Frilansportalen</title>
-        <meta name="description" content="Dine varsler: meldinger, videosamtaler og søknadssvar" />
+        <title>Mine varslinger | Frilansportalen</title>
+        <meta name="description" content="Administrer jobbagenter og tjenestevarslinger" />
       </Head>
-      <Header />
-      <main className="min-h-screen bg-portalGul text-black p-8 max-w-xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Varslinger</h1>
+      <main className="min-h-screen bg-portalGul text-black p-8 max-w-lg mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Mine varslinger</h1>
 
-        <ul className="space-y-4">
-          {varsler.map((v, i) => (
-            <li key={i} className="bg-white p-4 rounded shadow">
-              <p className="font-semibold capitalize">{v.type}</p>
-              <p>{v.tekst}</p>
-              <p className="text-sm text-gray-600">{v.tid}</p>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-4">
+          <Link href="/stillingsovervaking">
+            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
+              Overvåkning – Stillinger
+            </div>
+          </Link>
+
+          <Link href="/tjenesteovervaking">
+            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
+              Overvåkning – Tjenester
+            </div>
+          </Link>
+
+          <Link href="/gjenbruksovervaking">
+            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
+              Overvåkning – Gjenbruksoppføringer
+            </div>
+          </Link>
+        </div>
       </main>
     </>
-  );
+  )
 }
