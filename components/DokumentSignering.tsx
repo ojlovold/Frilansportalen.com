@@ -16,7 +16,7 @@ export default function DokumentSignering({ dokumentId, tittel, tekst }: Props) 
   const [lagret, setLagret] = useState(false)
 
   const signerOgLagre = async () => {
-    const brukerId = user && 'id' in user ? user.id : null
+    const brukerId = user && 'id' in user ? (user.id as string) : null
     if (!brukerId || !signatur) return
 
     const kombinert = `${tekst}\n\nSignert av: ${brukerId}\nSignatur: ${signatur}`
