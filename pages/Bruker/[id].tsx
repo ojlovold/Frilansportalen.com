@@ -90,3 +90,46 @@ export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
     </>
   )
 }
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const id = ctx.params?.id as string
+  const currentUserId = ctx.req.cookies['sb-user-id'] || null
+
+  const { data: profil } = await supabase
+    .from('brukerprofiler')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  let tilgang = false
+  let bildeUrl: string | null = null
+
+  if (!profil) return { props: { profil: null, tilgang: false, bildeUrl: null } }
+
+  if (profil.rolle === 'frilanser' || profil.synlighet === 'alle') {
+    tilgang = true
+  } else if (currentUserId) {
+    const { data: tilgangsdata } = await supabase
+      .from('profiltilgang')
+      .select('status')
+      .eq('fra', currentUserId)
+      .eq('til', id)
+      .eq('status', 'godkjent')
+      .maybeSingle()
+
+    if (tilgangsdata) tilgang = true
+  }
+
+  // Prøv å hente bilde
+  const { data: bildeinfo } = supabase.storage
+    .from('profilbilder')
+    .getPublicUrl(`${id}.jpg`)
+  if (bildeinfo?.publicUrl) bildeUrl = bildeinfo.publicUrl
+
+  return {
+    props: {
+      profil,
+      tilgang,
+      bildeUrl,
+    },
+  }
+}
