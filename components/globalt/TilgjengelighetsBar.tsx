@@ -13,24 +13,30 @@ export default function TilgjengelighetsBar() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user) return;
+      const brukerId = user && "id" in user ? (user.id as string) : null;
+      if (!brukerId) return;
+
       const { data } = await supabase
         .from("brukerprofiler")
         .select("sprak, opplesing_aktivert")
-        .eq("id", user.id)
+        .eq("id", brukerId)
         .single();
+
       if (data?.sprak) setSpråk(data.sprak);
       if (data?.opplesing_aktivert) setOpplesing(true);
     };
+
     hent();
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
+    const brukerId = user && "id" in user ? (user.id as string) : null;
+    if (!brukerId) return;
+
     supabase
       .from("brukerprofiler")
       .update({ sprak: språk, opplesing_aktivert: opplesing })
-      .eq("id", user.id);
+      .eq("id", brukerId);
 
     window.lesTekst = (tekst: string) => {
       if (!opplesing || !tekst) return;
