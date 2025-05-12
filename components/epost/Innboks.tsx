@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import getNotifications from "@/lib/getNotifications"; // <-- rettet her
+import getNotifications from "@/lib/getNotifications";
+import supabase from "@/lib/supabaseClient"; // ← lagt til her
 
 interface Epost {
   id: string;
@@ -19,7 +20,7 @@ export default function Innboks() {
 
   useEffect(() => {
     const hent = async () => {
-      const brukerId = user && 'id' in user ? (user.id as string) : null;
+      const brukerId = user && "id" in user ? (user.id as string) : null;
       if (!brukerId) return;
 
       const { data } = await supabase
@@ -53,7 +54,11 @@ export default function Innboks() {
               <ul className="list-disc list-inside">
                 {m.vedlegg.map((v, i) => (
                   <li key={i}>
-                    <a href={v.url} target="_blank" className="text-blue-600 underline">
+                    <a
+                      href={v.url}
+                      target="_blank"
+                      className="text-blue-600 underline"
+                    >
                       {v.filnavn}
                     </a>
                   </li>
