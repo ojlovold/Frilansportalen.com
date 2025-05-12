@@ -16,13 +16,16 @@ export default function LeggTilDugnad() {
   });
 
   const send = async () => {
-    if (!user) return;
+    const brukerId = user && 'id' in user ? (user.id as string) : null;
+    if (!brukerId) return;
+
     const { error } = await supabase.from("dugnader").insert([
       {
         ...data,
-        opprettet_av: user.id,
+        opprettet_av: brukerId,
       },
     ]);
+
     setStatus(error ? "Feil ved publisering" : "Dugnad publisert!");
     if (!error) {
       setData({
