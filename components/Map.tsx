@@ -1,5 +1,5 @@
 // components/Map.tsx
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, MapContainerProps } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect } from 'react'
@@ -30,13 +30,15 @@ export default function Map({ markorer }: { markorer: MarkerType[] }) {
     ? [markorer[0].lat, markorer[0].lng]
     : [60.472, 8.468] // fallback: Norge
 
+  const props: MapContainerProps = {
+    center: [center[0], center[1]],
+    zoom: 6,
+    scrollWheelZoom: true,
+    style: { height: '500px', width: '100%' },
+  }
+
   return (
-    <MapContainer
-      center={[center[0], center[1]] as [number, number]}
-      zoom={6}
-      style={{ height: '500px', width: '100%' }}
-      scrollWheelZoom={true}
-    >
+    <MapContainer {...props}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
