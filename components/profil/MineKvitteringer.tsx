@@ -15,7 +15,7 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
       .from("dokumenter")
       .list(`kvitteringer/${brukerId}`, { limit: 100 });
 
-    if (!error && data) setFiler(data);
+    if (!error && data) setFiler(data as Fil[]); // ← rettet her
   };
 
   useEffect(() => {
