@@ -8,6 +8,7 @@ import {
   fjernFavoritt,
   erFavoritt,
 } from '../lib/favoritt'
+import { loggSoek } from '../lib/sokelogg'
 
 type Stilling = {
   id: string
@@ -37,15 +38,14 @@ export default function Stillinger() {
       if (!error && data) {
         setStillinger(data)
         setFiltrert(data)
-      }
 
-      // Last inn favorittstatus
-      if (user && user.id) {
-        const favs = {}
-        for (const s of data || []) {
-          favs[s.id] = await erFavoritt(user.id, 'stilling', s.id)
+        if (user && user.id) {
+          const favs = {}
+          for (const s of data) {
+            favs[s.id] = await erFavoritt(user.id, 'stilling', s.id)
+          }
+          setFavoritter(favs)
         }
-        setFavoritter(favs)
       }
     }
 
@@ -63,6 +63,13 @@ export default function Stillinger() {
     })
 
     setFiltrert(filtrertListe)
+
+    // Logg søket
+    if (user && user.id) {
+      const aktivtSøk = Object.values(filter).filter(Boolean).join(', ')
+      if (aktivtSøk)
+        loggSoek(user.id, aktivtSøk, 'stillinger')
+    }
   }, [filter, stillinger])
 
   const unike = (felt: keyof Stilling) =>
@@ -90,7 +97,6 @@ export default function Stillinger() {
       <main className="bg-portalGul min-h-screen p-8 text-black">
         <h1 className="text-3xl font-bold mb-6">Ledige stillinger</h1>
 
-        {/* Filtrering */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {(['sted', 'type', 'frist', 'bransje'] as (keyof Stilling)[]).map((felt) => (
             <select
@@ -109,7 +115,6 @@ export default function Stillinger() {
           ))}
         </div>
 
-        {/* Visning */}
         <div className="grid gap-6">
           {filtrert.length === 0 && <p>Ingen stillinger matcher filtrene.</p>}
           {filtrert.map((s) => (
