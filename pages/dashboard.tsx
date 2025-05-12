@@ -1,66 +1,60 @@
-// pages/dashboard.tsx
-import Head from 'next/head'
-import Dashboard from '../components/Dashboard'
-import NotificationBell from '../components/NotificationBell'
-import Link from 'next/link'
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import supabase from "../lib/supabaseClient";
+import AutoPDFKnapp from "../components/AutoPDFKnapp";
 
-export default function BrukerDashboard() {
+export default function Dashboard() {
+  const { user } = useUser();
+  const [rapporter, setRapporter] = useState<any[]>([]);
+  const [fakturaer, setFakturaer] = useState<any[]>([]);
+  const [kjorebok, setKjorebok] = useState<any[]>([]);
+
+  useEffect(() => {
+    const hentData = async () => {
+      if (!user || !user.id) return;
+
+      const brukerId = user.id;
+
+      const [r1, r2, r3] = await Promise.all([
+        supabase.from("rapporter").select("*").eq("user_id", brukerId),
+        supabase.from("faktura").select("*").eq("user_id", brukerId),
+        supabase.from("kjorebok").select("*").eq("user_id", brukerId)
+      ]);
+
+      if (!r1.error) setRapporter(r1.data || []);
+      if (!r2.error) setFakturaer(r2.data || []);
+      if (!r3.error) setKjorebok(r3.data || []);
+    };
+
+    hentData();
+  }, [user]);
+
   return (
     <>
       <Head>
         <title>Dashboard | Frilansportalen</title>
-        <meta name="description" content="Ditt personlige dashbord" />
+        <meta name="description" content="Oversikt over rapporter, fakturaer og kjørebok" />
       </Head>
 
-      <Dashboard>
-        <div className="flex justify-end mb-6">
-          <NotificationBell />
-        </div>
+      <main className="min-h-screen bg-portalGul text-black p-6">
+        <h1 className="text-3xl font-bold mb-6">Mitt dashboard</h1>
 
-        <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-          <Link href="/profil">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Rediger profil
-            </div>
-          </Link>
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2">Rapporter</h2>
+          <AutoPDFKnapp data={rapporter} />
+        </section>
 
-          <Link href="/rapporteksport">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Eksport og dokumenter
-            </div>
-          </Link>
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2">Fakturaer</h2>
+          <AutoPDFKnapp data={fakturaer} />
+        </section>
 
-          <Link href="/mine-signaturer">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Mine signaturer
-            </div>
-          </Link>
-
-          <Link href="/favoritter">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Mine favoritter
-            </div>
-          </Link>
-
-          <Link href="/varslinger">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Jobbagenter og varslinger
-            </div>
-          </Link>
-
-          <Link href="/sokehistorikk">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Søkehistorikk
-            </div>
-          </Link>
-
-          <Link href="/visningslogg">
-            <div className="bg-white p-4 rounded-xl shadow hover:bg-gray-100 transition">
-              Visningslogg
-            </div>
-          </Link>
-        </div>
-      </Dashboard>
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Kjørebok</h2>
+          <AutoPDFKnapp data={kjorebok} />
+        </section>
+      </main>
     </>
-  )
+  );
 }
