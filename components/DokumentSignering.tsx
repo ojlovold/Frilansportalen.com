@@ -16,14 +16,15 @@ export default function DokumentSignering({ dokumentId, tittel, tekst }: Props) 
   const [lagret, setLagret] = useState(false)
 
   const signerOgLagre = async () => {
-    if (!user?.id || !signatur) return
+    const brukerId = user?.id
+    if (!brukerId || !signatur) return
 
-    const kombinert = `${tekst}\n\nSignert av: ${user.id}\nSignatur: ${signatur}`
+    const kombinert = `${tekst}\n\nSignert av: ${brukerId}\nSignatur: ${signatur}`
 
-    const pdf = await generateSimplePDF(tittel, kombinert, user.id, true)
+    const pdf = await generateSimplePDF(tittel, kombinert, brukerId, true)
     const blob = new Blob([pdf], { type: 'application/pdf' })
 
-    const filsti = `${user.id}/${dokumentId}.pdf`
+    const filsti = `${brukerId}/${dokumentId}.pdf`
 
     await supabase.storage.from('signerte-dokumenter').upload(filsti, blob, {
       upsert: true,
@@ -32,7 +33,7 @@ export default function DokumentSignering({ dokumentId, tittel, tekst }: Props) 
 
     await supabase.from('signaturer').insert([
       {
-        bruker_id: user.id,
+        bruker_id: brukerId,
         dokument_id: dokumentId,
         signatur,
       },
