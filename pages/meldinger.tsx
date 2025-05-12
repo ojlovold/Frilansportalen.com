@@ -1,11 +1,12 @@
 // pages/meldinger.tsx
 import Head from 'next/head'
-import { useUser } from '@supabase/auth-helpers-react'
 import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
 import supabase from '../lib/supabaseClient'
 import SuggestionBox from '../components/SuggestionBox'
 import ErrorBox from '../components/ErrorBox'
 import ReportBox from '../components/ReportBox'
+import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
 
 type Melding = {
   id: string
@@ -20,6 +21,9 @@ export default function Meldinger() {
   const [nyMelding, setNyMelding] = useState('')
   const [sendt, setSendt] = useState(false)
 
+  const mottaker = 'system' // eller admin-id
+  const modul = 'melding'
+
   useEffect(() => {
     const hentMeldinger = async () => {
       if (!user || !user.id) return
@@ -30,20 +34,37 @@ export default function Meldinger() {
         .eq('til', user.id)
         .order('opprettet', { ascending: false })
 
-      if (!error && data) {
-        setMeldinger(data)
-      }
+      if (!error && data) setMeldinger(data)
     }
 
     hentMeldinger()
   }, [user])
+
+  useEffect(() => {
+    const hentUtkastet = async () => {
+      if (!user?.id) return
+      const innhold = await hentUtkast(user.id, mottaker, modul)
+      setNyMelding(innhold)
+    }
+
+    hentUtkastet()
+  }, [user])
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (user?.id && nyMelding) {
+        lagreUtkast(user.id, mottaker, modul, nyMelding)
+      }
+    }, 1000)
+    return () => clearTimeout(delay)
+  }, [nyMelding, user])
 
   const sendMelding = async () => {
     if (!nyMelding || !user || !user.id) return
 
     const { error } = await supabase.from('epost').insert([
       {
-        til: 'system', // evt. admin-id eller en annen bruker
+        til: mottaker,
         fra: user.id,
         innhold: nyMelding,
         opprettet: new Date().toISOString(),
@@ -53,6 +74,7 @@ export default function Meldinger() {
     if (!error) {
       setNyMelding('')
       setSendt(true)
+      slettUtkast(user.id, mottaker, modul)
     }
   }
 
@@ -65,14 +87,12 @@ export default function Meldinger() {
       <main className="min-h-screen bg-portalGul text-black p-8">
         <h1 className="text-3xl font-bold mb-6">Meldingssentral</h1>
 
-        {/* Forbedringsforslag og feilmeldingssystem */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <SuggestionBox suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt.'" />
           <ErrorBox />
           <ReportBox />
         </div>
 
-        {/* Send ny melding */}
         <div className="bg-white p-4 rounded-xl shadow mb-8">
           <h2 className="text-xl font-semibold mb-2">Ny melding</h2>
           <textarea
@@ -90,7 +110,6 @@ export default function Meldinger() {
           {sendt && <p className="text-green-600 mt-2">Melding sendt!</p>}
         </div>
 
-        {/* Innkommende meldinger */}
         <div className="bg-white p-4 rounded-xl shadow">
           <h2 className="text-xl font-semibold mb-4">Innboks</h2>
           {meldinger.length === 0 ? (
