@@ -1,14 +1,15 @@
 import { supabase } from "./supabaseClient";
 
-export async function brukerHarPremium(): Promise<boolean> {
-  const bruker = await supabase.auth.getUser();
-  const id = bruker.data.user?.id;
-  if (!id) return false;
+/**
+ * Sjekker om brukeren med gitt ID har premium.
+ */
+export async function brukerHarPremium(brukerId: string): Promise<boolean> {
+  if (!brukerId) return false;
 
   const { data } = await supabase
     .from("profiler")
     .select("premium")
-    .eq("id", id)
+    .eq("id", brukerId)
     .single();
 
   return data?.premium === true;
