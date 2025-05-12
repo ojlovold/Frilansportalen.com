@@ -21,7 +21,9 @@ export default function ProsjektAI({ prosjektId }: { prosjektId: string }) {
         .eq("prosjekt_id", prosjektId);
 
       const oppgaveliste = oppgaver
-        ?.map((o) => `• ${o.tittel} – ${o.status} – ansvarlig: ${o.ansvarlig_id || "Ingen"}`)
+        ?.map((o: { tittel: string; status: string; ansvarlig_id?: string }) =>
+          `• ${o.tittel} – ${o.status} – ansvarlig: ${o.ansvarlig_id || "Ingen"}`
+        )
         .join("\n") || "";
 
       const prompt = `
