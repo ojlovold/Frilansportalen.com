@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect } from 'react'
 
-// Fjern standard ikonfeil i Leaflet
+// Fix ikon-problemer i Leaflet
 delete (L.Icon.Default as any).prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -21,7 +21,7 @@ type MarkerType = {
 
 export default function Map({ markorer }: { markorer: MarkerType[] }) {
   useEffect(() => {
-    // trigger resize fix
+    // Trigger resize for Leaflet-rendering
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
     }, 500)
@@ -33,7 +33,7 @@ export default function Map({ markorer }: { markorer: MarkerType[] }) {
 
   return (
     <MapContainer
-      center={center as [number, number]}
+      center={[center[0], center[1]]}
       zoom={6}
       style={{ height: '500px', width: '100%' }}
       scrollWheelZoom={true}
