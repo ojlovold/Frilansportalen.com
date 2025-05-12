@@ -11,7 +11,7 @@ interface Invitasjon {
     beskrivelse: string;
     frist: string;
     status: string;
-  }[];
+  }[]; // ← Supabase returnerer dette som en array
 }
 
 export default function MineInvitasjoner({ brukerId }: { brukerId: string }) {
