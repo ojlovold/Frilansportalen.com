@@ -1,137 +1,57 @@
+// components/dokumenter/MineAttester.tsx
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import supabase from "../../lib/supabaseClient"; // ← Fikset sti
 
 interface Attest {
   id: string;
-  type: string;
-  filnavn: string;
+  navn: string;
   url: string;
-  utløper: string;
-  opplastet: string;
+  dato: string;
 }
 
-export default function MineAttester({ brukerId }: { brukerId: string }) {
+export default function MineAttester() {
   const [attester, setAttester] = useState<Attest[]>([]);
-  const [opplasting, setOpplasting] = useState<{ [id: string]: File | null }>({});
+  const [feil, setFeil] = useState("");
 
   useEffect(() => {
-    const hent = async () => {
-      const { data } = await supabase
+    const hentAttester = async () => {
+      const { data, error } = await supabase
         .from("attester")
         .select("*")
-        .eq("bruker_id", brukerId)
-        .order("utløper", { ascending: true });
+        .order("dato", { ascending: false });
 
-      setAttester(data || []);
+      if (error) {
+        setFeil("Kunne ikke hente attester");
+      } else {
+        setAttester(data);
+      }
     };
 
-    hent();
-  }, [brukerId]);
-
-  const dagerIgjen = (datoStr: string) => {
-    const utløpsdato = new Date(datoStr);
-    const iDag = new Date();
-    const diff = Math.ceil((utløpsdato.getTime() - iDag.getTime()) / (1000 * 60 * 60 * 24));
-    return diff;
-  };
-
-  const slettAttest = async (attestId: string, type: string) => {
-    await supabase.from("attester").delete().eq("id", attestId);
-
-    await supabase
-      .from("varsler")
-      .delete()
-      .eq("bruker_id", brukerId)
-      .eq("type", "attest")
-      .like("tekst", `%${type}%`);
-
-    setAttester((prev) => prev.filter((a) => a.id !== attestId));
-  };
-
-  const erstatt = async (attest: Attest) => {
-    const ny = opplasting[attest.id];
-    if (!ny) return;
-
-    const path = `${brukerId}/${Date.now()}_${ny.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("attester")
-      .upload(path, ny, { upsert: true });
-
-    if (uploadError) return;
-
-    const url = supabase.storage.from("attester").getPublicUrl(path).data.publicUrl;
-
-    await supabase.from("attester").update({
-      url,
-      filnavn: ny.name,
-      opplastet: new Date().toISOString(),
-    }).eq("id", attest.id);
-
-    await supabase
-      .from("varsler")
-      .delete()
-      .eq("bruker_id", brukerId)
-      .eq("type", "attest")
-      .like("tekst", `%${attest.type}%`);
-
-    setOpplasting((prev) => ({ ...prev, [attest.id]: null }));
-
-    const { data } = await supabase
-      .from("attester")
-      .select("*")
-      .eq("bruker_id", brukerId);
-
-    setAttester(data || []);
-  };
+    hentAttester();
+  }, []);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold">Mine attester og sertifikater</h2>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-2">Mine attester</h2>
 
-      {attester.length === 0 ? (
-        <p>Ingen attester funnet.</p>
-      ) : (
-        <ul className="space-y-4">
-          {attester.map((a) => {
-            const diff = dagerIgjen(a.utløper);
-            const farge =
-              diff < 0 ? "text-red-600" : diff <= 30 ? "text-orange-500" : "text-green-700";
+      {feil && <p className="text-red-600">{feil}</p>}
 
-            return (
-              <li key={a.id} className="border p-4 rounded bg-white text-black shadow-sm">
-                <p><strong>Type:</strong> {a.type}</p>
-                <p><strong>Fil:</strong> <a href={a.url} target="_blank" className="underline text-blue-600">{a.filnavn}</a></p>
-                <p className={farge}><strong>Utløper:</strong> {new Date(a.utløper).toLocaleDateString()} ({diff} dager igjen)</p>
-                <p className="text-sm text-gray-500">Opplastet: {new Date(a.opplastet).toLocaleDateString()}</p>
-
-                <div className="mt-3 flex gap-4">
-                  <button onClick={() => slettAttest(a.id, a.type)} className="text-red-600 underline">
-                    Slett
-                  </button>
-
-                  <div>
-                    <input
-                      type="file"
-                      onChange={(e) =>
-                        setOpplasting((prev) => ({
-                          ...prev,
-                          [a.id]: e.target.files?.[0] || null,
-                        }))
-                      }
-                    />
-                    <button
-                      onClick={() => erstatt(a)}
-                      className="mt-1 text-blue-600 underline"
-                    >
-                      Erstatt fil
-                    </button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <ul className="space-y-2">
+        {attester.map((attest) => (
+          <li key={attest.id} className="border p-3 rounded bg-white shadow">
+            <p className="font-medium">{attest.navn}</p>
+            <p className="text-sm text-gray-600">{attest.dato}</p>
+            <a
+              href={attest.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline text-sm"
+            >
+              Åpne
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
