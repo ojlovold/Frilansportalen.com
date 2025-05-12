@@ -1,37 +1,135 @@
-import Head from "next/head";
-import { useUser } from "@supabase/auth-helpers-nextjs";
-import Dashboard from "@/components/Dashboard";
-import Profilkort from "@/components/profil/Profilkort";
-import CVUpload from "@/components/profil/CVUpload";
-import ReferanseOpplasting from "@/components/profil/ReferanseOpplasting";
-import LagCV from "@/components/profil/LagCV";
-import SøkerStatistikk from "@/components/profil/SøkerStatistikk";
-import MineSøknader from "@/components/profil/MineSøknader";
-import MineKvitteringer from "@/components/profil/MineKvitteringer";
-import EksporterAltSomPDF from "@/components/profil/EksporterAltSomPDF";
-import EksporterGDPR from "@/components/profil/EksporterGDPR";
+// pages/profil.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
 
-export default function ProfilSide() {
-  const user = useUser();
-  if (!user) return <p>Du må være innlogget for å se denne siden.</p>;
+export default function Profil() {
+  const user = useUser()
+  const [profil, setProfil] = useState<any>(null)
+  const [synlighet, setSynlighet] = useState('alle')
+  const [bilde, setBilde] = useState<File | null>(null)
+  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
+
+  useEffect(() => {
+    const hentProfil = async () => {
+      if (!user || !user.id) return
+      const { data, error } = await supabase
+        .from('brukerprofiler')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (!error && data) {
+        setProfil(data)
+        setSynlighet(data.synlighet || 'alle')
+      }
+    }
+
+    hentProfil()
+  }, [user])
+
+  const lagre = async () => {
+    if (!user || !profil) return
+    setStatus('lagrer')
+
+    const oppdatering = {
+      navn: profil.navn,
+      epost: profil.epost,
+      telefon: profil.telefon,
+      synlighet,
+    }
+
+    const { error } = await supabase
+      .from('brukerprofiler')
+      .update(oppdatering)
+      .eq('id', user.id)
+
+    if (error) {
+      setStatus('feil')
+    } else {
+      setStatus('lagret')
+    }
+
+    // Last opp bilde hvis valgt
+    if (bilde) {
+      await supabase.storage
+        .from('dokumenter')
+        .upload(`profilbilder/${user.id}.jpg`, bilde, { upsert: true })
+    }
+  }
+
+  if (!profil) return null
 
   return (
-    <Dashboard>
+    <>
       <Head>
         <title>Min profil | Frilansportalen</title>
+        <meta name="description" content="Se og oppdater din brukerprofil" />
       </Head>
+      <main className="min-h-screen bg-portalGul text-black p-8">
+        <h1 className="text-3xl font-bold mb-6">Min profil</h1>
 
-      <div className="space-y-6">
-        <Profilkort userId={user.id} />
-        <CVUpload userId={user.id} />
-        <ReferanseOpplasting brukerId={user.id} />
-        <LagCV brukerId={user.id} />
-        <SøkerStatistikk brukerId={user.id} />
-        <MineSøknader brukerId={user.id} />
-        <MineKvitteringer brukerId={user.id} />
-        <EksporterAltSomPDF brukerId={user.id} />
-        <EksporterGDPR brukerId={user.id} />
-      </div>
-    </Dashboard>
-  );
+        <div className="bg-white p-6 rounded-xl shadow max-w-xl">
+          <label className="block mb-2">Navn</label>
+          <input
+            type="text"
+            value={profil.navn || ''}
+            onChange={(e) => setProfil({ ...profil, navn: e.target.value })}
+            className="w-full p-2 border rounded mb-4"
+          />
+
+          <label className="block mb-2">E-post</label>
+          <input
+            type="email"
+            value={profil.epost || ''}
+            onChange={(e) => setProfil({ ...profil, epost: e.target.value })}
+            className="w-full p-2 border rounded mb-4"
+          />
+
+          <label className="block mb-2">Telefon</label>
+          <input
+            type="tel"
+            value={profil.telefon || ''}
+            onChange={(e) => setProfil({ ...profil, telefon: e.target.value })}
+            className="w-full p-2 border rounded mb-4"
+          />
+
+          <label className="block mb-2">Synlighet</label>
+          <select
+            value={synlighet}
+            onChange={(e) => setSynlighet(e.target.value)}
+            className="w-full p-2 border rounded mb-4"
+          >
+            <option value="alle">Synlig for alle</option>
+            <option value="arbeidsgivere">Kun arbeidsgivere</option>
+            <option value="frilansere">Kun frilansere</option>
+            <option value="privat">Skjult</option>
+          </select>
+
+          <label className="block mb-2">Profilbilde</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setBilde(e.target.files?.[0] || null)}
+            className="mb-4"
+          />
+
+          <button
+            onClick={lagre}
+            className="bg-black text-white px-4 py-2 rounded"
+          >
+            Lagre profil
+          </button>
+
+          {status === 'lagret' && (
+            <p className="text-green-600 mt-2">Profil oppdatert!</p>
+          )}
+          {status === 'feil' && (
+            <p className="text-red-600 mt-2">Noe gikk galt.</p>
+          )}
+        </div>
+      </main>
+    </>
+  )
 }
