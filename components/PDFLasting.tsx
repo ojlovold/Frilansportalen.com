@@ -1,39 +1,34 @@
-// components/PDFLasting.tsx
-import { useUser } from '@supabase/auth-helpers-react'
-import { generateSimplePDF } from '../lib/pdf'
+import { useUser } from "@supabase/auth-helpers-react";
+import generateSimplePDF from "../lib/generateSimplePDF";
 
-type Props = {
-  tittel: string
-  innhold: string
-  brukLogo?: boolean
-  knappetekst?: string
+interface PDFLastingProps {
+  tittel: string;
+  innhold: string;
+  brukLogo?: boolean;
 }
 
-export default function PDFLasting({
-  tittel,
-  innhold,
-  brukLogo = true,
-  knappetekst = 'Last ned PDF',
-}: Props) {
-  const user = useUser()
+export default function PDFLasting({ tittel, innhold, brukLogo = true }: PDFLastingProps) {
+  const { user } = useUser();
 
   const lastNed = async () => {
-    if (!user?.id) return
+    const brukerId = user?.id ?? user?.user_metadata?.id;
+    if (!brukerId || typeof brukerId !== "string") return;
 
-    const pdfBlob = await generateSimplePDF(tittel, innhold, user.id, brukLogo)
-    const url = URL.createObjectURL(pdfBlob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${tittel.replace(/\s+/g, '_')}.pdf`
-    link.click()
-  }
+    const pdfBlob = await generateSimplePDF(tittel, innhold, brukerId, brukLogo);
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tittel}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <button
       onClick={lastNed}
-      className="bg-black text-white px-4 py-2 rounded mt-4"
+      className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
     >
-      {knappetekst}
+      Last ned PDF
     </button>
-  )
+  );
 }
