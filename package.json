@@ -8,18 +8,20 @@
     "start": "next start"
   },
   "dependencies": {
-    "@supabase/auth-helpers-react": "^0.2.3",
-    "@supabase/supabase-js": "^2.39.5",
     "next": "13.4.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "file-saver": "^2.0.5",
-    "jszip": "^3.10.1",
     "jspdf": "^2.5.1",
-    "stripe": "^12.5.0"
+    "jspdf-autotable": "^3.5.28",
+    "@supabase/supabase-js": "^2.39.4",
+    "@supabase/auth-helpers-react": "^0.2.4",
+    "react-leaflet": "^4.2.1",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "@types/react": "^18.0.37"
+    "@types/node": "20.5.1",
+    "@types/react": "18.2.15",
+    "@types/react-dom": "18.2.7",
+    "typescript": "5.2.2"
   }
 }
