@@ -34,6 +34,12 @@ export default function Header() {
           <Link href="/visningslogg">
             <span className="hover:underline">Visningslogg</span>
           </Link>
+          <Link href="/mine-signaturer">
+            <span className="hover:underline">Signaturer</span>
+          </Link>
+          <Link href="/admin/systemstatus">
+            <span className="hover:underline text-red-600">Systemstatus</span>
+          </Link>
         </nav>
       </div>
     </header>
