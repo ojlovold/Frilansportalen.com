@@ -13,13 +13,20 @@ export default function AdminTjenester() {
   })
   const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
 
-  const opprettTjeneste = async () => {
+  const publiser = async () => {
     setStatus('lagrer')
     const { error } = await supabase.from('tjenester').insert([tjeneste])
+
     if (error) {
       setStatus('feil')
     } else {
-      setStatus('lagret')
+      // Send tjeneste til match og varsling
+      await fetch('/api/tjenestematch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tjeneste }),
+      })
+
       setTjeneste({
         navn: '',
         sted: '',
@@ -27,6 +34,7 @@ export default function AdminTjenester() {
         tilgjengelighet: '',
         beskrivelse: '',
       })
+      setStatus('lagret')
     }
   }
 
@@ -63,14 +71,14 @@ export default function AdminTjenester() {
           />
 
           <button
-            onClick={opprettTjeneste}
+            onClick={publiser}
             className="bg-black text-white px-4 py-2 rounded"
           >
             Publiser tjeneste
           </button>
 
           {status === 'lagret' && (
-            <p className="text-green-600 mt-2">Tjeneste registrert!</p>
+            <p className="text-green-600 mt-2">Tjeneste publisert og varsler sendt!</p>
           )}
           {status === 'feil' && (
             <p className="text-red-600 mt-2">Noe gikk galt.</p>
