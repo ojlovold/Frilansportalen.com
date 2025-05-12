@@ -7,14 +7,16 @@ export default function ProsjektFavoritt({ prosjektId }: { prosjektId: string })
   const [favoritt, setFavoritt] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const brukerId = user && "id" in user ? (user.id as string) : null;
+
   useEffect(() => {
     const hent = async () => {
-      if (!user) return;
+      if (!brukerId) return;
       const { data } = await supabase
         .from("prosjektdeltakere")
         .select("favoritt")
         .eq("prosjekt_id", prosjektId)
-        .eq("bruker_id", user.id)
+        .eq("bruker_id", brukerId)
         .single();
 
       setFavoritt(data?.favoritt || false);
@@ -22,15 +24,15 @@ export default function ProsjektFavoritt({ prosjektId }: { prosjektId: string })
     };
 
     hent();
-  }, [prosjektId, user]);
+  }, [prosjektId, brukerId]);
 
   const toggle = async () => {
-    if (!user) return;
+    if (!brukerId) return;
     const { error } = await supabase
       .from("prosjektdeltakere")
       .update({ favoritt: !favoritt })
       .eq("prosjekt_id", prosjektId)
-      .eq("bruker_id", user.id);
+      .eq("bruker_id", brukerId);
 
     if (!error) setFavoritt(!favoritt);
   };
