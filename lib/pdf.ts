@@ -1,46 +1,51 @@
-// lib/pdf.ts
-import jsPDF from 'jspdf'
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export async function generateSimplePDF(
-  title: string,
-  content: string,
-  bruker_id: string,
-  bruk_logo: boolean
-) {
-  const doc = new jsPDF()
+export default async function generateSimplePDF(
+  tittel: string,
+  innhold: string,
+  brukerId: string,
+  brukLogo: boolean = true
+): Promise<Blob> {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
 
-  if (bruk_logo && bruker_id) {
-    const logoUrl = `https://<YOUR_PROJECT>.supabase.co/storage/v1/object/public/profilbilder/${bruker_id}.jpg`
-    const imageData = await fetchImageAsBase64(logoUrl)
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontSize = 14;
 
-    if (imageData) {
-      doc.addImage(imageData, 'JPEG', 150, 10, 40, 20) // høyre hjørne
-    }
-  }
+  const marginTop = 60;
+  const lineHeight = 24;
 
-  doc.setFontSize(18)
-  doc.text(title, 10, 40)
-  doc.setFontSize(12)
-  doc.text(content, 10, 60)
+  // Tittel
+  page.drawText(tittel, {
+    x: 50,
+    y: height - marginTop,
+    size: 20,
+    font,
+    color: rgb(0, 0, 0),
+  });
 
-  return doc.output('blob')
-}
+  // Innhold
+  const linjer = innhold.split("\n");
+  linjer.forEach((linje, i) => {
+    page.drawText(linje, {
+      x: 50,
+      y: height - marginTop - 40 - i * lineHeight,
+      size: fontSize,
+      font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+  });
 
-async function fetchImageAsBase64(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    return await convertBlobToBase64(blob)
-  } catch {
-    return null
-  }
-}
+  // Bruker-ID nederst
+  page.drawText(`Bruker-ID: ${brukerId}`, {
+    x: 50,
+    y: 30,
+    size: 10,
+    font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
 
-function convertBlobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: "application/pdf" });
 }
