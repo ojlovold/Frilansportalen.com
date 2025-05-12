@@ -7,12 +7,14 @@ export default function SendSøknad({ stillingId }: { stillingId: string }) {
   const [melding, setMelding] = useState("");
   const [status, setStatus] = useState("");
 
+  const brukerId = user && "id" in user ? (user.id as string) : null;
+
   const send = async () => {
-    if (!user) return;
+    if (!brukerId) return;
 
     const { error } = await supabase.from("søknader").insert([
       {
-        bruker_id: user.id,
+        bruker_id: brukerId,
         stilling_id: stillingId,
         melding,
       },
