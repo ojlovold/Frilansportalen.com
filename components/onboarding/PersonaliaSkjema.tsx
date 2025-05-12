@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import brukerHarPremium from "@/utils/brukerHarPremium";
+import { brukerHarPremium } from "@/utils/brukerHarPremium"; // ← Rettet her
 
 export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
   const [navn, setNavn] = useState("");
@@ -31,7 +31,7 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
         setAdresse(data.adresse || "");
         setTelefon(data.telefon || "");
         setEpost(data.epost || "");
-        setLagret(true); // allerede fylt ut
+        setLagret(true);
       }
     };
     sjekk();
