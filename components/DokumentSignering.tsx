@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import { generateSimplePDF } from '../lib/pdf'
 import supabase from '../lib/supabaseClient'
-import { User } from '@supabase/supabase-js'
 
 type Props = {
   dokumentId: string
@@ -17,7 +16,7 @@ export default function DokumentSignering({ dokumentId, tittel, tekst }: Props) 
   const [lagret, setLagret] = useState(false)
 
   const signerOgLagre = async () => {
-    const brukerId = (user as User)?.id
+    const brukerId = user && 'id' in user ? user.id : null
     if (!brukerId || !signatur) return
 
     const kombinert = `${tekst}\n\nSignert av: ${brukerId}\nSignatur: ${signatur}`
