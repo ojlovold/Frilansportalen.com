@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-
-interface Fil {
-  name: string;
-  path: string;
-}
+import type { FileObject } from "@supabase/storage-js"; // ← riktig type fra Supabase
 
 export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
-  const [filer, setFiler] = useState<Fil[]>([]);
+  const [filer, setFiler] = useState<FileObject[]>([]);
   const [status, setStatus] = useState("");
 
   const hentKvitteringer = async () => {
@@ -15,7 +11,7 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
       .from("dokumenter")
       .list(`kvitteringer/${brukerId}`, { limit: 100 });
 
-    if (!error && data) setFiler(data as Fil[]); // ← rettet her
+    if (!error && data) setFiler(data); // ← data er allerede FileObject[]
   };
 
   useEffect(() => {
