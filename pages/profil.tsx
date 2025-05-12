@@ -3,59 +3,67 @@ import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import supabase from '../lib/supabaseClient'
+import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
 
 export default function Profil() {
   const user = useUser()
   const [profil, setProfil] = useState<any>(null)
   const [synlighet, setSynlighet] = useState('alle')
-  const [bilde, setBilde] = useState<File | null>(null)
   const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
 
+  const mottaker = 'profil'
+  const modul = 'profil_redigering'
+
   useEffect(() => {
-    const hentProfil = async () => {
+    const hent = async () => {
       if (!user || !user.id) return
-      const { data, error } = await supabase
+
+      const { data } = await supabase
         .from('brukerprofiler')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (!error && data) {
+      if (data) {
         setProfil(data)
         setSynlighet(data.synlighet || 'alle')
       }
+
+      const utkast = await hentUtkast(user.id, mottaker, modul)
+      if (utkast) {
+        try {
+          const parsed = JSON.parse(utkast)
+          setProfil((p: any) => ({ ...p, ...parsed }))
+        } catch {}
+      }
     }
 
-    hentProfil()
+    hent()
   }, [user])
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (user?.id && profil) {
+        lagreUtkast(user.id, mottaker, modul, JSON.stringify(profil))
+      }
+    }, 1000)
+    return () => clearTimeout(delay)
+  }, [profil, user])
 
   const lagre = async () => {
     if (!user || !profil) return
     setStatus('lagrer')
 
-    const oppdatering = {
-      navn: profil.navn,
-      epost: profil.epost,
-      telefon: profil.telefon,
-      synlighet,
-    }
-
     const { error } = await supabase
       .from('brukerprofiler')
-      .update(oppdatering)
+      .update({ ...profil, synlighet })
       .eq('id', user.id)
 
     if (error) {
       setStatus('feil')
     } else {
       setStatus('lagret')
-    }
-
-    // Last opp bilde hvis valgt
-    if (bilde) {
-      await supabase.storage
-        .from('dokumenter')
-        .upload(`profilbilder/${user.id}.jpg`, bilde, { upsert: true })
+      slettUtkast(user.id, mottaker, modul)
     }
   }
 
@@ -106,14 +114,6 @@ export default function Profil() {
             <option value="frilansere">Kun frilansere</option>
             <option value="privat">Skjult</option>
           </select>
-
-          <label className="block mb-2">Profilbilde</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setBilde(e.target.files?.[0] || null)}
-            className="mb-4"
-          />
 
           <button
             onClick={lagre}
