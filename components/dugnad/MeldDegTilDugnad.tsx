@@ -8,12 +8,13 @@ export default function MeldDegTilDugnad({ dugnadId }: { dugnadId: string }) {
   const [status, setStatus] = useState("");
 
   const send = async () => {
-    if (!user || !melding.trim()) return;
+    const brukerId = user && 'id' in user ? (user.id as string) : null;
+    if (!brukerId || !melding.trim()) return;
 
     const { error } = await supabase.from("dugnadsmeldinger").insert([
       {
         dugnad_id: dugnadId,
-        bruker_id: user.id,
+        bruker_id: brukerId,
         melding,
       },
     ]);
@@ -22,10 +23,10 @@ export default function MeldDegTilDugnad({ dugnadId }: { dugnadId: string }) {
       setStatus("Melding sendt!");
       setMelding("");
 
-      // Valgfritt: send varsling til eier
+      // Valgfritt: send varsling til eier (burde bruke dugnadseier_id)
       await supabase.from("varsler").insert([
         {
-          bruker_id: user.id, // Her bør det være dugnadseier_id
+          bruker_id: brukerId,
           type: "dugnad",
           tekst: "Du har fått en ny melding på dugnadsoppdrag.",
           lenke: `/dugnadsportalen`,
