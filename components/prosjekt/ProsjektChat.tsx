@@ -14,6 +14,8 @@ export default function ProsjektChat({ prosjektId }: { prosjektId: string }) {
   const [meldinger, setMeldinger] = useState<Melding[]>([]);
   const [nyMelding, setNyMelding] = useState("");
 
+  const brukerId = user && "id" in user ? (user.id as string) : null;
+
   useEffect(() => {
     const hent = async () => {
       const { data } = await supabase
@@ -31,12 +33,12 @@ export default function ProsjektChat({ prosjektId }: { prosjektId: string }) {
   }, [prosjektId]);
 
   const send = async () => {
-    if (!nyMelding.trim() || !user) return;
+    if (!nyMelding.trim() || !brukerId) return;
 
     const { error } = await supabase.from("prosjektmeldinger").insert([
       {
         prosjekt_id: prosjektId,
-        avsender_id: user.id,
+        avsender_id: brukerId,
         innhold: nyMelding,
       },
     ]);
