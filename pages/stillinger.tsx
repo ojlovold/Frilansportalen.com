@@ -1,7 +1,13 @@
 // pages/stillinger.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
 import supabase from '../lib/supabaseClient'
+import {
+  lagreFavoritt,
+  fjernFavoritt,
+  erFavoritt,
+} from '../lib/favoritt'
 
 type Stilling = {
   id: string
@@ -14,8 +20,10 @@ type Stilling = {
 }
 
 export default function Stillinger() {
+  const user = useUser()
   const [stillinger, setStillinger] = useState<Stilling[]>([])
   const [filtrert, setFiltrert] = useState<Stilling[]>([])
+  const [favoritter, setFavoritter] = useState<Record<string, boolean>>({})
   const [filter, setFilter] = useState({
     sted: '',
     type: '',
@@ -30,10 +38,19 @@ export default function Stillinger() {
         setStillinger(data)
         setFiltrert(data)
       }
+
+      // Last inn favorittstatus
+      if (user && user.id) {
+        const favs = {}
+        for (const s of data || []) {
+          favs[s.id] = await erFavoritt(user.id, 'stilling', s.id)
+        }
+        setFavoritter(favs)
+      }
     }
 
     hentStillinger()
-  }, [])
+  }, [user])
 
   useEffect(() => {
     const filtrertListe = stillinger.filter((s) => {
@@ -50,6 +67,19 @@ export default function Stillinger() {
 
   const unike = (felt: keyof Stilling) =>
     Array.from(new Set(stillinger.map((s) => s[felt])))
+
+  const toggleFavoritt = async (id: string) => {
+    if (!user || !user.id) return
+    const erFavorittNå = favoritter[id]
+
+    if (erFavorittNå) {
+      await fjernFavoritt(user.id, 'stilling', id)
+    } else {
+      await lagreFavoritt(user.id, 'stilling', id)
+    }
+
+    setFavoritter((f) => ({ ...f, [id]: !erFavorittNå }))
+  }
 
   return (
     <>
@@ -83,7 +113,13 @@ export default function Stillinger() {
         <div className="grid gap-6">
           {filtrert.length === 0 && <p>Ingen stillinger matcher filtrene.</p>}
           {filtrert.map((s) => (
-            <div key={s.id} className="bg-white p-6 rounded-xl shadow">
+            <div key={s.id} className="bg-white p-6 rounded-xl shadow relative">
+              <button
+                onClick={() => toggleFavoritt(s.id)}
+                className="absolute top-4 right-4 text-xl"
+              >
+                {favoritter[s.id] ? '❤️' : '🤍'}
+              </button>
               <h2 className="text-xl font-semibold">{s.tittel}</h2>
               <p className="text-sm text-gray-600 mb-2">
                 {s.sted} | {s.type} | Frist: {s.frist} | {s.bransje}
