@@ -1,0 +1,10 @@
+{
+  "crons": [
+    {
+      "path": "/api/attestvarsling",
+      "schedule": "0 5 * * *"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
+}
