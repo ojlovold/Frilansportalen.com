@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-nextjs";
+import { useUser } from "@supabase/auth-helpers-react";
 
 export default function VisSøknader({ stillingId }: { stillingId: string }) {
   const user = useUser();
@@ -8,9 +8,11 @@ export default function VisSøknader({ stillingId }: { stillingId: string }) {
   const [søknader, setSøknader] = useState<any[]>([]);
   const [status, setStatus] = useState("");
 
+  const brukerId = user && "id" in user ? (user.id as string) : null;
+
   useEffect(() => {
     const hent = async () => {
-      if (!user) return;
+      if (!brukerId) return;
 
       const { data: stilling } = await supabase
         .from("stillinger")
@@ -18,7 +20,7 @@ export default function VisSøknader({ stillingId }: { stillingId: string }) {
         .eq("id", stillingId)
         .single();
 
-      if (stilling?.arbeidsgiver_id !== user.id) {
+      if (stilling?.arbeidsgiver_id !== brukerId) {
         setErEier(false);
         return;
       }
@@ -35,7 +37,7 @@ export default function VisSøknader({ stillingId }: { stillingId: string }) {
     };
 
     hent();
-  }, [user, stillingId]);
+  }, [brukerId, stillingId]);
 
   const oppdaterStatus = async (id: string, nyStatus: string) => {
     const søknad = søknader.find((s) => s.id === id);
