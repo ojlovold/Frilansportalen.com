@@ -1,56 +1,54 @@
+// components/dokumenter/LastOppAttest.tsx
 import { useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import supabase from "@/lib/supabaseClient";
+import supabase from "../../lib/supabaseClient"; // ← Riktig import
 
 export default function LastOppAttest() {
   const { user } = useUser();
   const [fil, setFil] = useState<File | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState("");
 
   const håndterFilvalg = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valgt = e.target.files?.[0] || null;
-    setFil(valgt);
+    if (e.target.files && e.target.files.length > 0) {
+      setFil(e.target.files[0]);
+    }
   };
 
   const lastOpp = async () => {
-    if (!user?.id || !fil) {
-      setStatus("Du må være logget inn og velge en fil.");
+    if (!fil || !user) {
+      setStatus("Fil eller bruker mangler.");
       return;
     }
 
-    const filsti = `${user.id}/${Date.now()}_${fil.name}`;
-
-    const { error } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from("attester")
-      .upload(filsti, fil, {
-        contentType: fil.type,
-        upsert: true
+      .upload(`${user.id}/${fil.name}`, fil, {
+        cacheControl: "3600",
+        upsert: true,
       });
 
     if (error) {
-      setStatus("Feil ved opplasting: " + error.message);
+      setStatus(`Feil ved opplasting: ${error.message}`);
     } else {
-      setStatus("Attesten er lastet opp!");
-      setFil(null);
+      setStatus("Attest lastet opp!");
     }
   };
 
   return (
-    <div className="mb-4">
-      <label className="block mb-2 font-medium">Last opp attest (PDF eller bilde):</label>
+    <div className="space-y-4">
       <input
         type="file"
-        accept=".pdf,image/*"
         onChange={håndterFilvalg}
-        className="mb-2"
+        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:border-0
+          file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
       />
       <button
         onClick={lastOpp}
-        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
       >
-        Last opp
+        Last opp attest
       </button>
-      {status && <p className="mt-2 text-sm">{status}</p>}
+      {status && <p className="text-sm text-red-600">{status}</p>}
     </div>
   );
 }
