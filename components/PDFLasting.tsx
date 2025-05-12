@@ -1,5 +1,5 @@
 import { useUser } from "@supabase/auth-helpers-react";
-import generateSimplePDF from "../lib/generateSimplePDF";
+import generateSimplePDF from "../lib/pdf"; // <- riktig import når filen heter pdf.ts
 
 interface PDFLastingProps {
   tittel: string;
