@@ -13,35 +13,35 @@ export default function MineDokumenter() {
   const [filer, setFiler] = useState<Fil[]>([])
 
   useEffect(() => {
-    const hentFiler = async () => {
+    const hentKvitteringer = async () => {
       if (!user || !user.id) return
 
-      const mappe = `dokumenter/${user.id}`
-      const { data, error } = await supabase.storage.from('dokumenter').list(mappe)
+      const sti = `kvitteringer/${user.id}`
+      const { data, error } = await supabase.storage.from('kvitteringer').list(sti)
 
-      if (!error && data) {
-        const filerMedUrl = data.map((fil) => {
-          const { data: urlData } = supabase.storage
-            .from('dokumenter')
-            .getPublicUrl(`${mappe}/${fil.name}`)
+      if (error || !data) return
 
-          return {
-            navn: fil.name,
-            url: urlData.publicUrl,
-          }
-        })
+      const medUrl: Fil[] = data.map((fil) => {
+        const { data: urlData } = supabase.storage
+          .from('kvitteringer')
+          .getPublicUrl(`${sti}/${fil.name}`)
 
-        setFiler(filerMedUrl)
-      }
+        return {
+          navn: fil.name,
+          url: urlData.publicUrl,
+        }
+      })
+
+      setFiler(medUrl)
     }
 
-    hentFiler()
+    hentKvitteringer()
   }, [user])
 
   return (
     <div className="bg-white p-6 rounded-xl shadow mt-8">
-      <h2 className="text-xl font-semibold mb-4">Mine dokumenter</h2>
-      {filer.length === 0 && <p>Ingen dokumenter funnet.</p>}
+      <h2 className="text-xl font-semibold mb-4">Mine kvitteringer</h2>
+      {filer.length === 0 && <p>Ingen kvitteringer funnet.</p>}
       <ul className="space-y-2">
         {filer.map((fil) => (
           <li key={fil.navn}>
