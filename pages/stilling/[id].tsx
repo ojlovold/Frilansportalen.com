@@ -1,7 +1,10 @@
 // pages/stilling/[id].tsx
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import { useEffect } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
 import supabase from '../../lib/supabaseClient'
+import { loggVisning } from '../../lib/visningslogg'
 
 type Props = {
   stilling: {
@@ -16,6 +19,14 @@ type Props = {
 }
 
 export default function StillingVisning({ stilling }: Props) {
+  const user = useUser()
+
+  useEffect(() => {
+    if (user?.id && stilling?.id) {
+      loggVisning(user.id, stilling.id, 'stilling')
+    }
+  }, [user, stilling])
+
   if (!stilling) {
     return (
       <main className="p-8 bg-portalGul min-h-screen text-black">
@@ -46,7 +57,11 @@ export default function StillingVisning({ stilling }: Props) {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id
-  const { data, error } = await supabase.from('stillinger').select('*').eq('id', id).single()
+  const { data, error } = await supabase
+    .from('stillinger')
+    .select('*')
+    .eq('id', id)
+    .single()
 
   return {
     props: {
