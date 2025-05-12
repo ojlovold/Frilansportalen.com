@@ -38,7 +38,7 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
         .select("prosjekt_id, favoritt")
         .eq("bruker_id", brukerId);
 
-      const medlemIds = medlem?.map((m) => m.prosjekt_id) || [];
+      const medlemIds = medlem?.map((m: { prosjekt_id: string }) => m.prosjekt_id) || [];
 
       const { data: ekstra } = await supabase
         .from("prosjekter")
