@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
 
+type ProsjektDeltakelse = {
+  prosjekt: {
+    navn: string;
+    status: string;
+    frist: string;
+  };
+};
+
 export default function LagCV({ brukerId }: { brukerId: string }) {
   const [ferdigheter, setFerdigheter] = useState<string[]>([]);
   const [nyeFerdigheter, setNyeFerdigheter] = useState<string[]>([]);
@@ -22,7 +30,7 @@ export default function LagCV({ brukerId }: { brukerId: string }) {
         .select("prosjekt:prosjekter(navn, status, frist)")
         .eq("bruker_id", brukerId);
 
-      const fullførte = prosjekter
+      const fullførte = (prosjekter as ProsjektDeltakelse[])
         ?.filter((p) => p.prosjekt?.status === "fullført")
         .map((p) => `Prosjekt: ${p.prosjekt.navn} – Frist: ${p.prosjekt.frist}`);
 
