@@ -14,13 +14,20 @@ export default function AdminStillinger() {
   })
   const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
 
-  const opprettStilling = async () => {
+  const publiser = async () => {
     setStatus('lagrer')
     const { error } = await supabase.from('stillinger').insert([stilling])
+
     if (error) {
       setStatus('feil')
     } else {
-      setStatus('lagret')
+      // Send stilling til match og varsling
+      await fetch('/api/stillingsmatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stilling }),
+      })
+
       setStilling({
         tittel: '',
         sted: '',
@@ -29,6 +36,7 @@ export default function AdminStillinger() {
         bransje: '',
         beskrivelse: '',
       })
+      setStatus('lagret')
     }
   }
 
@@ -65,14 +73,14 @@ export default function AdminStillinger() {
           />
 
           <button
-            onClick={opprettStilling}
+            onClick={publiser}
             className="bg-black text-white px-4 py-2 rounded"
           >
             Publiser
           </button>
 
           {status === 'lagret' && (
-            <p className="text-green-600 mt-2">Stilling publisert!</p>
+            <p className="text-green-600 mt-2">Stilling publisert og varsler sendt!</p>
           )}
           {status === 'feil' && (
             <p className="text-red-600 mt-2">Noe gikk galt.</p>
