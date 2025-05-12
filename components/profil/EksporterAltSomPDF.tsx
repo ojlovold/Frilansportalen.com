@@ -65,8 +65,12 @@ export default function EksporterAltSomPDF({ brukerId }: { brukerId: string }) {
     doc.setFontSize(12);
     doc.text("Attester", 10, y); y += 8;
     doc.setFontSize(10);
-    attester?.forEach((a) => {
-      doc.text(`• ${a.type} (${a.filnavn}) – utløper: ${new Date(a.utløper).toLocaleDateString()}`, 10, y);
+    attester?.forEach((a: { type: string; filnavn: string; utløper: string }) => {
+      doc.text(
+        `• ${a.type} (${a.filnavn}) – utløper: ${new Date(a.utløper).toLocaleDateString()}`,
+        10,
+        y
+      );
       y += 6;
     });
 
@@ -74,7 +78,7 @@ export default function EksporterAltSomPDF({ brukerId }: { brukerId: string }) {
     doc.setFontSize(12);
     doc.text("Kontrakter", 10, y); y += 8;
     doc.setFontSize(10);
-    kontrakter?.forEach((k) => {
+    kontrakter?.forEach((k: { filnavn: string; status: string }) => {
       doc.text(`• ${k.filnavn} – status: ${k.status}`, 10, y);
       y += 6;
     });
@@ -83,8 +87,12 @@ export default function EksporterAltSomPDF({ brukerId }: { brukerId: string }) {
     doc.setFontSize(12);
     doc.text("Prosjekter", 10, y); y += 8;
     doc.setFontSize(10);
-    prosjekter?.forEach((p) => {
-      doc.text(`• ${p.navn} – status: ${p.status} – frist: ${new Date(p.frist).toLocaleDateString()}`, 10, y);
+    prosjekter?.forEach((p: { navn: string; status: string; frist: string }) => {
+      doc.text(
+        `• ${p.navn} – status: ${p.status} – frist: ${new Date(p.frist).toLocaleDateString()}`,
+        10,
+        y
+      );
       y += 6;
     });
 
