@@ -1,72 +1,83 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import SuccessBox from "../components/SuccessBox";
+// pages/firma.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
 
-export default function Firma() {
-  const [orgnr, setOrgnr] = useState("");
-  const [info, setInfo] = useState<any>(null);
-  const [melding, setMelding] = useState("");
-  const [feil, setFeil] = useState("");
+type Firmadok = {
+  id: string
+  tittel: string
+  kategori: string
+  fil_url: string
+  firma_id: string
+  kun_for: string[] | null
+}
 
-  const hentInfo = async () => {
-    setMelding(""); setFeil(""); setInfo(null);
-    if (!orgnr || orgnr.length !== 9) return setFeil("Ugyldig organisasjonsnummer");
+export default function FirmaBibliotek() {
+  const user = useUser()
+  const [firmaId, setFirmaId] = useState('') // Dette hentes normalt fra profilen
+  const [dokumenter, setDokumenter] = useState<Firmadok[]>([])
 
-    try {
-      const res = await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${orgnr}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setInfo(data);
-    } catch {
-      setFeil("Fant ikke firmaet");
+  useEffect(() => {
+    const hent = async () => {
+      if (!user || !user.id || !firmaId) return
+
+      const { data, error } = await supabase
+        .from('firmadokumenter')
+        .select('*')
+        .eq('firma_id', firmaId)
+
+      if (!error && data) {
+        const synlige = data.filter(
+          (d) =>
+            !d.kun_for ||
+            d.kun_for.length === 0 ||
+            d.kun_for.includes(user.id)
+        )
+        setDokumenter(synlige)
+      }
     }
-  };
 
-  const lagre = async () => {
-    const bruker = await supabase.auth.getUser();
-    const id = bruker.data.user?.id;
-    if (!id || !info) return;
-
-    const { navn, organisasjonsform } = info;
-    const a = info.forretningsadresse;
-    const { error } = await supabase.from("profiler").update({
-      firmanavn: navn,
-      orgnr,
-      adresse: a?.adresse || "",
-      poststed: `${a?.postnummer || ""} ${a?.kommune || ""}`,
-      organisasjonsform: organisasjonsform?.beskrivelse || "",
-    }).eq("id", id);
-
-    setMelding(error ? "Feil under lagring" : "Firmainformasjon lagret!");
-  };
+    hent()
+  }, [user, firmaId])
 
   return (
-    <Layout>
-      <Head><title>Firma</title></Head>
-      <div className="max-w-xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Firmaregistrering</h1>
+    <>
+      <Head>
+        <title>Firmabibliotek | Frilansportalen</title>
+        <meta name="description" content="Se delte dokumenter fra din arbeidsgiver" />
+      </Head>
+      <main className="min-h-screen bg-portalGul text-black p-8">
+        <h1 className="text-3xl font-bold mb-6">Firmabibliotek</h1>
 
-        <input value={orgnr} onChange={(e) => setOrgnr(e.target.value)} placeholder="Organisasjonsnummer" className="w-full p-2 border rounded mb-4" />
-        <button onClick={hentInfo} className="bg-black text-white px-4 py-2 rounded text-sm w-full mb-4">Hent informasjon</button>
+        <div className="max-w-lg mb-6">
+          <input
+            type="text"
+            placeholder="Firma-ID (orgnr)"
+            value={firmaId}
+            onChange={(e) => setFirmaId(e.target.value)}
+            className="p-2 border rounded w-full"
+          />
+        </div>
 
-        {feil && <p className="text-red-600 text-sm mb-4">{feil}</p>}
-        {info && (
-          <>
-            <div className="bg-white border rounded p-4 text-sm space-y-2">
-              <p><strong>Navn:</strong> {info.navn}</p>
-              <p><strong>Adresse:</strong> {info.forretningsadresse?.adresse}</p>
-              <p><strong>Postnr:</strong> {info.forretningsadresse?.postnummer}</p>
-              <p><strong>Sted:</strong> {info.forretningsadresse?.kommune}</p>
-              <p><strong>Form:</strong> {info.organisasjonsform?.beskrivelse}</p>
+        <div className="grid gap-4">
+          {dokumenter.length === 0 && <p>Ingen dokumenter funnet eller tilgjengelige.</p>}
+          {dokumenter.map((d) => (
+            <div key={d.id} className="bg-white p-4 rounded shadow">
+              <h2 className="text-lg font-semibold">{d.tittel}</h2>
+              <p className="text-sm text-gray-600 mb-2">{d.kategori}</p>
+              <a
+                href={d.fil_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                Last ned
+              </a>
             </div>
-            <button onClick={lagre} className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 mt-4 w-full">Lagre til profilen</button>
-          </>
-        )}
-
-        <SuccessBox melding={melding} />
-      </div>
-    </Layout>
-  );
+          ))}
+        </div>
+      </main>
+    </>
+  )
 }
