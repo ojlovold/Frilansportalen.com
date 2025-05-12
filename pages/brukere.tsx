@@ -1,53 +1,115 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { useRouter } from "next/router";
+// pages/brukere.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import supabase from '../lib/supabaseClient'
 
-export default function Brukere() {
-  const [brukere, setBrukere] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+type Brukerprofil = {
+  id: string
+  navn: string
+  rolle: string
+  sted?: string
+  pris?: number
+  synlighet: string
+  beskrivelse?: string
+}
+
+export default function Brukersøk() {
+  const [brukere, setBrukere] = useState<Brukerprofil[]>([])
+  const [filtrert, setFiltrert] = useState<Brukerprofil[]>([])
+  const [filter, setFilter] = useState({
+    rolle: '',
+    sted: '',
+    maksPris: '',
+  })
 
   useEffect(() => {
     const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
-      if (!id) {
-        router.push("/login");
-        return;
+      const { data, error } = await supabase.from('brukerprofiler').select('*')
+      if (!error && data) {
+        // Filtrer: frilansere = alltid synlig, andre må ha synlighet = 'alle'
+        const synlige = data.filter((b: Brukerprofil) =>
+          b.rolle === 'frilanser' || b.synlighet === 'alle'
+        )
+        setBrukere(synlige)
+        setFiltrert(synlige)
       }
+    }
 
-      const { data } = await supabase.from("profiler").select("id, navn, bilde").order("navn", { ascending: true });
-      if (data) setBrukere(data);
-      setLoading(false);
-    };
+    hent()
+  }, [])
 
-    hent();
-  }, [router]);
+  useEffect(() => {
+    const resultat = brukere.filter((b) => {
+      return (
+        (filter.rolle === '' || b.rolle === filter.rolle) &&
+        (filter.sted === '' || b.sted === filter.sted) &&
+        (filter.maksPris === '' || (b.pris ?? 0) <= Number(filter.maksPris))
+      )
+    })
+    setFiltrert(resultat)
+  }, [filter, brukere])
 
-  if (loading) return <Layout><p className="text-sm">Laster brukere...</p></Layout>;
+  const unike = (felt: keyof Brukerprofil) =>
+    Array.from(new Set(brukere.map((b) => b[felt]))).filter(Boolean)
 
   return (
-    <Layout>
+    <>
       <Head>
-        <title>Brukere | Frilansportalen</title>
+        <title>Finn brukere | Frilansportalen</title>
+        <meta name="description" content="Søk etter frilansere og arbeidssøkere" />
       </Head>
+      <main className="bg-portalGul min-h-screen text-black p-8">
+        <h1 className="text-3xl font-bold mb-6">Søk etter brukere</h1>
 
-      <h1 className="text-3xl font-bold mb-6">Registrerte brukere</h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <select
+            value={filter.rolle}
+            onChange={(e) => setFilter({ ...filter, rolle: e.target.value })}
+            className="p-2 border rounded"
+          >
+            <option value="">Alle roller</option>
+            {unike('rolle').map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {brukere.map(({ id, navn, bilde }) => (
-          <div key={id} className="bg-white border border-black rounded p-4 text-sm flex items-center space-x-4">
-            <img
-              src={bilde || "/placeholder.png"}
-              alt={navn || "Ukjent"}
-              className="w-12 h-12 rounded-full object-cover bg-gray-200"
-            />
-            <span className="font-semibold">{navn || "Ukjent bruker"}</span>
-          </div>
-        ))}
-      </div>
-    </Layout>
-  );
+          <select
+            value={filter.sted}
+            onChange={(e) => setFilter({ ...filter, sted: e.target.value })}
+            className="p-2 border rounded"
+          >
+            <option value="">Alle steder</option>
+            {unike('sted').map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            placeholder="Makspris (kr/time)"
+            value={filter.maksPris}
+            onChange={(e) => setFilter({ ...filter, maksPris: e.target.value })}
+            className="p-2 border rounded"
+          />
+        </div>
+
+        <div className="grid gap-6">
+          {filtrert.length === 0 && <p>Ingen profiler matcher filtrene.</p>}
+          {filtrert.map((b) => (
+            <div key={b.id} className="bg-white p-6 rounded-xl shadow">
+              <h2 className="text-xl font-semibold">{b.navn}</h2>
+              <p className="text-sm text-gray-600 mb-1">
+                {b.rolle} | {b.sted || 'Ukjent'} | {b.pris ? `${b.pris} kr/time` : 'Pris ikke oppgitt'}
+              </p>
+              {b.beskrivelse && <p className="text-sm">{b.beskrivelse.slice(0, 140)}...</p>}
+            </div>
+          ))}
+        </div>
+      </main>
+    </>
+  )
 }
