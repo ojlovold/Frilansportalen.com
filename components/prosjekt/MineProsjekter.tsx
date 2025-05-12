@@ -161,9 +161,11 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
               <p className="text-sm text-gray-700">{p.beskrivelse}</p>
               <p className="text-sm">Status: <strong>{p.status}</strong></p>
               <p className="text-sm">Frist: {new Date(p.frist).toLocaleDateString()}</p>
-              {p.etiketter?.length > 0 && (
+
+              {p.etiketter?.length > 0 && ( // ← rettet her
                 <p className="text-sm text-gray-500">Etiketter: {p.etiketter.join(", ")}</p>
               )}
+
               <p className="text-sm text-gray-500">
                 Deltakere: {p.deltakere?.map((d) => d.bruker_id).join(", ") || "-"}
               </p>
