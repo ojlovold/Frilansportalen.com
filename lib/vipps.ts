@@ -1,37 +1,37 @@
-// lib/vipps.ts
 import supabase from './supabaseClient'
 
 export type VippsConfig = {
-  aktiv: boolean
-  testmodus: boolean
-  api_key: string
-  client_id: string
-  client_secret: string
-  callback_url?: string
-  miljo?: string
-}
+  aktiv: boolean;
+  testmodus: boolean;
+  api_key: string;
+  client_id: string;
+  client_secret: string;
+  callback_url?: string;
+  miljo?: string;
+  orgnr: string; // ← lagt til her for å unngå typefeil
+};
 
 export async function hentVippsConfig(): Promise<VippsConfig | null> {
   const { data } = await supabase
     .from('integrasjoner')
     .select('*')
     .eq('id', 'vipps')
-    .maybeSingle()
+    .maybeSingle();
 
-  return data || null
+  return data || null;
 }
 
-// Simulert betalingskall
+// Simulert betalingskall til Vipps
 export async function opprettVippsBetaling(belop: number, referanse: string) {
-  const config = await hentVippsConfig()
+  const config = await hentVippsConfig();
   if (!config || !config.aktiv) {
-    console.warn('Vipps er ikke aktivert')
-    return null
+    console.warn('Vipps er ikke aktivert');
+    return null;
   }
 
   const vippsUrl = config.testmodus
     ? 'https://apitest.vipps.no/ecomm/v2/payments'
-    : 'https://api.vipps.no/ecomm/v2/payments'
+    : 'https://api.vipps.no/ecomm/v2/payments';
 
   const response = await fetch(vippsUrl, {
     method: 'POST',
@@ -43,7 +43,7 @@ export async function opprettVippsBetaling(belop: number, referanse: string) {
     },
     body: JSON.stringify({
       merchantInfo: {
-        merchantSerialNumber: config.orgnr,
+        merchantSerialNumber: config.orgnr, // ← nå støttet av typen
         callbackPrefix: config.callback_url || '',
         fallBack: 'https://frilansportalen.com/',
       },
@@ -53,8 +53,8 @@ export async function opprettVippsBetaling(belop: number, referanse: string) {
         transactionText: 'Frilansportalen betaling',
       },
     }),
-  })
+  });
 
-  const data = await response.json()
-  return data
+  const data = await response.json();
+  return data;
 }
