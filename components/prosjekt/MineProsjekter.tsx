@@ -162,7 +162,7 @@ export default function MineProsjekter({ brukerId }: { brukerId: string }) {
               <p className="text-sm">Status: <strong>{p.status}</strong></p>
               <p className="text-sm">Frist: {new Date(p.frist).toLocaleDateString()}</p>
 
-              {p.etiketter?.length > 0 && ( // ← rettet her
+              {p.etiketter && p.etiketter.length > 0 && (
                 <p className="text-sm text-gray-500">Etiketter: {p.etiketter.join(", ")}</p>
               )}
 
