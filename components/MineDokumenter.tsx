@@ -1,61 +1,49 @@
-// components/MineDokumenter.tsx
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
-
-type Fil = {
-  navn: string
-  url: string
-}
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function MineDokumenter() {
-  const user = useUser()
-  const [filer, setFiler] = useState<Fil[]>([])
+  const { user } = useUser();
+  const [filer, setFiler] = useState<any[]>([]);
 
   useEffect(() => {
     const hentKvitteringer = async () => {
-      if (!user || !user.id) return
+      if (!user || !user.id) return;
 
-      const sti = `kvitteringer/${user.id}`
-      const { data, error } = await supabase.storage.from('kvitteringer').list(sti)
+      const sti = `kvitteringer/${user.id}`;
+      const { data, error } = await supabase.storage.from("kvitteringer").list(sti);
 
-      if (error || !data) return
+      if (error) {
+        console.error("Feil ved henting av kvitteringer:", error.message);
+      } else {
+        setFiler(data || []);
+      }
+    };
 
-      const medUrl: Fil[] = data.map((fil) => {
-        const { data: urlData } = supabase.storage
-          .from('kvitteringer')
-          .getPublicUrl(`${sti}/${fil.name}`)
-
-        return {
-          navn: fil.name,
-          url: urlData.publicUrl,
-        }
-      })
-
-      setFiler(medUrl)
-    }
-
-    hentKvitteringer()
-  }, [user])
+    hentKvitteringer();
+  }, [user]);
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow mt-8">
-      <h2 className="text-xl font-semibold mb-4">Mine kvitteringer</h2>
-      {filer.length === 0 && <p>Ingen kvitteringer funnet.</p>}
-      <ul className="space-y-2">
-        {filer.map((fil) => (
-          <li key={fil.navn}>
-            <a
-              href={fil.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              {fil.navn}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <div className="p-6 bg-white rounded-xl shadow">
+      <h2 className="text-2xl font-semibold mb-4">Mine dokumenter</h2>
+      {filer.length === 0 ? (
+        <p>Ingen dokumenter funnet.</p>
+      ) : (
+        <ul className="list-disc pl-5 space-y-2">
+          {filer.map((fil, index) => (
+            <li key={index}>
+              <a
+                href={`https://<ditt-prosjekt>.supabase.co/storage/v1/object/public/kvitteringer/${user?.id}/${fil.name}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                {fil.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  )
+  );
 }
