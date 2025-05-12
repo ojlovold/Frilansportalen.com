@@ -2,6 +2,14 @@ import { jsPDF } from "jspdf";
 import supabase from "@/lib/supabaseClient";
 import { useState } from "react";
 
+interface Epost {
+  fra: string;
+  til: string;
+  emne?: string;
+  innhold?: string;
+  opprettet: string;
+}
+
 export default function EksporterEpost({ brukerId }: { brukerId: string }) {
   const [sok, setSok] = useState("");
   const [status, setStatus] = useState("");
@@ -16,7 +24,7 @@ export default function EksporterEpost({ brukerId }: { brukerId: string }) {
       .order("opprettet", { ascending: true })
       .limit(1000);
 
-    const filtrert = (meldinger || []).filter((m) => {
+    const filtrert = (meldinger || []).filter((m: Epost) => {
       const tekst = `${m.emne || ""} ${m.innhold || ""}`.toLowerCase();
       return tekst.includes(sok.toLowerCase());
     });
