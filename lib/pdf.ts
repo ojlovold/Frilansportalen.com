@@ -12,9 +12,26 @@ export default async function generateSimplePDF(
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontSize = 14;
-
   const marginTop = 60;
   const lineHeight = 24;
+
+  // Logo (hvis ønsket)
+  if (brukLogo) {
+    try {
+      const logoUrl = "https://<ditt-prosjekt>.supabase.co/storage/v1/object/public/logoer/frilansportalen.png"; // juster etter behov
+      const logoBytes = await fetch(logoUrl).then((res) => res.arrayBuffer());
+      const logoImage = await pdfDoc.embedPng(logoBytes);
+      const logoDims = logoImage.scale(0.25);
+      page.drawImage(logoImage, {
+        x: width - logoDims.width - 50,
+        y: height - logoDims.height - 40,
+        width: logoDims.width,
+        height: logoDims.height,
+      });
+    } catch (err) {
+      console.warn("Klarte ikke å laste logo:", err);
+    }
+  }
 
   // Tittel
   page.drawText(tittel, {
