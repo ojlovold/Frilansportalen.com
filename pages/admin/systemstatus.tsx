@@ -1,56 +1,60 @@
-import Head from "next/head";
-import Dashboard from "@/components/Dashboard";
-import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+// pages/admin/systemstatus.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import supabase from '../../lib/supabaseClient'
 
-export default function SystemstatusSide() {
-  const [faglenker, setFaglenker] = useState(0);
-  const [attesterSomUtgår, setAttesterSomUtgår] = useState(0);
-  const [ulesteVarsler, setUlesteVarsler] = useState(0);
+type Integrasjon = {
+  id: string
+  aktiv: boolean
+  api_key?: string
+  client_id?: string
+  client_secret?: string
+  orgnr?: string
+  sist_oppdatert?: string
+}
+
+export default function Systemstatus() {
+  const [data, setData] = useState<Integrasjon[]>([])
 
   useEffect(() => {
-    const hentStatus = async () => {
-      const iDag = new Date();
-      const om30 = new Date();
-      om30.setDate(iDag.getDate() + 30);
+    const hent = async () => {
+      const { data } = await supabase.from('integrasjoner').select('*')
+      if (data) setData(data)
+    }
 
-      const { count: fag } = await supabase
-        .from("fagbibliotek")
-        .select("*", { count: "exact", head: true });
+    hent()
+  }, [])
 
-      const { count: utlop } = await supabase
-        .from("attester")
-        .select("*", { count: "exact", head: true })
-        .lt("utløper", om30.toISOString());
-
-      const { count: varsler } = await supabase
-        .from("varsler")
-        .select("*", { count: "exact", head: true })
-        .eq("lest", false);
-
-      setFaglenker(fag || 0);
-      setAttesterSomUtgår(utlop || 0);
-      setUlesteVarsler(varsler || 0);
-    };
-
-    hentStatus();
-  }, []);
+  const erGyldig = (item: Integrasjon) =>
+    item.api_key &&
+    (item.id !== 'altinn' || item.orgnr) &&
+    (item.id !== 'vipps' || (item.client_id && item.client_secret)) &&
+    item.aktiv
 
   return (
-    <Dashboard>
+    <>
       <Head>
-        <title>Systemstatus | Frilansportalen</title>
+        <title>Systemstatus | Frilansportalen Admin</title>
+        <meta name="description" content="Se status på eksterne integrasjoner" />
       </Head>
+      <main className="min-h-screen bg-portalGul text-black p-8 max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Systemstatus – Integrasjoner</h1>
 
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Systemstatus</h1>
-
-        <ul className="space-y-2 text-black">
-          <li>Lenker i fagbiblioteket: <strong>{faglenker}</strong></li>
-          <li>Attester med utløp innen 30 dager: <strong>{attesterSomUtgår}</strong></li>
-          <li>Uleste varsler i systemet: <strong>{ulesteVarsler}</strong></li>
-        </ul>
-      </div>
-    </Dashboard>
-  );
+        <div className="grid gap-4">
+          {data.map((item) => (
+            <div key={item.id} className={`p-4 rounded shadow ${erGyldig(item) ? 'bg-green-100' : 'bg-red-100'}`}>
+              <p className="text-lg font-semibold capitalize">{item.id}</p>
+              <p>Status: {item.aktiv ? 'Aktiv' : 'Inaktiv'}</p>
+              <p>Sist oppdatert: {item.sist_oppdatert ? new Date(item.sist_oppdatert).toLocaleString('no-NO') : '–'}</p>
+              <p className="text-sm text-gray-700">
+                {erGyldig(item)
+                  ? 'Integrasjon er klar til bruk.'
+                  : 'Manglende data – sjekk admin/innstillinger.'}
+              </p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </>
+  )
 }
