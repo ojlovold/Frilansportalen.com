@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import { brukerHarPremium } from "@/utils/brukerHarPremium"; // ← Rettet her
+import { brukerHarPremium } from "@/utils/brukerHarPremium"; // NB! må være named import
 
 export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
   const [navn, setNavn] = useState("");
@@ -14,7 +14,7 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
 
   useEffect(() => {
     const sjekk = async () => {
-      const premium = await brukerHarPremium(brukerId);
+      const premium = await brukerHarPremium(); // ← ingen argument
       setHarPremium(premium);
       if (!premium) return;
 
