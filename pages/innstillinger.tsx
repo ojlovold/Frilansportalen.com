@@ -1,124 +1,117 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+// pages/innstillinger.tsx
+import Head from 'next/head'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
+import { useEffect, useState } from 'react'
 
 export default function Innstillinger() {
-  const [data, setData] = useState<any>({});
-  const [melding, setMelding] = useState("");
+  const user = useUser()
+  const [data, setData] = useState<any>({})
+  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar')
+  const [logo, setLogo] = useState<File | null>(null)
 
   useEffect(() => {
     const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
-      if (!id) return;
+      if (!user?.id) return
+      const { data } = await supabase
+        .from('brukerprofiler')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      if (data) setData(data)
+    }
 
-      const { data: profil } = await supabase
-        .from("profiler")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (profil) setData(profil);
-    };
-
-    hent();
-  }, []);
-
-  const oppdater = (felt: string, verdi: any) => {
-    setData((prev: any) => ({ ...prev, [felt]: verdi }));
-  };
+    hent()
+  }, [user])
 
   const lagre = async () => {
-    const bruker = await supabase.auth.getUser();
-    const id = bruker.data.user?.id;
-    if (!id) return;
+    if (!user?.id) return
+
+    if (logo) {
+      await supabase.storage
+        .from('profilbilder')
+        .upload(`${user.id}.jpg`, logo, { upsert: true })
+    }
 
     const { error } = await supabase
-      .from("profiler")
+      .from('brukerprofiler')
       .update(data)
-      .eq("id", id);
+      .eq('id', user.id)
 
-    setMelding(error ? "Feil under lagring" : "Innstillinger lagret.");
-  };
+    setStatus(error ? 'feil' : 'lagret')
+  }
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Innstillinger | Frilansportalen</title>
+        <meta name="description" content="Rediger profil, logo og firmainnstillinger" />
       </Head>
+      <main className="min-h-screen bg-portalGul text-black p-8 max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Innstillinger</h1>
 
-      <div className="max-w-xl mx-auto py-10 text-sm">
-        <h1 className="text-2xl font-bold mb-6">Innstillinger og kontroll</h1>
+        <input
+          type="text"
+          placeholder="Navn"
+          value={data.navn || ''}
+          onChange={(e) => setData({ ...data, navn: e.target.value })}
+          className="w-full p-2 border rounded mb-4"
+        />
 
-        <div className="space-y-4">
-          <input
-            value={data.firmanavn || ""}
-            onChange={(e) => oppdater("firmanavn", e.target.value)}
-            placeholder="Firmanavn"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            value={data.orgnr || ""}
-            onChange={(e) => oppdater("orgnr", e.target.value)}
-            placeholder="Organisasjonsnummer"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            value={data.adresse || ""}
-            onChange={(e) => oppdater("adresse", e.target.value)}
-            placeholder="Adresse"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            value={data.poststed || ""}
-            onChange={(e) => oppdater("poststed", e.target.value)}
-            placeholder="Poststed"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            value={data.kontonr || ""}
-            onChange={(e) => oppdater("kontonr", e.target.value)}
-            placeholder="Kontonummer"
-            className="w-full p-2 border rounded"
-          />
-          <input
-            value={data.fakturareferanse || ""}
-            onChange={(e) => oppdater("fakturareferanse", e.target.value)}
-            placeholder="Fakturareferanse"
-            className="w-full p-2 border rounded"
-          />
+        <input
+          type="text"
+          placeholder="E-post"
+          value={data.epost || ''}
+          onChange={(e) => setData({ ...data, epost: e.target.value })}
+          className="w-full p-2 border rounded mb-4"
+        />
 
-          <label className="block">
-            <input
-              type="checkbox"
-              checked={data.samtykke_ai ?? true}
-              onChange={(e) => oppdater("samtykke_ai", e.target.checked)}
-              className="mr-2"
-            />
-            Tillat AI å gi forslag basert på mine data
-          </label>
+        <input
+          type="text"
+          placeholder="Telefon"
+          value={data.telefon || ''}
+          onChange={(e) => setData({ ...data, telefon: e.target.value })}
+          className="w-full p-2 border rounded mb-4"
+        />
 
-          <label className="block">
-            <input
-              type="checkbox"
-              checked={data.samtykke_deling ?? true}
-              onChange={(e) => oppdater("samtykke_deling", e.target.checked)}
-              className="mr-2"
-            />
-            Tillat at profilen kan vises for andre
-          </label>
+        <textarea
+          placeholder="Beskrivelse (CV, firma, bakgrunn...)"
+          value={data.beskrivelse || ''}
+          onChange={(e) => setData({ ...data, beskrivelse: e.target.value })}
+          className="w-full p-2 border rounded mb-4 h-32"
+        />
 
-          <button
-            onClick={lagre}
-            className="bg-black text-white px-4 py-2 rounded text-sm hover:bg-gray-800"
-          >
-            Lagre innstillinger
-          </button>
+        <label className="block mb-2 font-semibold">Logoopplasting</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setLogo(e.target.files?.[0] || null)}
+          className="mb-4"
+        />
 
-          {melding && <p className="text-green-600 mt-2">{melding}</p>}
-        </div>
-      </div>
-    </Layout>
-  );
+        <label className="block mb-4">
+          <input
+            type="checkbox"
+            checked={data.bruk_logo || false}
+            onChange={(e) => setData({ ...data, bruk_logo: e.target.checked })}
+          />
+          <span className="ml-2">Bruk logo i dokumenter</span>
+        </label>
+
+        <button
+          onClick={lagre}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Lagre innstillinger
+        </button>
+
+        {status === 'lagret' && (
+          <p className="text-green-600 mt-4">Innstillinger lagret!</p>
+        )}
+        {status === 'feil' && (
+          <p className="text-red-600 mt-4">Noe gikk galt.</p>
+        )}
+      </main>
+    </>
+  )
 }
