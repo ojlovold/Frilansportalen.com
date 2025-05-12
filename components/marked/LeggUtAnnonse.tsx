@@ -19,21 +19,24 @@ export default function LeggUtAnnonse() {
 
   useEffect(() => {
     const hentFirmaStatus = async () => {
-      if (!user) return;
+      const brukerId = user && "id" in user ? (user.id as string) : null;
+      if (!brukerId) return;
+
       const { data } = await supabase
         .from("brukerprofiler")
         .select("er_firma")
-        .eq("id", user.id)
+        .eq("id", brukerId)
         .single();
+
       if (data?.er_firma) setFirma(true);
     };
     hentFirmaStatus();
   }, [user]);
 
-  const lastOppBilder = async (): Promise<string[]> => {
+  const lastOppBilder = async (brukerId: string): Promise<string[]> => {
     const urls: string[] = [];
     for (const fil of data.bilder) {
-      const path = `marked/${user?.id}/${Date.now()}_${fil.name}`;
+      const path = `marked/${brukerId}/${Date.now()}_${fil.name}`;
       const { error } = await supabase.storage.from("dokumenter").upload(path, fil);
       if (!error) {
         const url = supabase.storage.from("dokumenter").getPublicUrl(path).data.publicUrl;
@@ -44,12 +47,14 @@ export default function LeggUtAnnonse() {
   };
 
   const send = async () => {
-    if (!user) return;
-    const bilder = await lastOppBilder();
+    const brukerId = user && "id" in user ? (user.id as string) : null;
+    if (!brukerId) return;
+
+    const bilder = await lastOppBilder(brukerId);
 
     const { error } = await supabase.from("annonser").insert([
       {
-        opprettet_av: user.id,
+        opprettet_av: brukerId,
         type: data.type,
         tittel: data.tittel,
         beskrivelse: data.beskrivelse,
