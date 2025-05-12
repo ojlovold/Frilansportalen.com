@@ -41,7 +41,7 @@ export default function Map({ markorer }: { markorer: MarkerType[] }) {
 
   return (
     <MapContainer
-      center={center}
+      defaultCenter={center}
       zoom={6}
       scrollWheelZoom={true}
       style={{ height: '500px', width: '100%' }}
