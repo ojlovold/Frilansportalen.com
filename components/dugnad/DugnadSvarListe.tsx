@@ -1,60 +1,58 @@
-import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-react";
+// components/dugnad/DugnadSvarListe.tsx
+import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '@/lib/supabaseClient'
 
 export default function DugnadSvarListe({ dugnadId }: { dugnadId: string }) {
-  const user = useUser();
-  const [meldinger, setMeldinger] = useState<any[]>([]);
-  const [erEier, setErEier] = useState(false);
+  const user = useUser()
+  const [svar, setSvar] = useState<any[]>([])
+  const [erEier, setErEier] = useState(false)
 
   useEffect(() => {
     const hent = async () => {
-      if (!user) return;
-
       const { data: dugnad } = await supabase
-        .from("dugnader")
-        .select("opprettet_av")
-        .eq("id", dugnadId)
-        .single();
+        .from('dugnader')
+        .select('opprettet_av')
+        .eq('id', dugnadId)
+        .single()
 
-      if (dugnad?.opprettet_av !== user.id) {
-        setErEier(false);
-        return;
+      const brukerId = user && 'id' in user ? (user.id as string) : null
+      if (dugnad?.opprettet_av !== brukerId) {
+        setErEier(false)
+        return
       }
 
-      setErEier(true);
+      setErEier(true)
 
-      const { data } = await supabase
-        .from("dugnadsmeldinger")
-        .select("*, bruker:brukerprofiler(navn, epost)")
-        .eq("dugnad_id", dugnadId)
-        .order("opprettet", { ascending: false });
+      const { data: svarData } = await supabase
+        .from('dugnad_svar')
+        .select('*')
+        .eq('dugnad_id', dugnadId)
 
-      setMeldinger(data || []);
-    };
+      setSvar(svarData || [])
+    }
 
-    hent();
-  }, [user, dugnadId]);
+    hent()
+  }, [dugnadId, user])
 
-  if (!erEier) return null;
+  if (!erEier) return null
 
   return (
-    <div className="space-y-4 mt-6">
-      <h3 className="text-lg font-bold">Meldinger fra frivillige</h3>
+    <div className="bg-white p-4 rounded shadow mt-6">
+      <h2 className="text-xl font-semibold mb-4">Svar fra deltakere</h2>
 
-      {meldinger.length === 0 ? (
-        <p>Ingen meldinger mottatt ennå.</p>
+      {svar.length === 0 ? (
+        <p>Ingen har svart på denne dugnaden ennå.</p>
       ) : (
-        <ul className="space-y-3">
-          {meldinger.map((m) => (
-            <li key={m.id} className="border p-3 rounded bg-white text-black">
-              <p><strong>{m.bruker?.navn || m.bruker_id}</strong> ({m.bruker?.epost || "ukjent"})</p>
-              <p className="text-sm">{m.melding || "(ingen melding)"}</p>
-              <p className="text-xs text-gray-500">{new Date(m.opprettet).toLocaleString()}</p>
+        <ul className="space-y-2 text-sm">
+          {svar.map((s, i) => (
+            <li key={i} className="border-b pb-2">
+              <p><strong>{s.navn || 'Ukjent'}</strong> – {s.status}</p>
+              {s.kommentar && <p className="text-gray-600 italic">{s.kommentar}</p>}
             </li>
           ))}
         </ul>
       )}
     </div>
-  );
+  )
 }
