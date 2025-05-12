@@ -1,6 +1,10 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import supabase from '../lib/supabaseClient'
+import dynamic from 'next/dynamic'
+
+// Dynamisk import for å unngå SSR-feil med Leaflet
+const Map = dynamic(() => import('./Map'), { ssr: false })
 
 type DashboardProps = {
   children: ReactNode
@@ -29,6 +33,12 @@ export default function Dashboard({ children }: DashboardProps) {
     hentUlestEpost()
   }, [user])
 
+  const markører = [
+    { lat: 59.9111, lng: 10.7528, tekst: 'Oslo' },
+    { lat: 60.39299, lng: 5.32415, tekst: 'Bergen' },
+    { lat: 63.4305, lng: 10.3951, tekst: 'Trondheim' },
+  ]
+
   return (
     <div className="min-h-screen p-8 bg-portalGul text-black">
       <header className="flex justify-between items-center mb-6">
@@ -39,7 +49,15 @@ export default function Dashboard({ children }: DashboardProps) {
           </span>
         )}
       </header>
-      <main>{children}</main>
+
+      <main className="space-y-8">
+        {children}
+
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Kart over markører</h2>
+          <Map markører={markører} />
+        </section>
+      </main>
     </div>
   )
 }
