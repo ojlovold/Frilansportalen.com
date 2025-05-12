@@ -15,10 +15,10 @@ export default function LeggTilGjenbruk() {
     bilder: [] as File[],
   });
 
-  const lastOppBilder = async (): Promise<string[]> => {
+  const lastOppBilder = async (brukerId: string): Promise<string[]> => {
     const urls: string[] = [];
     for (const fil of data.bilder) {
-      const path = `gjenbruk/${user?.id}/${Date.now()}_${fil.name}`;
+      const path = `gjenbruk/${brukerId}/${Date.now()}_${fil.name}`;
       const { error } = await supabase.storage.from("dokumenter").upload(path, fil);
       if (!error) {
         const url = supabase.storage.from("dokumenter").getPublicUrl(path).data.publicUrl;
@@ -29,12 +29,14 @@ export default function LeggTilGjenbruk() {
   };
 
   const send = async () => {
-    if (!user) return;
-    const bilder = await lastOppBilder();
+    const brukerId = user && "id" in user ? (user.id as string) : null;
+    if (!brukerId) return;
+
+    const bilder = await lastOppBilder(brukerId);
 
     const { error } = await supabase.from("gjenbruk").insert([
       {
-        opprettet_av: user.id,
+        opprettet_av: brukerId,
         type: data.type,
         tittel: data.tittel,
         beskrivelse: data.beskrivelse,
