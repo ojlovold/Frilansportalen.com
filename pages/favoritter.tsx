@@ -1,59 +1,65 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import Link from "next/link";
+// pages/favoritter.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import { useUser } from '@supabase/auth-helpers-react'
+import supabase from '../lib/supabaseClient'
+import { hentFavoritter } from '../lib/favoritt'
+
+type Stilling = {
+  id: string
+  tittel: string
+  sted: string
+  type: string
+  frist: string
+  bransje: string
+  beskrivelse: string
+}
 
 export default function Favoritter() {
-  const [favoritter, setFavoritter] = useState<any[]>([]);
+  const user = useUser()
+  const [favoritter, setFavoritter] = useState<Stilling[]>([])
 
   useEffect(() => {
     const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
-      if (!id) return;
+      if (!user || !user.id) return
+      const favorittPoster = await hentFavoritter(user.id, 'stilling')
+      const idListe = favorittPoster.map((f: any) => f.objekt_id)
 
-      const { data } = await supabase
-        .from("favoritter")
-        .select("*")
-        .eq("bruker_id", id)
-        .order("lagret", { ascending: false });
+      if (idListe.length > 0) {
+        const { data, error } = await supabase
+          .from('stillinger')
+          .select('*')
+          .in('id', idListe)
 
-      setFavoritter(data || []);
-    };
+        if (!error && data) setFavoritter(data)
+      }
+    }
 
-    hent();
-  }, []);
+    hent()
+  }, [user])
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Mine favoritter | Frilansportalen</title>
+        <meta name="description" content="Se dine lagrede stillingsannonser" />
       </Head>
+      <main className="bg-portalGul min-h-screen text-black p-8">
+        <h1 className="text-3xl font-bold mb-6">Mine lagrede stillinger</h1>
 
-      <div className="max-w-3xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Lagrede annonser</h1>
-
-        {favoritter.length === 0 ? (
-          <p className="text-sm text-gray-600">Du har ikke lagret noen annonser ennå.</p>
-        ) : (
-          <ul className="space-y-4 text-sm">
-            {favoritter.map((f) => (
-              <li key={f.id} className="bg-white border p-4 rounded shadow-sm">
-                <p className="font-semibold">{f.tittel}</p>
-                <p className="text-xs text-gray-600">{f.type} · {f.kilde}</p>
-                <Link
-                  href={f.lenke}
-                  className="text-blue-600 underline text-xs hover:text-blue-800"
-                  target="_blank"
-                >
-                  Gå til annonse
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </Layout>
-  );
+        <div className="grid gap-6">
+          {favoritter.length === 0 && <p>Du har ikke lagret noen stillinger.</p>}
+          {favoritter.map((s) => (
+            <div key={s.id} className="bg-white p-6 rounded-xl shadow">
+              <h2 className="text-xl font-semibold">{s.tittel}</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                {s.sted} | {s.type} | Frist: {s.frist} | {s.bransje}
+              </p>
+              <p>{s.beskrivelse}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </>
+  )
 }
