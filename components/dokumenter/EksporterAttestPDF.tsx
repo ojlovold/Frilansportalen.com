@@ -1,61 +1,67 @@
 import Head from "next/head";
 import { useUser } from "@supabase/auth-helpers-react";
-import Dashboard from "@/components/Dashboard";
 import LastOppAttest from "@/components/dokumenter/LastOppAttest";
-import EksporterAttestPDF from "@/components/dokumenter/EksporterAttestPDF";
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-export default function AttesterSide() {
-  const user = useUser();
-  const [attester, setAttester] = useState<any[]>([]);
+interface Attest {
+  id: string;
+  tittel: string;
+  utsteder: string;
+  dato: string;
+  status: string;
+}
+
+export default function EksporterAttestPDF() {
+  const { user } = useUser();
+  const [attester, setAttester] = useState<Attest[]>([]);
 
   useEffect(() => {
-    const hent = async () => {
-      if (!user) return;
+    const hentAttester = async () => {
+      if (!user?.id) return;
 
-      const { data } = await supabase
-        .from("attester")
-        .select("*")
-        .eq("bruker_id", user.id)
-        .order("utløper");
-
-      setAttester(data || []);
+      const res = await fetch(`/api/attester?user_id=${user.id}`);
+      const data = await res.json();
+      setAttester(data);
     };
 
-    hent();
+    hentAttester();
   }, [user]);
 
-  if (!user) return <p>Du må være innlogget for å se attester.</p>;
+  const lastNedPDF = () => {
+    const doc = new jsPDF();
+    const dato = new Date().toLocaleDateString("no-NO");
+
+    doc.setFontSize(18);
+    doc.text("Mine attester", 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Dato: ${dato}`, 14, 28);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["Tittel", "Utsteder", "Dato", "Status"]],
+      body: attester.map((a) => [a.tittel, a.utsteder, a.dato, a.status]),
+    });
+
+    doc.save(`attester_${Date.now()}.pdf`);
+  };
 
   return (
-    <Dashboard>
+    <>
       <Head>
-        <title>Attester og dokumenter | Frilansportalen</title>
+        <title>Eksporter attester | Frilansportalen</title>
       </Head>
-
-      <div className="space-y-6">
-        <LastOppAttest brukerId={user.id} />
-
-        <h2 className="text-xl font-bold">Mine attester</h2>
-
-        {attester.length === 0 ? (
-          <p>Ingen attester funnet.</p>
-        ) : (
-          <ul className="space-y-4">
-            {attester.map((a) => (
-              <li key={a.id} className="border p-4 rounded bg-white text-black shadow-sm space-y-1">
-                <p><strong>Type:</strong> {a.type}</p>
-                <p><strong>Fil:</strong> <a href={a.url} target="_blank" className="underline text-blue-600">{a.filnavn}</a></p>
-                <p>Utløper: {new Date(a.utløper).toLocaleDateString()}</p>
-                <p>Opplastet: {new Date(a.opplastet).toLocaleDateString()}</p>
-
-                <EksporterAttestPDF attest={a} />
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Eksporter attester</h1>
+        <LastOppAttest />
+        <button
+          onClick={lastNedPDF}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Last ned som PDF
+        </button>
       </div>
-    </Dashboard>
+    </>
   );
 }
