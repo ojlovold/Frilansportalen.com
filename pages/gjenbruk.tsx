@@ -1,52 +1,91 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+// pages/gjenbruk.tsx
+import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import supabase from '../lib/supabaseClient'
+
+type Gjenbruksobjekt = {
+  id: string
+  tittel: string
+  sted: string
+  kategori: string
+  beskrivelse: string
+  pris: number
+}
 
 export default function Gjenbruk() {
-  const [annonser, setAnnonser] = useState<any[]>([]);
+  const [objekter, setObjekter] = useState<Gjenbruksobjekt[]>([])
+  const [filtrert, setFiltrert] = useState<Gjenbruksobjekt[]>([])
+  const [filter, setFilter] = useState({
+    sted: '',
+    kategori: '',
+  })
 
   useEffect(() => {
-    const hent = async () => {
-      const { data } = await supabase
-        .from("gjenbruk")
-        .select("*")
-        .order("opprettet_dato", { ascending: false });
+    const hentData = async () => {
+      const { data, error } = await supabase.from('gjenbruk').select('*')
+      if (!error && data) {
+        setObjekter(data)
+        setFiltrert(data)
+      }
+    }
 
-      setAnnonser(data || []);
-    };
+    hentData()
+  }, [])
 
-    hent();
-  }, []);
+  useEffect(() => {
+    const resultat = objekter.filter((obj) => {
+      return (
+        (filter.sted === '' || obj.sted === filter.sted) &&
+        (filter.kategori === '' || obj.kategori === filter.kategori)
+      )
+    })
+
+    setFiltrert(resultat)
+  }, [filter, objekter])
+
+  const unike = (felt: keyof Gjenbruksobjekt) =>
+    Array.from(new Set(objekter.map((o) => o[felt])))
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Gjenbruk | Frilansportalen</title>
+        <meta name="description" content="Gi bort eller hent gratis ting i ditt nærområde" />
       </Head>
+      <main className="bg-portalGul min-h-screen p-8 text-black">
+        <h1 className="text-3xl font-bold mb-6">Gjenbruksportalen</h1>
 
-      <div className="max-w-4xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6">Gjenbruksportalen</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {(['sted', 'kategori'] as (keyof Gjenbruksobjekt)[]).map((felt) => (
+            <select
+              key={felt}
+              value={filter[felt]}
+              onChange={(e) => setFilter({ ...filter, [felt]: e.target.value })}
+              className="p-2 rounded border"
+            >
+              <option value="">{felt[0].toUpperCase() + felt.slice(1)}</option>
+              {unike(felt).map((val) => (
+                <option key={val} value={val}>
+                  {val}
+                </option>
+              ))}
+            </select>
+          ))}
+        </div>
 
-        {annonser.length === 0 ? (
-          <p className="text-sm text-gray-600">Ingen gjenbruksannonser er publisert ennå.</p>
-        ) : (
-          <ul className="space-y-4 text-sm">
-            {annonser.map((a) => (
-              <li key={a.id} className="bg-white border rounded p-4 shadow-sm">
-                <h2 className="font-semibold text-lg">{a.tittel}</h2>
-                <p className="text-xs text-gray-500 mb-1">
-                  {new Date(a.opprettet_dato).toLocaleString("no-NO")} · {a.sted}
-                </p>
-                <p>{a.beskrivelse}</p>
-                {a.kontakt && (
-                  <p className="text-xs text-gray-600 mt-2">Kontakt: {a.kontakt}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </Layout>
-  );
+        <div className="grid gap-6">
+          {filtrert.length === 0 && <p>Ingen oppføringer matcher filtrene.</p>}
+          {filtrert.map((obj) => (
+            <div key={obj.id} className="bg-white p-6 rounded-xl shadow">
+              <h2 className="text-xl font-semibold">{obj.tittel}</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                {obj.sted} | {obj.kategori} | {obj.pris === 0 ? 'Gratis' : `${obj.pris} kr`}
+              </p>
+              <p>{obj.beskrivelse}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </>
+  )
 }
