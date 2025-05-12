@@ -1,57 +1,32 @@
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { useRouter } from "next/router";
+// components/Header.tsx
+import Link from 'next/link'
 
 export default function Header() {
-  const [harVarsel, setHarVarsel] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    const sjekkVarsler = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
-      if (!id) return;
-
-      const { data } = await supabase
-        .from("varsler")
-        .select("id")
-        .eq("bruker_id", id)
-        .eq("lest", false);
-
-      if (data && data.length > 0) {
-        setHarVarsel(true);
-      }
-    };
-
-    sjekkVarsler();
-  }, [router]);
-
   return (
-    <header className="bg-black text-white sticky top-0 z-50 shadow-md">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/" className="block text-2xl font-extrabold tracking-tight">
-          <span className="mr-1">FRILANS</span>
-          <span className="font-light">PORTALEN</span>
+    <header className="bg-white shadow p-4">
+      <div className="max-w-6xl mx-auto flex justify-between items-center">
+        <Link href="/">
+          <h1 className="text-xl font-bold text-black">Frilansportalen</h1>
         </Link>
 
-        <nav className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm mt-4 sm:mt-0 items-center">
-          <Link href="/stillinger">Stillinger</Link>
-          <Link href="/tjenester">Tjenester</Link>
-          <Link href="/gjenbruk">Gjenbruk</Link>
-          <Link href="/kurs">Kurs</Link>
-          <Link href="/dashboard">Dashboard</Link>
-          <div className="relative">
-            <Link href="/varsler">Varsler</Link>
-            {harVarsel && (
-              <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" title="Nytt varsel"></span>
-            )}
-          </div>
-          <Link href="/profil">
-            <button className="bg-white text-black px-3 py-1 rounded text-xs hover:bg-gray-200">Profil</button>
+        <nav className="flex gap-6 text-sm">
+          <Link href="/dashboard">
+            <span className="hover:underline">Dashboard</span>
+          </Link>
+          <Link href="/stillinger">
+            <span className="hover:underline">Stillinger</span>
+          </Link>
+          <Link href="/tjenester">
+            <span className="hover:underline">Tjenester</span>
+          </Link>
+          <Link href="/gjenbruk">
+            <span className="hover:underline">Gjenbruk</span>
+          </Link>
+          <Link href="/favoritter">
+            <span className="hover:underline">Mine favoritter</span>
           </Link>
         </nav>
       </div>
     </header>
-  );
+  )
 }
