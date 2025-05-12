@@ -1,12 +1,17 @@
 // components/Map.tsx
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import dynamic from 'next/dynamic'
+import { useEffect, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { useEffect } from 'react'
-import type { LatLngExpression } from 'leaflet'
 
-// Fiks ikonvisning i Leaflet
-delete (L.Icon.Default as any).prototype._getIconUrl
+// Dynamisk import av MapContainer og avhengigheter for å unngå SSR-feil
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false })
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
+
+// Fiks for manglende ikoner i Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -21,21 +26,21 @@ type MarkerType = {
 }
 
 export default function Map({ markorer }: { markorer: MarkerType[] }) {
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'))
-    }, 500)
+    setMounted(true)
   }, [])
 
   const center = markorer.length
     ? [markorer[0].lat, markorer[0].lng]
-    : [60.472, 8.468] // fallback: Norge
+    : [60.472, 8.468]
 
-  const typedCenter: LatLngExpression = [center[0], center[1]]
+  if (!mounted) return null
 
   return (
     <MapContainer
-      center={typedCenter}
+      center={center}
       zoom={6}
       scrollWheelZoom={true}
       style={{ height: '500px', width: '100%' }}
