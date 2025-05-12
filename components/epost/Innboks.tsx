@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import getNotifications from "../lib/getNotifications";
+import getNotifications from "@/lib/getNotifications"; // <-- rettet her
 
 interface Epost {
   id: string;
@@ -47,18 +47,13 @@ export default function Innboks() {
           </p>
           <p className="mt-2">{m.innhold}</p>
 
-          {/* Fikset vedlegg-sjekk */}
           {Array.isArray(m.vedlegg) && m.vedlegg.length > 0 && (
             <div className="mt-3">
               <strong>Vedlegg:</strong>
               <ul className="list-disc list-inside">
                 {m.vedlegg.map((v, i) => (
                   <li key={i}>
-                    <a
-                      href={v.url}
-                      target="_blank"
-                      className="text-blue-600 underline"
-                    >
+                    <a href={v.url} target="_blank" className="text-blue-600 underline">
                       {v.filnavn}
                     </a>
                   </li>
