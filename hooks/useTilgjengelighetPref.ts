@@ -18,12 +18,13 @@ export default function useTilgjengelighetPref() {
 
   // Synkroniser til brukerprofil etter innlogging
   useEffect(() => {
-    if (user) {
-      supabase
-        .from("brukerprofiler")
-        .update({ sprak: språk, opplesing_aktivert: opplesing })
-        .eq("id", user.id);
-    }
+    const brukerId = user && "id" in user ? (user.id as string) : null;
+    if (!brukerId) return;
+
+    supabase
+      .from("brukerprofiler")
+      .update({ sprak: språk, opplesing_aktivert: opplesing })
+      .eq("id", brukerId);
   }, [user, språk, opplesing]);
 
   // Lagre til localStorage og oppdater global lesefunksjon
