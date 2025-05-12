@@ -31,7 +31,8 @@ export default function LastOppProsjektfil({ prosjektId }: { prosjektId: string 
   }, [prosjektId]);
 
   const lastOpp = async () => {
-    if (!fil || !user) return;
+    const brukerId = user && "id" in user ? (user.id as string) : null;
+    if (!fil || !brukerId) return;
 
     const path = `prosjekter/${prosjektId}/${Date.now()}_${fil.name}`;
     const { error: uploadError } = await supabase.storage
@@ -48,7 +49,7 @@ export default function LastOppProsjektfil({ prosjektId }: { prosjektId: string 
     const { error } = await supabase.from("prosjektfiler").insert([
       {
         prosjekt_id: prosjektId,
-        opplaster_id: user.id,
+        opplaster_id: brukerId,
         filnavn: fil.name,
         url,
       },
@@ -68,4 +69,27 @@ export default function LastOppProsjektfil({ prosjektId }: { prosjektId: string 
   };
 
   return (
-    <div class
+    <div className="space-y-4 mt-6">
+      <h2 className="text-xl font-bold">Last opp prosjektfil</h2>
+
+      <input type="file" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+
+      <button onClick={lastOpp} className="bg-black text-white px-4 py-2 rounded">
+        Last opp
+      </button>
+
+      {status && <p className="text-sm text-green-600">{status}</p>}
+
+      <ul className="space-y-2">
+        {filer.map((f) => (
+          <li key={f.id} className="flex justify-between items-center border p-2 rounded">
+            <a href={f.url} target="_blank" className="text-blue-600 underline">
+              {f.filnavn}
+            </a>
+            <span className="text-xs text-gray-500">{new Date(f.opplastet).toLocaleString()}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
