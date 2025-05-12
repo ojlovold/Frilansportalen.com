@@ -20,7 +20,7 @@ export default function MineAttester() {
       const { data: filer } = await supabase.storage.from('attester').list(brukerId)
       if (!filer) return
 
-      const filerMedUrl = filer.map((fil) => {
+      const filerMedUrl = filer.map((fil: any) => {
         const sti = `${brukerId}/${fil.name}`
         const { data: link } = supabase.storage.from('attester').getPublicUrl(sti)
         return {
