@@ -1,6 +1,7 @@
 // pages/bruker/[id].tsx
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import { useState } from 'react'
 import supabase from '../../lib/supabaseClient'
 
 type Props = {
@@ -17,13 +18,33 @@ type Props = {
 }
 
 export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
-  if (!profil || !tilgang) {
+  const [forespurt, setForespurt] = useState(false)
+
+  if (!profil || (!tilgang && forespurt)) {
     return (
       <main className="min-h-screen bg-portalGul p-8 text-black">
         <h1 className="text-3xl font-bold mb-6">Profil utilgjengelig</h1>
         <p>Brukeren har skjult profilen sin, eller du har ikke tilgang.</p>
       </main>
     )
+  }
+
+  const sendForespørsel = async () => {
+    const fraId = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('sb-user-id='))
+      ?.split('=')[1]
+
+    if (!fraId || !profil?.id) return
+
+    await supabase.from('profiltilgang').insert([
+      {
+        fra: fraId,
+        til: profil.id,
+        status: 'venter',
+      },
+    ])
+    setForespurt(true)
   }
 
   return (
@@ -47,6 +68,23 @@ export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
             {profil.pris ? `${profil.pris} kr/time` : 'Pris ikke oppgitt'}
           </p>
           {profil.beskrivelse && <p className="mt-4">{profil.beskrivelse}</p>}
+
+          {!tilgang && !forespurt && (
+            <div className="text-center mt-6">
+              <button
+                onClick={sendForespørsel}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Be om tilgang til profilen
+              </button>
+            </div>
+          )}
+
+          {forespurt && (
+            <p className="text-center mt-6 text-green-600">
+              Forespørsel sendt – du får beskjed hvis den godkjennes.
+            </p>
+          )}
         </div>
       </main>
     </>
