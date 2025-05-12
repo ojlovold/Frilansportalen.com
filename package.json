@@ -1,37 +1,31 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    },
-    "types": [
-      "node",
-      "leaflet",
-      "react-leaflet",
-      "jspdf",
-      "file-saver"
-    ]
+  "name": "frilansportalen",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "vercel-build": "next build"
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "globals.d.ts"
-  ],
-  "exclude": ["node_modules"]
+  "dependencies": {
+    "@supabase/auth-helpers-react": "^0.2.4",
+    "axios": "^1.6.7",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.263.0",
+    "next": "13.4.19",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.1",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.28"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/leaflet": "^1.9.4",
+    "@types/jspdf": "^2.0.0",
+    "typescript": "^5.2.2"
+  }
 }
