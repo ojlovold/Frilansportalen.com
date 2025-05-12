@@ -14,13 +14,14 @@ export default function MineAttester() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return
+      const brukerId = user && 'id' in user ? (user.id as string) : null
+      if (!brukerId) return
 
-      const { data: filer } = await supabase.storage.from('attester').list(user.id)
+      const { data: filer } = await supabase.storage.from('attester').list(brukerId)
       if (!filer) return
 
       const filerMedUrl = filer.map((fil) => {
-        const sti = `${user.id}/${fil.name}`
+        const sti = `${brukerId}/${fil.name}`
         const { data: link } = supabase.storage.from('attester').getPublicUrl(sti)
         return {
           navn: fil.name,
@@ -34,7 +35,8 @@ export default function MineAttester() {
     hent()
   }, [user])
 
-  if (!user?.id) return null
+  const brukerId = user && 'id' in user ? (user.id as string) : null
+  if (!brukerId) return null
 
   return (
     <div className="bg-white p-4 rounded-xl shadow mt-4">
