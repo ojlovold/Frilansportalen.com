@@ -28,6 +28,9 @@ export default function Header() {
           <Link href="/sokehistorikk">
             <span className="hover:underline">Søkehistorikk</span>
           </Link>
+          <Link href="/visningslogg">
+            <span className="hover:underline">Visningslogg</span>
+          </Link>
         </nav>
       </div>
     </header>
