@@ -1,68 +1,52 @@
-// components/DokumentSignering.tsx
-import { useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import { generateSimplePDF } from '../lib/pdf'
-import supabase from '../lib/supabaseClient'
+import { useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import generateSimplePDF from "../lib/pdf"; // ← korrekt default-import
+import supabase from "../lib/supabaseClient";
 
 type Props = {
-  dokumentId: string
-  tittel: string
-  tekst: string
-}
+  tittel: string;
+  innhold: string;
+  brukLogo?: boolean;
+};
 
-export default function DokumentSignering({ dokumentId, tittel, tekst }: Props) {
-  const user = useUser()
-  const [signatur, setSignatur] = useState('')
-  const [lagret, setLagret] = useState(false)
+export default function DokumentSignering({ tittel, innhold, brukLogo = true }: Props) {
+  const { user } = useUser();
+  const [signert, setSignert] = useState(false);
 
-  const signerOgLagre = async () => {
-    const brukerId = user && 'id' in user ? (user.id as string) : null
-    if (!brukerId || !signatur) return
+  const signerOgLastOpp = async () => {
+    const brukerId = user?.id ?? user?.user_metadata?.id;
+    if (!brukerId || typeof brukerId !== "string") return;
 
-    const kombinert = `${tekst}\n\nSignert av: ${brukerId}\nSignatur: ${signatur}`
+    const pdfBlob = await generateSimplePDF(tittel, innhold, brukerId, brukLogo);
+    const filnavn = `${tittel.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
 
-    const pdf = await generateSimplePDF(tittel, kombinert, brukerId, true)
-    const blob = new Blob([pdf], { type: 'application/pdf' })
+    const { error } = await supabase.storage
+      .from("signerte-dokumenter")
+      .upload(`${brukerId}/${filnavn}`, pdfBlob, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
 
-    const filsti = `${brukerId}/${dokumentId}.pdf`
-
-    await supabase.storage.from('signerte-dokumenter').upload(filsti, blob, {
-      upsert: true,
-      contentType: 'application/pdf',
-    })
-
-    await supabase.from('signaturer').insert([
-      {
-        bruker_id: brukerId,
-        dokument_id: dokumentId,
-        signatur,
-      },
-    ])
-
-    setLagret(true)
-  }
+    if (error) {
+      console.error("Feil ved opplasting:", error.message);
+    } else {
+      setSignert(true);
+    }
+  };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow max-w-2xl mx-auto mt-6">
-      <h2 className="text-xl font-semibold mb-4">{tittel}</h2>
-      <pre className="text-sm whitespace-pre-wrap mb-4">{tekst}</pre>
-
-      <input
-        type="text"
-        placeholder="Skriv navnet ditt som signatur"
-        value={signatur}
-        onChange={(e) => setSignatur(e.target.value)}
-        className="w-full p-2 border rounded mb-4"
-      />
-
+    <div>
       <button
-        onClick={signerOgLagre}
-        className="bg-black text-white px-4 py-2 rounded"
+        onClick={signerOgLastOpp}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
       >
-        Signer og lagre
+        Signer og last opp
       </button>
-
-      {lagret && <p className="text-green-600 mt-2">Dokument signert og lagret!</p>}
+      {signert && (
+        <p className="text-green-700 mt-2">
+          Dokumentet er signert og lastet opp til Supabase.
+        </p>
+      )}
     </div>
-  )
+  );
 }
