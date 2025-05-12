@@ -11,7 +11,7 @@ interface Invitasjon {
     beskrivelse: string;
     frist: string;
     status: string;
-  };
+  }[];
 }
 
 export default function MineInvitasjoner({ brukerId }: { brukerId: string }) {
@@ -50,10 +50,10 @@ export default function MineInvitasjoner({ brukerId }: { brukerId: string }) {
       <ul className="space-y-4">
         {invitasjoner.map((i) => (
           <li key={i.id} className="border p-4 rounded bg-white text-black shadow-sm">
-            <p className="text-lg font-bold">{i.prosjekt.navn}</p>
-            <p className="text-sm text-gray-700">{i.prosjekt.beskrivelse}</p>
-            <p>Status: <strong>{i.prosjekt.status}</strong></p>
-            <p>Frist: {new Date(i.prosjekt.frist).toLocaleDateString()}</p>
+            <p className="text-lg font-bold">{i.prosjekt[0]?.navn}</p>
+            <p className="text-sm text-gray-700">{i.prosjekt[0]?.beskrivelse}</p>
+            <p>Status: <strong>{i.prosjekt[0]?.status}</strong></p>
+            <p>Frist: {i.prosjekt[0]?.frist && new Date(i.prosjekt[0].frist).toLocaleDateString()}</p>
             <p>Rolle: {i.rolle}</p>
 
             <div className="flex gap-4 mt-2">
