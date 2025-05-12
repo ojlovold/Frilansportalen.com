@@ -46,8 +46,17 @@ export default function AdminGjenbruk() {
         opprettet: new Date().toISOString(),
       },
     ])
-    if (error) setStatus('feil')
-    else {
+
+    if (error) {
+      setStatus('feil')
+    } else {
+      // Send til automatisk match
+      await fetch('/api/gjenbrukmatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oppforing: ny }),
+      })
+
       setNy({ tittel: '', sted: '', kategori: '', beskrivelse: '', pris: 0 })
       setStatus('lagret')
     }
@@ -55,7 +64,7 @@ export default function AdminGjenbruk() {
 
   const toggleAktiv = async (id: string, aktiv: boolean) => {
     await supabase.from('gjenbruk').update({ aktiv: !aktiv }).eq('id', id)
-    setStatus('klar') // Trigg refresh
+    setStatus('klar')
   }
 
   const slett = async (id: string) => {
@@ -95,8 +104,12 @@ export default function AdminGjenbruk() {
           <button onClick={publiser} className="bg-black text-white px-4 py-2 rounded">
             Publiser
           </button>
-          {status === 'lagret' && <p className="text-green-600 mt-2">Oppføring publisert!</p>}
-          {status === 'feil' && <p className="text-red-600 mt-2">Noe gikk galt.</p>}
+          {status === 'lagret' && (
+            <p className="text-green-600 mt-2">Oppføring publisert og varsler sendt!</p>
+          )}
+          {status === 'feil' && (
+            <p className="text-red-600 mt-2">Noe gikk galt.</p>
+          )}
         </div>
 
         {/* Eksisterende oppføringer */}
