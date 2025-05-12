@@ -48,6 +48,15 @@ export default function RapportEksport() {
       <main className="bg-portalGul min-h-screen text-black p-8">
         <h1 className="text-3xl font-bold mb-6">Mine rapporter og dokumenter</h1>
 
+        {user?.id && (
+          <a
+            href={`/api/lastnedAlt?user=${user.id}`}
+            className="bg-black text-white px-4 py-2 rounded mb-6 inline-block"
+          >
+            Last ned alt som ZIP
+          </a>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl">
           {/* Fakturaer */}
           <div className="bg-white p-4 rounded shadow">
