@@ -15,11 +15,11 @@ export default function Personvern() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user || typeof user !== 'object' || !('id' in user)) return
       const { data } = await supabase
         .from('brukerprofiler')
         .select('samtykke_ai, samtykke_varsler, samtykke_match')
-        .eq('id', user.id)
+        .eq('id', (user as any).id)
         .single()
       if (data) setInnstillinger(data)
     }
@@ -28,11 +28,11 @@ export default function Personvern() {
   }, [user])
 
   const lagre = async () => {
-    if (!user || !user.id) return
+    if (!user || typeof user !== 'object' || !('id' in user)) return
     const { error } = await supabase
       .from('brukerprofiler')
       .update(innstillinger)
-      .eq('id', user.id)
+      .eq('id', (user as any).id)
 
     setStatus(error ? 'feil' : 'lagret')
   }
@@ -51,7 +51,9 @@ export default function Personvern() {
             <input
               type="checkbox"
               checked={innstillinger.samtykke_ai}
-              onChange={(e) => setInnstillinger({ ...innstillinger, samtykke_ai: e.target.checked })}
+              onChange={(e) =>
+                setInnstillinger({ ...innstillinger, samtykke_ai: e.target.checked })
+              }
             />
             Tillat at AI bruker svar og mønster til forbedring
           </label>
@@ -60,7 +62,9 @@ export default function Personvern() {
             <input
               type="checkbox"
               checked={innstillinger.samtykke_varsler}
-              onChange={(e) => setInnstillinger({ ...innstillinger, samtykke_varsler: e.target.checked })}
+              onChange={(e) =>
+                setInnstillinger({ ...innstillinger, samtykke_varsler: e.target.checked })
+              }
             />
             Tillat varsler i app og på e-post
           </label>
@@ -69,7 +73,9 @@ export default function Personvern() {
             <input
               type="checkbox"
               checked={innstillinger.samtykke_match}
-              onChange={(e) => setInnstillinger({ ...innstillinger, samtykke_match: e.target.checked })}
+              onChange={(e) =>
+                setInnstillinger({ ...innstillinger, samtykke_match: e.target.checked })
+              }
             />
             Tillat at profilen vises i automatiske forslag
           </label>
