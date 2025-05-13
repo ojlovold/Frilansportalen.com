@@ -1,4 +1,3 @@
-// pages/meldinger.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
@@ -21,17 +20,18 @@ export default function Meldinger() {
   const [nyMelding, setNyMelding] = useState('')
   const [sendt, setSendt] = useState(false)
 
-  const mottaker = 'system' // eller admin-id
+  const mottaker = 'system'
   const modul = 'melding'
 
   useEffect(() => {
     const hentMeldinger = async () => {
-      if (!user || !('id' in user)) return
+      const brukerId = user && 'id' in user ? user.id as string : null
+      if (!brukerId) return
 
       const { data, error } = await supabase
         .from('epost')
         .select('*')
-        .eq('til', user.id)
+        .eq('til', brukerId)
         .order('opprettet', { ascending: false })
 
       if (!error && data) setMeldinger(data)
@@ -42,8 +42,9 @@ export default function Meldinger() {
 
   useEffect(() => {
     const hentUtkastet = async () => {
-      if (!user || !('id' in user)) return
-      const innhold = await hentUtkast(user.id, mottaker, modul)
+      const brukerId = user && 'id' in user ? user.id as string : null
+      if (!brukerId) return
+      const innhold = await hentUtkast(brukerId, mottaker, modul)
       setNyMelding(innhold)
     }
 
@@ -52,20 +53,22 @@ export default function Meldinger() {
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      if (user && 'id' in user && nyMelding) {
-        lagreUtkast(user.id, mottaker, modul, nyMelding)
+      const brukerId = user && 'id' in user ? user.id as string : null
+      if (brukerId && nyMelding) {
+        lagreUtkast(brukerId, mottaker, modul, nyMelding)
       }
     }, 1000)
     return () => clearTimeout(delay)
   }, [nyMelding, user])
 
   const sendMelding = async () => {
-    if (!nyMelding || !user || !('id' in user)) return
+    const brukerId = user && 'id' in user ? user.id as string : null
+    if (!nyMelding || !brukerId) return
 
     const { error } = await supabase.from('epost').insert([
       {
         til: mottaker,
-        fra: user.id,
+        fra: brukerId,
         innhold: nyMelding,
         opprettet: new Date().toISOString(),
       },
@@ -74,7 +77,7 @@ export default function Meldinger() {
     if (!error) {
       setNyMelding('')
       setSendt(true)
-      slettUtkast(user.id, mottaker, modul)
+      slettUtkast(brukerId, mottaker, modul)
     }
   }
 
