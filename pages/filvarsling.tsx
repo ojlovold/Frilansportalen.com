@@ -5,7 +5,11 @@ import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
 
 export default function Filvarsling() {
-  const [status, setStatus] = useState<any>({
+  const [status, setStatus] = useState<{
+    cv: boolean | null;
+    kontrakt: boolean | null;
+    attest: any[] | null;
+  }>({
     cv: null,
     kontrakt: null,
     attest: null,
@@ -15,6 +19,7 @@ export default function Filvarsling() {
     const hent = async () => {
       const bruker = await supabase.auth.getUser();
       const id = bruker.data.user?.id;
+      if (!id) return;
 
       const [cv, kontrakt, attest] = await Promise.all([
         supabase.from("cv").select("id").eq("opprettet_av", id),
@@ -23,9 +28,9 @@ export default function Filvarsling() {
       ]);
 
       setStatus({
-        cv: cv.data?.length > 0,
-        kontrakt: kontrakt.data?.length > 0,
-        attest: attest.data?.length > 0 ? attest.data : null,
+        cv: Array.isArray(cv.data) && cv.data.length > 0,
+        kontrakt: Array.isArray(kontrakt.data) && kontrakt.data.length > 0,
+        attest: Array.isArray(attest.data) && attest.data.length > 0 ? attest.data : null,
       });
     };
 
@@ -35,7 +40,8 @@ export default function Filvarsling() {
   const utløpsAdvarsel = () => {
     if (!status.attest) return null;
     const nærUt = status.attest.find((a: any) => {
-      const dager = (new Date(a.utløpsdato).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+      const dager =
+        (new Date(a.utløpsdato).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
       return dager <= 30;
     });
     return nærUt ? "⚠️ Attest nær utløp" : null;
