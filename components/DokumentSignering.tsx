@@ -1,14 +1,7 @@
 import { useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabaseClient";
 
 export default function DokumentSignering({ brukerId }: { brukerId: string }) {
-  const rawUser = useUser();
-  const user = rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser
-    ? (rawUser as User)
-    : null;
-
   const [fil, setFil] = useState<File | null>(null);
   const [signatur, setSignatur] = useState("");
   const [status, setStatus] = useState<"klar" | "sender" | "ferdig" | "feil">("klar");
@@ -32,7 +25,7 @@ export default function DokumentSignering({ brukerId }: { brukerId: string }) {
       {
         bruker_id: brukerId,
         dokument_id: fil.name.replace(".pdf", ""),
-        signatur: signatur,
+        signatur,
       },
     ]);
 
