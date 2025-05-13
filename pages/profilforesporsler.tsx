@@ -2,6 +2,7 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 type Forespørsel = {
@@ -12,12 +13,13 @@ type Forespørsel = {
 }
 
 export default function ProfilForespørsler() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser ? (rawUser as User) : null
   const [forespørsler, setForespørsler] = useState<Forespørsel[]>([])
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
       const { data, error } = await supabase
         .from('profiltilgang')
         .select('*')
