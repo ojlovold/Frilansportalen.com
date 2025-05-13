@@ -1,16 +1,24 @@
+// pages/pdf.tsx
 import Head from "next/head";
 import Layout from "../components/Layout";
 import jsPDF from "jspdf";
 import { brukerHarPremium } from "../utils/brukerHarPremium";
 import PremiumBox from "../components/PremiumBox";
 import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
 
 export default function PDF() {
+  const user = useUser();
   const [premium, setPremium] = useState(false);
 
   useEffect(() => {
-    brukerHarPremium().then(setPremium);
-  }, []);
+    const sjekk = async () => {
+      if (!user || !("id" in user)) return;
+      const har = await brukerHarPremium(user.id);
+      setPremium(har);
+    };
+    sjekk();
+  }, [user]);
 
   const generer = () => {
     const doc = new jsPDF();
