@@ -1,67 +1,58 @@
-import { useEffect, useState } from 'react';
-import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
-import type { User } from '@supabase/supabase-js';
-import Dashboard from '@/components/Dashboard';  // Juster import-sti etter prosjektstruktur
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import Dashboard from "@/components/Dashboard";
+import { supabase } from "@/lib/supabaseClient";
 
-const StatistikkPage: React.FC = () => {
-  // Hent innlogget bruker (caste til Supabase User for å unngå TS-konflikt)
-  const { user } = useUser();
-  const supabaseUser = user as unknown as User;
-  const userId = supabaseUser?.id;
+export default function SjappaStatistikk() {
+  const rawUser = useUser();
+  const user = rawUser as unknown as User | null;
 
-  // State for annonser-statistikk
-  const [totalAds, setTotalAds] = useState<number | null>(null);
-  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState<boolean>(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Supabase klient (forutsatt at SessionContextProvider er satt opp i _app.tsx)
-  const supabase = useSupabaseClient();
+  const [antall, setAntall] = useState(0);
+  const [fordeling, setFordeling] = useState<{ [type: string]: number }>({});
+  const [laster, setLaster] = useState(true);
+  const [feil, setFeil] = useState<string | null>(null);
 
   useEffect(() => {
-    // Ikke hent data hvis bruker ikke er innlogget
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+    const hent = async () => {
+      if (!user) {
+        setLaster(false);
+        return;
+      }
 
-    const fetchAdStats = async () => {
       try {
-        // Hent alle annonser opprettet av denne brukeren
         const { data, error } = await supabase
-          .from('annonser')
-          .select('type')
-          .eq('user_id', userId);  // anta at kolonnen for brukerens ID heter 'user_id'
-        
-        if (error) {
-          throw error;
-        }
-        if (data) {
-          // Beregn totalt antall annonser og antall per type
-          setTotalAds(data.length);
-          const counts: Record<string, number> = {};
-          data.forEach(ad => {
-            const type = ad.type || 'Ukjent';
-            counts[type] = (counts[type] || 0) + 1;
-          });
-          setTypeCounts(counts);
-        }
+          .from("annonser")
+          .select("type")
+          .eq("opprettet_av", user.id); // bruk riktig kolonnenavn
+
+        if (error) throw error;
+        if (!data) return;
+
+        setAntall(data.length);
+
+        const teller: { [type: string]: number } = {};
+        data.forEach((a) => {
+          const type = a.type || "Ukjent";
+          teller[type] = (teller[type] || 0) + 1;
+        });
+
+        setFordeling(teller);
       } catch (err) {
-        console.error('Error fetching ad stats:', err);
-        setErrorMsg('Kunne ikke hente statistikk.');
+        console.error("Feil ved henting av data:", err);
+        setFeil("Kunne ikke hente statistikk.");
       } finally {
-        setLoading(false);
+        setLaster(false);
       }
     };
 
-    fetchAdStats();
-  }, [userId, supabase]);
+    hent();
+  }, [user]);
 
-  // Vis beskjed dersom brukeren ikke er innlogget
   if (!user) {
     return (
       <Dashboard>
-        <h1>Statistikk</h1>
+        <h1 className="text-2xl font-bold">Statistikk</h1>
         <p>Du må være innlogget for å se denne siden.</p>
       </Dashboard>
     );
@@ -69,30 +60,28 @@ const StatistikkPage: React.FC = () => {
 
   return (
     <Dashboard>
-      <h1>Statistikk</h1>
+      <h1 className="text-2xl font-bold mb-4">Statistikk</h1>
 
-      {loading ? (
+      {laster ? (
         <p>Laster data...</p>
-      ) : errorMsg ? (
-        <p style={{ color: 'red' }}>{errorMsg}</p>
-      ) : totalAds !== null && totalAds === 0 ? (
-        <p>Du har ingen annonser enda.</p>
+      ) : feil ? (
+        <p className="text-red-600">{feil}</p>
       ) : (
-        // Vis statistikk dersom data er klar
-        <div>
-          <p>Antall annonser: <strong>{totalAds}</strong></p>
-          <p>Fordeling per annonsetype:</p>
-          <ul>
-            {Object.entries(typeCounts).map(([type, count]) => (
+        <>
+          <p className="text-sm text-black">
+            Antall publiserte annonser: <strong>{antall}</strong>
+          </p>
+
+          <ul className="text-sm text-black mt-4 space-y-1">
+            {Object.entries(fordeling).map(([type, count]) => (
               <li key={type}>
-                {type}: <strong>{count}</strong>
+                {type.charAt(0).toUpperCase() + type.slice(1)}:{" "}
+                <strong>{count}</strong>
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
     </Dashboard>
   );
-};
-
-export default StatistikkPage;
+}
