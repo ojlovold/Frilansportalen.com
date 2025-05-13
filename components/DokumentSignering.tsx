@@ -5,7 +5,8 @@ import supabase from "@/lib/supabaseClient"
 import { useState } from "react"
 
 export default function DokumentSignering() {
-  const user = useSafeUser()?.user
+  const result = useSafeUser()
+  const user = (result as any)?.user as User | null
   const [status, setStatus] = useState("")
 
   const signerDokument = async () => {
