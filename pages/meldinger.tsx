@@ -2,6 +2,7 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 import SuggestionBox from '../components/SuggestionBox'
 import ErrorBox from '../components/ErrorBox'
@@ -16,7 +17,7 @@ type Melding = {
 }
 
 export default function Meldinger() {
-  const user = useUser()
+  const user = useUser() as unknown as User
   const [meldinger, setMeldinger] = useState<Melding[]>([])
   const [nyMelding, setNyMelding] = useState('')
   const [sendt, setSendt] = useState(false)
@@ -26,7 +27,7 @@ export default function Meldinger() {
 
   useEffect(() => {
     const hentMeldinger = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
 
       const { data, error } = await supabase
         .from('epost')
@@ -60,7 +61,7 @@ export default function Meldinger() {
   }, [nyMelding, user])
 
   const sendMelding = async () => {
-    if (!nyMelding || !user || !user.id) return
+    if (!nyMelding || !user?.id) return
 
     const { error } = await supabase.from('epost').insert([
       {
