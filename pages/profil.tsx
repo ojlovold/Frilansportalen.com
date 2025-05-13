@@ -8,7 +8,10 @@ import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
 
 export default function Profil() {
   const rawUser = useUser()
-  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser ? (rawUser as User) : null
+  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser
+    ? (rawUser as User)
+    : null
+
   const [profil, setProfil] = useState<any>(null)
   const [synlighet, setSynlighet] = useState('alle')
   const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
@@ -53,7 +56,7 @@ export default function Profil() {
   }, [profil, user])
 
   const lagre = async () => {
-    if (!user || !profil) return
+    if (!user?.id || !profil) return
     setStatus('lagrer')
 
     const { error } = await supabase
