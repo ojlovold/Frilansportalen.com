@@ -1,59 +1,33 @@
-import { useState } from "react";
-import supabase from "@/lib/supabaseClient";
+// pages/signering.tsx
+import Head from 'next/head';
+import { useUser } from '@supabase/auth-helpers-react';
+import { useState } from 'react';
+import type { User } from '@supabase/supabase-js';
+import Layout from '@/components/Layout';
+import DokumentSignering from '@/components/DokumentSignering';
 
-export default function DokumentSignering({ brukerId }: { brukerId: string }) {
-  const [fil, setFil] = useState<File | null>(null);
-  const [status, setStatus] = useState<"klar" | "laster" | "ferdig" | "feil">("klar");
-
-  const lastOpp = async () => {
-    if (!fil || !brukerId) return;
-    setStatus("laster");
-
-    const path = `signerte-dokumenter/${brukerId}/${fil.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("signerte-dokumenter")
-      .upload(path, fil, { upsert: true });
-
-    if (uploadError) {
-      console.error(uploadError);
-      setStatus("feil");
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("signerte-dokumenter")
-      .getPublicUrl(path);
-
-    await supabase.from("signaturer").insert([
-      {
-        bruker_id: brukerId,
-        dokument_id: fil.name.replace(".pdf", ""),
-        signatur: "Signert elektronisk",
-        tidspunkt: new Date().toISOString(),
-      },
-    ]);
-
-    setFil(null);
-    setStatus("ferdig");
-  };
+export default function Signering() {
+  const rawUser = useUser();
+  const user = rawUser && typeof rawUser === 'object' && rawUser !== null && 'id' in rawUser
+    ? (rawUser as User)
+    : null;
 
   return (
-    <div className="bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Signer dokument</h2>
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={(e) => setFil(e.target.files?.[0] || null)}
-        className="mb-4"
-      />
-      <button
-        onClick={lastOpp}
-        className="bg-black text-white px-4 py-2 rounded"
-      >
-        Last opp og signer
-      </button>
-      {status === "ferdig" && <p className="text-green-600 mt-2">Dokument signert!</p>}
-      {status === "feil" && <p className="text-red-600 mt-2">Noe gikk galt.</p>}
-    </div>
+    <Layout>
+      <Head>
+        <title>Signering | Frilansportalen</title>
+      </Head>
+      <div className="max-w-xl mx-auto py-10 text-black">
+        <h1 className="text-3xl font-bold mb-6">Dokumentsignering</h1>
+
+        {!user ? (
+          <p>Du må være innlogget for å signere dokumenter.</p>
+        ) : (
+          <div className="space-y-10">
+            <DokumentSignering brukerId={user.id} />
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }
