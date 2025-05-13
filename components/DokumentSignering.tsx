@@ -1,40 +1,34 @@
-import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabaseClient";
+import { useState } from "react";
 
 export default function DokumentSignering() {
   const rawUser = useUser();
-  const user: User | null =
-    rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser
-      ? (rawUser as User)
-      : null;
+  const brukerId = typeof rawUser === "object" && rawUser !== null && "id" in rawUser
+    ? String((rawUser as any).id)
+    : null;
 
   const [fil, setFil] = useState<File | null>(null);
   const [signatur, setSignatur] = useState("");
+  const [status, setStatus] = useState<"klar" | "feil" | "lagret">("klar");
 
   const send = async () => {
-    if (!fil || !user) return;
+    if (!fil || !brukerId || !signatur) return setStatus("feil");
 
-    const filnavn = `signert/${user.id}/${Date.now()}-${fil.name}`;
+    const sti = `signert/${brukerId}/${Date.now()}-${fil.name}`;
     const { error: uploadError } = await supabase.storage
       .from("signerte-dokumenter")
-      .upload(filnavn, fil, {
-        contentType: "application/pdf",
-      });
+      .upload(sti, fil);
 
-    if (uploadError) {
-      console.error("Opplasting feilet:", uploadError);
-      return;
-    }
+    if (uploadError) return setStatus("feil");
 
     const { data: urlData } = supabase.storage
       .from("signerte-dokumenter")
-      .getPublicUrl(filnavn);
+      .getPublicUrl(sti);
 
     const { error: dbError } = await supabase.from("signaturer").insert([
       {
-        bruker_id: user.id,
+        bruker_id: brukerId,
         dokument_id: fil.name.replace(".pdf", ""),
         signatur,
         tidspunkt: new Date().toISOString(),
@@ -42,17 +36,17 @@ export default function DokumentSignering() {
       },
     ]);
 
-    if (dbError) {
-      console.error("DB-feil:", dbError);
-    } else {
-      setFil(null);
-      setSignatur("");
-    }
+    if (dbError) return setStatus("feil");
+
+    setStatus("lagret");
+    setFil(null);
+    setSignatur("");
   };
 
   return (
     <div className="bg-white p-6 rounded shadow space-y-4">
-      <h2 className="text-xl font-bold">Signer et dokument</h2>
+      <h2 className="text-xl font-bold">Signer dokument</h2>
+
       <input
         type="file"
         accept=".pdf"
@@ -64,14 +58,14 @@ export default function DokumentSignering() {
         placeholder="Din signatur"
         value={signatur}
         onChange={(e) => setSignatur(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full border p-2 rounded"
       />
-      <button
-        onClick={send}
-        className="bg-black text-white px-4 py-2 rounded"
-      >
+      <button onClick={send} className="bg-black text-white px-4 py-2 rounded">
         Last opp og signer
       </button>
+
+      {status === "lagret" && <p className="text-green-600">Dokument signert!</p>}
+      {status === "feil" && <p className="text-red-600">Noe gikk galt. Prøv igjen.</p>}
     </div>
   );
 }
