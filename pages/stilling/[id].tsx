@@ -1,71 +1,69 @@
-// pages/stilling/[id].tsx
-import { GetServerSideProps } from 'next'
-import Head from 'next/head'
-import { useEffect } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../../lib/supabaseClient'
-import { loggVisning } from '../../lib/visningslogg'
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import Head from "next/head";
+import Layout from "@/components/Layout";
+import supabase from "@/lib/supabaseClient";
+import loggVisning from "@/lib/loggVisning";
 
-type Props = {
-  stilling: {
-    id: string
-    tittel: string
-    sted: string
-    type: string
-    frist: string
-    bransje: string
-    beskrivelse: string
-  } | null
-}
+export default function StillingsVisning() {
+  const router = useRouter();
+  const { id } = router.query;
 
-export default function StillingVisning({ stilling }: Props) {
-  const user = useUser()
+  const rawUser = useUser();
+  const user = rawUser as unknown as User | null;
+
+  const [stilling, setStilling] = useState<any>(null);
+  const [feil, setFeil] = useState<string | null>(null);
+  const [laster, setLaster] = useState(true);
+
+  useEffect(() => {
+    const hentStilling = async () => {
+      if (!id || typeof id !== "string") return;
+
+      const { data, error } = await supabase
+        .from("stillinger")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Feil ved henting:", error);
+        setFeil("Kunne ikke finne stillingen.");
+      } else {
+        setStilling(data);
+      }
+
+      setLaster(false);
+    };
+
+    hentStilling();
+  }, [id]);
 
   useEffect(() => {
     if (user?.id && stilling?.id) {
-      loggVisning(user.id, stilling.id, 'stilling')
+      loggVisning(user.id, stilling.id, "stilling");
     }
-  }, [user, stilling])
-
-  if (!stilling) {
-    return (
-      <main className="p-8 bg-portalGul min-h-screen text-black">
-        <h1 className="text-3xl font-bold">Stilling ikke funnet</h1>
-        <p>Stillingen finnes ikke eller er slettet.</p>
-      </main>
-    )
-  }
+  }, [user, stilling]);
 
   return (
-    <>
+    <Layout>
       <Head>
-        <title>{stilling.tittel} | Frilansportalen</title>
-        <meta name="description" content={`Stilling: ${stilling.tittel}`} />
+        <title>{stilling?.tittel || "Stilling"} | Frilansportalen</title>
       </Head>
-      <main className="p-8 bg-portalGul min-h-screen text-black">
-        <div className="bg-white p-6 rounded-xl shadow max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">{stilling.tittel}</h1>
-          <p className="text-sm text-gray-600 mb-4">
-            {stilling.sted} | {stilling.type} | Frist: {stilling.frist} | {stilling.bransje}
-          </p>
-          <p>{stilling.beskrivelse}</p>
-        </div>
-      </main>
-    </>
-  )
-}
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const id = context.params?.id
-  const { data, error } = await supabase
-    .from('stillinger')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  return {
-    props: {
-      stilling: error ? null : data,
-    },
-  }
+      {laster ? (
+        <p>Laster stillingsannonse...</p>
+      ) : feil ? (
+        <p className="text-red-600">{feil}</p>
+      ) : (
+        <>
+          <h1 className="text-3xl font-bold mb-4">{stilling.tittel}</h1>
+          <p className="text-sm text-gray-700 mb-6">{stilling.beskrivelse}</p>
+          {/* Tilpass og utvid visningen etter behov */}
+        </>
+      )}
+    </Layout>
+  );
 }
