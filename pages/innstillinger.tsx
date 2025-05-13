@@ -1,45 +1,45 @@
-// pages/innstillinger.tsx
-import Head from 'next/head'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
-import { useEffect, useState } from 'react'
+import Head from "next/head";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import supabase from "../lib/supabaseClient";
+import { useEffect, useState } from "react";
 
 export default function Innstillinger() {
-  const user = useUser()
-  const [data, setData] = useState<any>({})
-  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar')
-  const [logo, setLogo] = useState<File | null>(null)
+  const user = useUser() as unknown as User;
+  const [data, setData] = useState<any>({});
+  const [status, setStatus] = useState<"klar" | "lagret" | "feil">("klar");
+  const [logo, setLogo] = useState<File | null>(null);
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return
+      if (!user?.id) return;
       const { data } = await supabase
-        .from('brukerprofiler')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      if (data) setData(data)
-    }
+        .from("brukerprofiler")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      if (data) setData(data);
+    };
 
-    hent()
-  }, [user])
+    hent();
+  }, [user]);
 
   const lagre = async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
     if (logo) {
       await supabase.storage
-        .from('profilbilder')
-        .upload(`${user.id}.jpg`, logo, { upsert: true })
+        .from("profilbilder")
+        .upload(`${user.id}.jpg`, logo, { upsert: true });
     }
 
     const { error } = await supabase
-      .from('brukerprofiler')
+      .from("brukerprofiler")
       .update(data)
-      .eq('id', user.id)
+      .eq("id", user.id);
 
-    setStatus(error ? 'feil' : 'lagret')
-  }
+    setStatus(error ? "feil" : "lagret");
+  };
 
   return (
     <>
@@ -53,7 +53,7 @@ export default function Innstillinger() {
         <input
           type="text"
           placeholder="Navn"
-          value={data.navn || ''}
+          value={data.navn || ""}
           onChange={(e) => setData({ ...data, navn: e.target.value })}
           className="w-full p-2 border rounded mb-4"
         />
@@ -61,7 +61,7 @@ export default function Innstillinger() {
         <input
           type="text"
           placeholder="E-post"
-          value={data.epost || ''}
+          value={data.epost || ""}
           onChange={(e) => setData({ ...data, epost: e.target.value })}
           className="w-full p-2 border rounded mb-4"
         />
@@ -69,14 +69,14 @@ export default function Innstillinger() {
         <input
           type="text"
           placeholder="Telefon"
-          value={data.telefon || ''}
+          value={data.telefon || ""}
           onChange={(e) => setData({ ...data, telefon: e.target.value })}
           className="w-full p-2 border rounded mb-4"
         />
 
         <textarea
           placeholder="Beskrivelse (CV, firma, bakgrunn...)"
-          value={data.beskrivelse || ''}
+          value={data.beskrivelse || ""}
           onChange={(e) => setData({ ...data, beskrivelse: e.target.value })}
           className="w-full p-2 border rounded mb-4 h-32"
         />
@@ -105,13 +105,13 @@ export default function Innstillinger() {
           Lagre innstillinger
         </button>
 
-        {status === 'lagret' && (
+        {status === "lagret" && (
           <p className="text-green-600 mt-4">Innstillinger lagret!</p>
         )}
-        {status === 'feil' && (
+        {status === "feil" && (
           <p className="text-red-600 mt-4">Noe gikk galt.</p>
         )}
       </main>
     </>
-  )
+  );
 }
