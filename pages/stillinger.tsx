@@ -2,6 +2,7 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 import {
   lagreFavoritt,
@@ -21,7 +22,9 @@ type Stilling = {
 }
 
 export default function Stillinger() {
-  const user = useUser()
+  const rawUser = useUser();
+  const user = rawUser as unknown as User | null;
+
   const [stillinger, setStillinger] = useState<Stilling[]>([])
   const [filtrert, setFiltrert] = useState<Stilling[]>([])
   const [favoritter, setFavoritter] = useState<Record<string, boolean>>({})
@@ -39,8 +42,8 @@ export default function Stillinger() {
         setStillinger(data)
         setFiltrert(data)
 
-        if (user && user.id) {
-          const favs = {}
+        if (user?.id) {
+          const favs: Record<string, boolean> = {}
           for (const s of data) {
             favs[s.id] = await erFavoritt(user.id, 'stilling', s.id)
           }
@@ -64,19 +67,17 @@ export default function Stillinger() {
 
     setFiltrert(filtrertListe)
 
-    // Logg søket
-    if (user && user.id) {
+    if (user?.id) {
       const aktivtSøk = Object.values(filter).filter(Boolean).join(', ')
-      if (aktivtSøk)
-        loggSoek(user.id, aktivtSøk, 'stillinger')
+      if (aktivtSøk) loggSoek(user.id, aktivtSøk, 'stillinger')
     }
-  }, [filter, stillinger])
+  }, [filter, stillinger, user])
 
   const unike = (felt: keyof Stilling) =>
     Array.from(new Set(stillinger.map((s) => s[felt])))
 
   const toggleFavoritt = async (id: string) => {
-    if (!user || !user.id) return
+    if (!user?.id) return
     const erFavorittNå = favoritter[id]
 
     if (erFavorittNå) {
