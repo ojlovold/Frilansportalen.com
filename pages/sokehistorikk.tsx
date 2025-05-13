@@ -1,69 +1,79 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { useUser } from "@supabase/auth-helpers-react";
 import type { User } from "@supabase/supabase-js";
-import Head from "next/head";
-import Layout from "@/components/Layout";
+import Dashboard from "@/components/Dashboard";
 import supabase from "@/lib/supabaseClient";
-import loggVisning from "@/lib/loggVisning";
 
-export default function StillingsVisning() {
-  const router = useRouter();
-  const { id } = router.query;
+type SokelogEntry = {
+  id: number;
+  søkeord: string;
+  tidspunkt: string;
+};
 
+export default function Sokehistorikk() {
   const rawUser = useUser();
   const user = rawUser as unknown as User | null;
 
-  const [stilling, setStilling] = useState<any>(null);
-  const [feil, setFeil] = useState<string | null>(null);
+  const [historikk, setHistorikk] = useState<SokelogEntry[]>([]);
   const [laster, setLaster] = useState(true);
+  const [feil, setFeil] = useState<string | null>(null);
 
   useEffect(() => {
-    const hentStilling = async () => {
-      if (!id || typeof id !== "string") return;
-
-      const { data, error } = await supabase
-        .from("stillinger")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error("Feil ved henting:", error);
-        setFeil("Kunne ikke finne stillingen.");
-      } else {
-        setStilling(data);
+    const hent = async () => {
+      if (!user) {
+        setLaster(false);
+        return;
       }
 
-      setLaster(false);
+      try {
+        const { data, error } = await supabase
+          .from("sokelogg")
+          .select("*")
+          .eq("bruker_id", user.id)
+          .order("tidspunkt", { ascending: false });
+
+        if (error) throw error;
+        if (data) setHistorikk(data);
+      } catch (err) {
+        console.error("Feil ved henting av søkelogg:", err);
+        setFeil("Kunne ikke hente søkehistorikk.");
+      } finally {
+        setLaster(false);
+      }
     };
 
-    hentStilling();
-  }, [id]);
+    hent();
+  }, [user]);
 
-  useEffect(() => {
-    if (user?.id && stilling?.id) {
-      loggVisning(user.id, stilling.id, "stilling");
-    }
-  }, [user, stilling]);
+  if (!user) {
+    return (
+      <Dashboard>
+        <h1 className="text-2xl font-bold mb-4">Søkehistorikk</h1>
+        <p>Du må være innlogget for å se denne siden.</p>
+      </Dashboard>
+    );
+  }
 
   return (
-    <Layout>
-      <Head>
-        <title>{stilling?.tittel || "Stilling"} | Frilansportalen</title>
-      </Head>
+    <Dashboard>
+      <h1 className="text-2xl font-bold mb-4">Søkehistorikk</h1>
 
       {laster ? (
-        <p>Laster stillingsannonse...</p>
+        <p>Laster data...</p>
       ) : feil ? (
         <p className="text-red-600">{feil}</p>
+      ) : historikk.length === 0 ? (
+        <p className="text-sm text-black">Ingen søk registrert ennå.</p>
       ) : (
-        <>
-          <h1 className="text-3xl font-bold mb-4">{stilling.tittel}</h1>
-          <p className="text-sm text-gray-700 mb-6">{stilling.beskrivelse}</p>
-          {/* Tilpass og utvid visningen etter behov */}
-        </>
+        <ul className="text-sm text-black space-y-2">
+          {historikk.map((rad) => (
+            <li key={rad.id}>
+              <strong>{rad.søkeord}</strong>{" "}
+              <span className="text-gray-600">({new Date(rad.tidspunkt).toLocaleString()})</span>
+            </li>
+          ))}
+        </ul>
       )}
-    </Layout>
+    </Dashboard>
   );
 }
