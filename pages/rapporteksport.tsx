@@ -2,10 +2,13 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 export default function RapportEksport() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser && typeof rawUser === 'object' && rawUser !== null && 'id' in rawUser ? (rawUser as User) : null
+
   const [fakturaer, setFakturaer] = useState<any[]>([])
   const [kjorebok, setKjorebok] = useState<any[]>([])
   const [rapporter, setRapporter] = useState<any[]>([])
@@ -13,7 +16,7 @@ export default function RapportEksport() {
 
   useEffect(() => {
     const hentData = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
 
       const f = await supabase.from('fakturaer').select('*').eq('frilanser_id', user.id)
       if (f.data) setFakturaer(f.data)
@@ -58,7 +61,6 @@ export default function RapportEksport() {
         )}
 
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl">
-          {/* Fakturaer */}
           <div className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold mb-3">Fakturaer</h2>
             {fakturaer.map((f) => (
@@ -68,7 +70,6 @@ export default function RapportEksport() {
             ))}
           </div>
 
-          {/* Kjørebok */}
           <div className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold mb-3">Kjørebok</h2>
             {kjorebok.map((t) => (
@@ -78,7 +79,6 @@ export default function RapportEksport() {
             ))}
           </div>
 
-          {/* Rapporter */}
           <div className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold mb-3">PDF-rapporter</h2>
             {rapporter.map((r) => (
@@ -90,7 +90,6 @@ export default function RapportEksport() {
             ))}
           </div>
 
-          {/* Kvitteringer */}
           <div className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold mb-3">Kvitteringer</h2>
             {kvitteringer.map((k) => (
