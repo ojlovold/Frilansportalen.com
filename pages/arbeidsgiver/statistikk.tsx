@@ -1,17 +1,18 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/components/Dashboard";
 import supabase from "@/lib/supabaseClient";
 
 export default function ArbeidsgiverStatistikk() {
-  const user = useUser();
+  const user = useUser() as unknown as User;
   const [stillinger, setStillinger] = useState(0);
   const [søknader, setSøknader] = useState(0);
   const [ansettelser, setAnsettelser] = useState(0);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const hent = async () => {
       const { count: stillingCount } = await supabase
