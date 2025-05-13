@@ -6,14 +6,15 @@ import { brukerHarPremium } from "../utils/brukerHarPremium";
 import PremiumBox from "../components/PremiumBox";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 
 export default function PDF() {
-  const user = useUser();
+  const user = useUser() as User | null;
   const [premium, setPremium] = useState(false);
 
   useEffect(() => {
     const sjekk = async () => {
-      if (!user || !("id" in user)) return;
+      if (!user?.id) return;
       const har = await brukerHarPremium(user.id);
       setPremium(har);
     };
