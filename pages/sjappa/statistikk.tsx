@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/components/Dashboard";
-import { supabase } from "@/lib/supabaseClient";
+import supabase from "@/lib/supabaseClient"; // ← riktig default-import
 
 export default function SjappaStatistikk() {
   const rawUser = useUser();
@@ -24,7 +24,7 @@ export default function SjappaStatistikk() {
         const { data, error } = await supabase
           .from("annonser")
           .select("type")
-          .eq("opprettet_av", user.id); // bruk riktig kolonnenavn
+          .eq("opprettet_av", user.id); // ← husk riktig kolonnenavn
 
         if (error) throw error;
         if (!data) return;
