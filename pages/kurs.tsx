@@ -17,7 +17,7 @@ type Kurs = {
 export default function Kursportal() {
   const [kurs, setKurs] = useState<Kurs[]>([])
   const [filtrert, setFiltrert] = useState<Kurs[]>([])
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<{ kategori: string; sted: string }>({
     kategori: '',
     sted: '',
   })
@@ -58,12 +58,12 @@ export default function Kursportal() {
 
         {/* Filtrering */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {(['kategori', 'sted'] as (keyof Kurs)[]).map((felt) => (
+          {(['kategori', 'sted'] as const).map((felt) => (
             <select
               key={felt}
               value={filter[felt]}
               onChange={(e) =>
-                setFilter({ ...filter, [felt]: e.target.value })
+                setFilter((prev) => ({ ...prev, [felt]: e.target.value }))
               }
               className="p-2 border rounded"
             >
