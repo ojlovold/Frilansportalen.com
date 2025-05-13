@@ -10,27 +10,37 @@ export default function Altinn() {
   const [premium, setPremium] = useState(false);
 
   useEffect(() => {
-    brukerHarPremium().then(setPremium);
+    const hentAltinnData = async () => {
+      const { data: brukerData, error } = await supabase.auth.getUser();
+      const id = brukerData?.user?.id;
 
-    const hent = async () => {
-      const bruker = await supabase.auth.getUser();
-      const id = bruker.data.user?.id;
+      if (!id) return;
 
-      const { data: mva } = await supabase.from("mva").select("inntekt, fradrag").eq("bruker_id", id);
-      const { data: kjore } = await supabase.from("kjorebok").select("km, sats").eq("bruker_id", id);
+      const harPremium = await brukerHarPremium(id);
+      setPremium(harPremium);
 
-      const inntekt = mva?.reduce((acc, r) => acc + Number(r.inntekt || 0), 0);
-      const fradrag = mva?.reduce((acc, r) => acc + Number(r.fradrag || 0), 0);
-      const kjoresum = kjore?.reduce((acc, r) => acc + (r.km * r.sats), 0);
+      const { data: mva } = await supabase
+        .from("mva")
+        .select("inntekt, fradrag")
+        .eq("bruker_id", id);
+
+      const { data: kjore } = await supabase
+        .from("kjorebok")
+        .select("km, sats")
+        .eq("bruker_id", id);
+
+      const inntekt = mva?.reduce((acc, r) => acc + Number(r.inntekt || 0), 0) || 0;
+      const fradrag = mva?.reduce((acc, r) => acc + Number(r.fradrag || 0), 0) || 0;
+      const kjoresum = kjore?.reduce((acc, r) => acc + (r.km * r.sats), 0) || 0;
 
       setData({
-        inntekt: inntekt || 0,
-        fradrag: fradrag || 0,
-        kjore: kjoresum || 0,
+        inntekt,
+        fradrag,
+        kjore: kjoresum,
       });
     };
 
-    hent();
+    hentAltinnData();
   }, []);
 
   const grunnlag = data.inntekt - data.fradrag - data.kjore;
