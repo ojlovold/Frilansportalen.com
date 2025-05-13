@@ -1,65 +1,55 @@
-// pages/favoritter.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
-import { hentFavoritter } from '../lib/favoritt'
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import Layout from "@/components/Layout";
+import { hentFavoritter } from "@/lib/hentFavoritter";
 
-type Stilling = {
-  id: string
-  tittel: string
-  sted: string
-  type: string
-  frist: string
-  bransje: string
-  beskrivelse: string
-}
-
-export default function Favoritter() {
-  const user = useUser()
-  const [favoritter, setFavoritter] = useState<Stilling[]>([])
+export default function FavoritterSide() {
+  const user = useUser() as unknown as User;
+  const [stillinger, setStillinger] = useState<any[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
-      const favorittPoster = await hentFavoritter(user.id, 'stilling')
-      const idListe = favorittPoster.map((f: any) => f.objekt_id)
+      if (!user?.id) return;
+
+      const favorittPoster = await hentFavoritter(user.id, "stilling");
+      const idListe = favorittPoster.map((f: any) => f.objekt_id);
 
       if (idListe.length > 0) {
-        const { data, error } = await supabase
-          .from('stillinger')
-          .select('*')
-          .in('id', idListe)
+        const { data } = await supabase
+          .from("stillinger")
+          .select("*")
+          .in("id", idListe);
 
-        if (!error && data) setFavoritter(data)
+        if (data) setStillinger(data);
       }
-    }
+    };
 
-    hent()
-  }, [user])
+    hent();
+  }, [user]);
 
   return (
-    <>
+    <Layout>
       <Head>
         <title>Mine favoritter | Frilansportalen</title>
-        <meta name="description" content="Se dine lagrede stillingsannonser" />
       </Head>
-      <main className="bg-portalGul min-h-screen text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Mine lagrede stillinger</h1>
+      <div className="p-6 max-w-3xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4">Mine favoritter</h1>
 
-        <div className="grid gap-6">
-          {favoritter.length === 0 && <p>Du har ikke lagret noen stillinger.</p>}
-          {favoritter.map((s) => (
-            <div key={s.id} className="bg-white p-6 rounded-xl shadow">
-              <h2 className="text-xl font-semibold">{s.tittel}</h2>
-              <p className="text-sm text-gray-600 mb-2">
-                {s.sted} | {s.type} | Frist: {s.frist} | {s.bransje}
-              </p>
-              <p>{s.beskrivelse}</p>
-            </div>
-          ))}
-        </div>
-      </main>
-    </>
-  )
+        {stillinger.length === 0 ? (
+          <p>Du har ikke lagret noen favoritter.</p>
+        ) : (
+          <ul className="space-y-4">
+            {stillinger.map((s) => (
+              <li key={s.id} className="bg-white p-4 border rounded shadow-sm">
+                <h2 className="font-semibold text-lg">{s.tittel}</h2>
+                <p className="text-sm text-gray-600">{s.sted}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Layout>
+  );
 }
