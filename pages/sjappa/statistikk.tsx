@@ -1,62 +1,98 @@
-import Head from "next/head";
-import Dashboard from "@/components/Dashboard";
-import { useUser } from "@supabase/auth-helpers-react";
-import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
+import { useEffect, useState } from 'react';
+import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
+import type { User } from '@supabase/supabase-js';
+import Dashboard from '@/components/Dashboard';  // Juster import-sti etter prosjektstruktur
 
-export default function SjappaStatistikk() {
-  const user = useUser() as User | null;
-  const [antall, setAntall] = useState(0);
-  const [fordeling, setFordeling] = useState<{ [type: string]: number }>({});
+const StatistikkPage: React.FC = () => {
+  // Hent innlogget bruker (caste til Supabase User for å unngå TS-konflikt)
+  const { user } = useUser();
+  const supabaseUser = user as unknown as User;
+  const userId = supabaseUser?.id;
+
+  // State for annonser-statistikk
+  const [totalAds, setTotalAds] = useState<number | null>(null);
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Supabase klient (forutsatt at SessionContextProvider er satt opp i _app.tsx)
+  const supabase = useSupabaseClient();
 
   useEffect(() => {
-    const hent = async () => {
-      if (!user) return;
+    // Ikke hent data hvis bruker ikke er innlogget
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
-      const { data } = await supabase
-        .from("annonser")
-        .select("type")
-        .eq("opprettet_av", user.id);
-
-      if (!data) return;
-
-      setAntall(data.length);
-
-      const teller: { [type: string]: number } = {};
-      data.forEach((a) => {
-        teller[a.type] = (teller[a.type] || 0) + 1;
-      });
-
-      setFordeling(teller);
+    const fetchAdStats = async () => {
+      try {
+        // Hent alle annonser opprettet av denne brukeren
+        const { data, error } = await supabase
+          .from('annonser')
+          .select('type')
+          .eq('user_id', userId);  // anta at kolonnen for brukerens ID heter 'user_id'
+        
+        if (error) {
+          throw error;
+        }
+        if (data) {
+          // Beregn totalt antall annonser og antall per type
+          setTotalAds(data.length);
+          const counts: Record<string, number> = {};
+          data.forEach(ad => {
+            const type = ad.type || 'Ukjent';
+            counts[type] = (counts[type] || 0) + 1;
+          });
+          setTypeCounts(counts);
+        }
+      } catch (err) {
+        console.error('Error fetching ad stats:', err);
+        setErrorMsg('Kunne ikke hente statistikk.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    hent();
-  }, [user]);
+    fetchAdStats();
+  }, [userId, supabase]);
 
-  if (!user) return <p>Du må være innlogget.</p>;
+  // Vis beskjed dersom brukeren ikke er innlogget
+  if (!user) {
+    return (
+      <Dashboard>
+        <h1>Statistikk</h1>
+        <p>Du må være innlogget for å se denne siden.</p>
+      </Dashboard>
+    );
+  }
 
   return (
     <Dashboard>
-      <Head>
-        <title>Sjappa – statistikk | Frilansportalen</title>
-      </Head>
+      <h1>Statistikk</h1>
 
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Din aktivitet i Sjappa</h1>
-
-        <p className="text-black text-sm">
-          Antall publiserte annonser: <strong>{antall}</strong>
-        </p>
-
-        <ul className="text-black text-sm space-y-1">
-          {Object.entries(fordeling).map(([type, count]) => (
-            <li key={type}>
-              {type.charAt(0).toUpperCase() + type.slice(1)}: <strong>{count}</strong>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {loading ? (
+        <p>Laster data...</p>
+      ) : errorMsg ? (
+        <p style={{ color: 'red' }}>{errorMsg}</p>
+      ) : totalAds !== null && totalAds === 0 ? (
+        <p>Du har ingen annonser enda.</p>
+      ) : (
+        // Vis statistikk dersom data er klar
+        <div>
+          <p>Antall annonser: <strong>{totalAds}</strong></p>
+          <p>Fordeling per annonsetype:</p>
+          <ul>
+            {Object.entries(typeCounts).map(([type, count]) => (
+              <li key={type}>
+                {type}: <strong>{count}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Dashboard>
   );
-}
+};
+
+export default StatistikkPage;
