@@ -1,3 +1,4 @@
+// pages/admin/visningsanalyse.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import supabase from '../../lib/supabaseClient'
@@ -101,7 +102,7 @@ export default function VisningsAnalyse() {
         ) : (
           <div className="grid gap-4">
             {data.map((e) => (
-              <div key={e.innhold_id} className="bg-white p-4 rounded shadow text-sm">
+              <div key={`${e.innhold_id}-${e.type}`} className="bg-white p-4 rounded shadow text-sm">
                 <p className="text-gray-600">{visningsTypeNavn(e.type)}</p>
                 <p className="font-semibold">{e.tittel}</p>
                 <p className="text-gray-500">Vist: {e.antall} ganger</p>
