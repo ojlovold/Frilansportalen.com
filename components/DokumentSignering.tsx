@@ -1,74 +1,28 @@
-import { useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import Head from "next/head";
+import { useUser } from "@supabase/auth-helpers-react";
+import Layout from "../components/Layout";
+import DokumentSignering from "../components/DokumentSignering";
 
-export default function DokumentSignering({ brukerId }: { brukerId: string }) {
-  const [fil, setFil] = useState<File | null>(null);
-  const [signatur, setSignatur] = useState("");
-  const [status, setStatus] = useState<"klar" | "sender" | "ferdig" | "feil">("klar");
-
-  const send = async () => {
-    if (!fil || !signatur || !brukerId) return setStatus("feil");
-
-    setStatus("sender");
-
-    const filnavn = `${brukerId}/${fil.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("signerte-dokumenter")
-      .upload(filnavn, fil, { upsert: true });
-
-    if (uploadError) {
-      console.error("Feil ved opplasting:", uploadError.message);
-      return setStatus("feil");
-    }
-
-    const dokumentId = fil.name.replace(".pdf", "");
-
-    const { error: insertError } = await supabase.from("signaturer").insert([
-      {
-        bruker_id: brukerId,
-        dokument_id: dokumentId,
-        signatur,
-      },
-    ]);
-
-    if (insertError) {
-      console.error("Feil ved lagring:", insertError.message);
-      return setStatus("feil");
-    }
-
-    setFil(null);
-    setSignatur("");
-    setStatus("ferdig");
-  };
+export default function Signering() {
+  const rawUser = useUser();
+  const user = rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser ? rawUser as any : null;
 
   return (
-    <div className="bg-white p-6 rounded shadow space-y-4">
-      <h2 className="text-xl font-bold">Signer dokument</h2>
+    <Layout>
+      <Head>
+        <title>Signering | Frilansportalen</title>
+      </Head>
+      <div className="max-w-3xl mx-auto py-10">
+        <h1 className="text-3xl font-bold mb-6">Dokumentsignering</h1>
 
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => setFil(e.target.files?.[0] || null)}
-        className="block w-full border p-2 rounded"
-      />
-
-      <input
-        type="text"
-        value={signatur}
-        onChange={(e) => setSignatur(e.target.value)}
-        placeholder="Skriv signatur"
-        className="block w-full border p-2 rounded"
-      />
-
-      <button
-        onClick={send}
-        className="bg-black text-white px-4 py-2 rounded text-sm"
-      >
-        Send
-      </button>
-
-      {status === "ferdig" && <p className="text-green-600 text-sm">Signering lagret!</p>}
-      {status === "feil" && <p className="text-red-600 text-sm">Noe gikk galt.</p>}
-    </div>
+        {!user?.id ? (
+          <p>Du må være innlogget for å signere dokumenter.</p>
+        ) : (
+          <div className="space-y-10">
+            <DokumentSignering brukerId={user.id} />
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }
