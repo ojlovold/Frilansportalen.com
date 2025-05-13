@@ -2,11 +2,14 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
 
 export default function Profil() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser as User | null
+
   const [profil, setProfil] = useState<any>(null)
   const [synlighet, setSynlighet] = useState('alle')
   const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
@@ -16,13 +19,13 @@ export default function Profil() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
 
       const { data } = await supabase
         .from('brukerprofiler')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (data) {
         setProfil(data)
@@ -34,7 +37,9 @@ export default function Profil() {
         try {
           const parsed = JSON.parse(utkast)
           setProfil((p: any) => ({ ...p, ...parsed }))
-        } catch {}
+        } catch {
+          // Ignorer JSON-feil
+        }
       }
     }
 
@@ -51,7 +56,7 @@ export default function Profil() {
   }, [profil, user])
 
   const lagre = async () => {
-    if (!user || !profil) return
+    if (!user?.id || !profil) return
     setStatus('lagrer')
 
     const { error } = await supabase
