@@ -1,13 +1,17 @@
 import Head from "next/head";
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/components/Dashboard";
 import EpostInnboks from "@/components/epost/Innboks";
 import NyEpost from "@/components/epost/NyEpost";
 import EksporterEpost from "@/components/epost/EksporterEpost";
 
 export default function EpostSide() {
-  const user = useUser();
-  if (!user) return <p>Du må være innlogget for å bruke e-postsystemet.</p>;
+  const user = useUser() as unknown as User;
+
+  if (!user?.id) {
+    return <p>Du må være innlogget for å bruke e-postsystemet.</p>;
+  }
 
   return (
     <Dashboard>
