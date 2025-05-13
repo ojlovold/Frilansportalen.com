@@ -2,15 +2,12 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
-import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
 
 export default function Profil() {
   const rawUser = useUser()
-  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser
-    ? (rawUser as User)
-    : null
+  const userId = typeof rawUser === 'object' && rawUser && 'id' in rawUser ? String(rawUser.id) : null
 
   const [profil, setProfil] = useState<any>(null)
   const [synlighet, setSynlighet] = useState('alle')
@@ -21,12 +18,12 @@ export default function Profil() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return
+      if (!userId) return
 
       const { data } = await supabase
         .from('brukerprofiler')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single()
 
       if (data) {
@@ -34,7 +31,7 @@ export default function Profil() {
         setSynlighet(data.synlighet || 'alle')
       }
 
-      const utkast = await hentUtkast(user.id, mottaker, modul)
+      const utkast = await hentUtkast(userId, mottaker, modul)
       if (utkast) {
         try {
           const parsed = JSON.parse(utkast)
@@ -44,31 +41,31 @@ export default function Profil() {
     }
 
     hent()
-  }, [user])
+  }, [userId])
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      if (user?.id && profil) {
-        lagreUtkast(user.id, mottaker, modul, JSON.stringify(profil))
+      if (userId && profil) {
+        lagreUtkast(userId, mottaker, modul, JSON.stringify(profil))
       }
     }, 1000)
     return () => clearTimeout(delay)
-  }, [profil, user])
+  }, [profil, userId])
 
   const lagre = async () => {
-    if (!user?.id || !profil) return
+    if (!userId || !profil) return
     setStatus('lagrer')
 
     const { error } = await supabase
       .from('brukerprofiler')
       .update({ ...profil, synlighet })
-      .eq('id', user.id)
+      .eq('id', userId)
 
     if (error) {
       setStatus('feil')
     } else {
       setStatus('lagret')
-      slettUtkast(user.id, mottaker, modul)
+      slettUtkast(userId, mottaker, modul)
     }
   }
 
