@@ -1,7 +1,11 @@
 import { useState } from "react";
 import supabase from "@/lib/supabaseClient";
 
-export default function NyEpost({ fraId }: { fraId: string }) {
+type Props = {
+  fraId: string;
+};
+
+export default function NyEpost({ fraId }: Props) {
   const [til, setTil] = useState("");
   const [emne, setEmne] = useState("");
   const [innhold, setInnhold] = useState("");
@@ -14,7 +18,6 @@ export default function NyEpost({ fraId }: { fraId: string }) {
       return;
     }
 
-    // 1. Opprett e-post
     const { data: epost, error } = await supabase
       .from("epost")
       .insert([{ fra: fraId, til, emne, innhold }])
@@ -28,7 +31,6 @@ export default function NyEpost({ fraId }: { fraId: string }) {
 
     const epostId = epost.id;
 
-    // 2. Last opp og lagre vedlegg
     if (filer) {
       for (const fil of Array.from(filer)) {
         const path = `epost/${fraId}/${Date.now()}_${fil.name}`;
@@ -50,7 +52,6 @@ export default function NyEpost({ fraId }: { fraId: string }) {
       }
     }
 
-    // 3. Legg til intern varsel
     await supabase.from("varsler").insert([
       {
         bruker_id: til,
@@ -60,7 +61,6 @@ export default function NyEpost({ fraId }: { fraId: string }) {
       },
     ]);
 
-    // 4. Hent e-postadresse til mottaker
     const { data: bruker } = await supabase
       .from("brukerprofiler")
       .select("epost")
@@ -79,7 +79,6 @@ export default function NyEpost({ fraId }: { fraId: string }) {
       });
     }
 
-    // 5. Nullstill skjema
     setTil("");
     setEmne("");
     setInnhold("");
