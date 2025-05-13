@@ -3,12 +3,12 @@ import { useUser } from "@supabase/auth-helpers-react";
 import supabase from "../lib/supabaseClient";
 
 export default function MineDokumenter() {
-  const { user } = useUser();
+  const user = useUser();
   const [filer, setFiler] = useState<any[]>([]);
 
   useEffect(() => {
     const hentKvitteringer = async () => {
-      if (!user || !user.id) return;
+      if (!user?.id) return;
 
       const sti = `kvitteringer/${user.id}`;
       const { data, error } = await supabase.storage.from("kvitteringer").list(sti);
