@@ -12,10 +12,12 @@ type Tjeneste = {
   beskrivelse: string
 }
 
+type FilterFelt = 'sted' | 'kategori' | 'tilgjengelighet'
+
 export default function Tjenester() {
   const [tjenester, setTjenester] = useState<Tjeneste[]>([])
   const [filtrert, setFiltrert] = useState<Tjeneste[]>([])
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<Record<FilterFelt, string>>({
     sted: '',
     kategori: '',
     tilgjengelighet: '',
@@ -45,7 +47,7 @@ export default function Tjenester() {
     setFiltrert(filtrertListe)
   }, [filter, tjenester])
 
-  const unike = (felt: keyof Tjeneste) =>
+  const unike = (felt: FilterFelt) =>
     Array.from(new Set(tjenester.map((t) => t[felt])))
 
   return (
@@ -59,7 +61,7 @@ export default function Tjenester() {
 
         {/* Filtrering */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {(['sted', 'kategori', 'tilgjengelighet'] as (keyof Tjeneste)[]).map((felt) => (
+          {(['sted', 'kategori', 'tilgjengelighet'] as FilterFelt[]).map((felt) => (
             <select
               key={felt}
               value={filter[felt]}
