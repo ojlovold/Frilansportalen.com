@@ -24,14 +24,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).end("Method not allowed");
 
   const sig = req.headers["stripe-signature"];
-  if (!sig) {
-    return res.status(400).send("Mangler stripe-signature header");
+  if (!sig || typeof sig !== "string") {
+    return res.status(400).send("Mangler eller ugyldig stripe-signature");
   }
 
   let event;
   try {
     const buf = await buffer(req);
-    event = stripe.webhooks.constructEvent(buf, sig, stripeWebhookSecret);
+    event = stripe.webhooks.constructEvent(buf, sig, stripeWebhookSecret as string); // ← her er fiksen
   } catch (err) {
     console.error("Webhook error:", err);
     return res.status(400).send(`Webhook Error: ${(err as Error).message}`);
