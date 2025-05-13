@@ -1,6 +1,7 @@
 // pages/stillingsovervaking.tsx
 import Head from 'next/head'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 
@@ -12,7 +13,9 @@ type Overvaking = {
 }
 
 export default function Stillingsovervaking() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser as unknown as User | null
+
   const [liste, setListe] = useState<Overvaking[]>([])
   const [ny, setNy] = useState({
     sted: '',
