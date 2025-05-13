@@ -10,9 +10,9 @@ export default function SjappaStatistikk() {
   const [fordeling, setFordeling] = useState<{ [type: string]: number }>({});
 
   useEffect(() => {
-    if (!user) return;
-
     const hent = async () => {
+      if (!user?.id) return;
+
       const { data } = await supabase
         .from("annonser")
         .select("type")
