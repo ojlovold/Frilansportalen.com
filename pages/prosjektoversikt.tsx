@@ -1,25 +1,23 @@
 // pages/prosjektoversikt.tsx
 import Head from "next/head";
 import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/components/Dashboard";
 import MineInvitasjoner from "@/components/prosjekt/MineInvitasjoner";
 import OpprettProsjekt from "@/components/prosjekt/OpprettProsjekt";
 import MineProsjekter from "@/components/prosjekt/MineProsjekter";
 
 export default function ProsjektOversikt() {
-  const rawUser = useUser();
-  const user = rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser
-    ? (rawUser as User)
-    : null;
+  const user = useUser();
 
-  if (!user) {
+  if (!user || typeof user !== "object" || !("id" in user)) {
     return (
       <Dashboard>
         <p>Du må være innlogget for å se prosjektene dine.</p>
       </Dashboard>
     );
   }
+
+  const brukerId = user.id as string;
 
   return (
     <Dashboard>
@@ -28,9 +26,9 @@ export default function ProsjektOversikt() {
       </Head>
 
       <div className="space-y-6">
-        <MineInvitasjoner brukerId={user.id} />
-        <OpprettProsjekt eierId={user.id} />
-        <MineProsjekter brukerId={user.id} />
+        <MineInvitasjoner brukerId={brukerId} />
+        <OpprettProsjekt eierId={brukerId} />
+        <MineProsjekter brukerId={brukerId} />
       </div>
     </Dashboard>
   );
