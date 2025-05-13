@@ -2,7 +2,6 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
-import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 import SuggestionBox from '../components/SuggestionBox'
 import ErrorBox from '../components/ErrorBox'
@@ -17,17 +16,17 @@ type Melding = {
 }
 
 export default function Meldinger() {
-  const user = useUser() as unknown as User
+  const user = useUser()
   const [meldinger, setMeldinger] = useState<Melding[]>([])
   const [nyMelding, setNyMelding] = useState('')
   const [sendt, setSendt] = useState(false)
 
-  const mottaker = 'system'
+  const mottaker = 'system' // eller admin-id
   const modul = 'melding'
 
   useEffect(() => {
     const hentMeldinger = async () => {
-      if (!user?.id) return
+      if (!user || !('id' in user)) return
 
       const { data, error } = await supabase
         .from('epost')
@@ -43,7 +42,7 @@ export default function Meldinger() {
 
   useEffect(() => {
     const hentUtkastet = async () => {
-      if (!user?.id) return
+      if (!user || !('id' in user)) return
       const innhold = await hentUtkast(user.id, mottaker, modul)
       setNyMelding(innhold)
     }
@@ -53,7 +52,7 @@ export default function Meldinger() {
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      if (user?.id && nyMelding) {
+      if (user && 'id' in user && nyMelding) {
         lagreUtkast(user.id, mottaker, modul, nyMelding)
       }
     }, 1000)
@@ -61,7 +60,7 @@ export default function Meldinger() {
   }, [nyMelding, user])
 
   const sendMelding = async () => {
-    if (!nyMelding || !user?.id) return
+    if (!nyMelding || !user || !('id' in user)) return
 
     const { error } = await supabase.from('epost').insert([
       {
@@ -90,7 +89,7 @@ export default function Meldinger() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <SuggestionBox forslag="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt.'" onAccept={() => {}} />
-          <ErrorBox />
+          <ErrorBox feil="" />
           <ReportBox />
         </div>
 
