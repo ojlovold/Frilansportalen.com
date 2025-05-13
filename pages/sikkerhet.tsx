@@ -4,31 +4,47 @@ import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 
 export default function Sikkerhet() {
-  const [brukerinfo, setBrukerinfo] = useState<any>({});
+  const [brukerinfo, setBrukerinfo] = useState<any>(null);
   const [samtykkeAI, setSamtykkeAI] = useState(true);
   const [samtykkeDeling, setSamtykkeDeling] = useState(true);
   const [melding, setMelding] = useState("");
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
+
+      if (!data?.user) {
+        console.warn("Ingen innlogget bruker funnet");
+        return;
+      }
+
       setBrukerinfo(data.user);
 
-      const { data: profil } = await supabase.from("profiler").select("*").eq("id", data.user.id).single();
+      const { data: profil } = await supabase
+        .from("profiler")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
       if (profil) {
         setSamtykkeAI(profil.samtykke_ai ?? true);
         setSamtykkeDeling(profil.samtykke_deling ?? true);
       }
     };
+
     hent();
   }, []);
 
   const lagre = async () => {
-    const id = brukerinfo.id;
+    if (!brukerinfo?.id) {
+      setMelding("Brukerinfo mangler. Prøv å laste siden på nytt.");
+      return;
+    }
+
     const { error } = await supabase
       .from("profiler")
       .update({ samtykke_ai: samtykkeAI, samtykke_deling: samtykkeDeling })
-      .eq("id", id);
+      .eq("id", brukerinfo.id);
 
     setMelding(error ? "Kunne ikke lagre." : "Oppdatert.");
   };
@@ -42,7 +58,9 @@ export default function Sikkerhet() {
       <div className="max-w-lg mx-auto py-10 text-sm">
         <h1 className="text-2xl font-bold mb-6">Sikkerhet og samtykke</h1>
 
-        <p className="mb-4">Din innlogging: <strong>{brukerinfo?.email}</strong></p>
+        <p className="mb-4">
+          Din innlogging: <strong>{brukerinfo?.email || "Ikke innlogget"}</strong>
+        </p>
 
         <div className="mb-6 space-y-3">
           <label className="block">
