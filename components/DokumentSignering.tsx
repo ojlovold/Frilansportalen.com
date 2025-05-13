@@ -1,10 +1,13 @@
 // components/DokumentSignering.tsx
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabaseClient";
 import { useState } from "react";
 
 export default function DokumentSignering() {
-  const { user } = useUser() ?? {}; // Bruk destrukturering trygt
+  const rawUser = useUser();
+  const user = rawUser as unknown as User | null;
+
   const [fil, setFil] = useState<File | null>(null);
   const [status, setStatus] = useState<"klar" | "laster" | "feil" | "ok">("klar");
 
