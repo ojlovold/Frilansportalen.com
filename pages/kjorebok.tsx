@@ -1,83 +1,86 @@
-// pages/kjorebok.tsx
-import Head from 'next/head'
-import { useState, useEffect } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
+import Head from "next/head";
+import { useState, useEffect } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import supabase from "../lib/supabaseClient";
 
 type Tur = {
-  id: string
-  dato: string
-  fra: string
-  til: string
-  kilometer: number
-  transportmiddel: string
-  bompenger: number
-  ferge: number
-  drivstoff: number
-  formål: string
-  prosjektnr?: string
-  referanse?: string
-}
+  id: string;
+  dato: string;
+  fra: string;
+  til: string;
+  kilometer: number;
+  transportmiddel: string;
+  bompenger: number;
+  ferge: number;
+  drivstoff: number;
+  formål: string;
+  prosjektnr?: string;
+  referanse?: string;
+};
 
 export default function Kjorebok() {
-  const user = useUser()
-  const [tur, setTur] = useState<Omit<Tur, 'id'>>({
-    dato: '',
-    fra: '',
-    til: '',
+  const user = useUser() as unknown as User;
+  const [tur, setTur] = useState<Omit<Tur, "id">>({
+    dato: "",
+    fra: "",
+    til: "",
     kilometer: 0,
-    transportmiddel: '',
+    transportmiddel: "",
     bompenger: 0,
     ferge: 0,
     drivstoff: 0,
-    formål: '',
-    prosjektnr: '',
-    referanse: '',
-  })
-  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar')
-  const [logg, setLogg] = useState<Tur[]>([])
+    formål: "",
+    prosjektnr: "",
+    referanse: "",
+  });
+  const [status, setStatus] = useState<"klar" | "lagret" | "feil">("klar");
+  const [logg, setLogg] = useState<Tur[]>([]);
 
   useEffect(() => {
     const hentTurer = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return;
+
       const { data, error } = await supabase
-        .from('kjorebok')
-        .select('*')
-        .eq('bruker_id', user.id)
-        .order('dato', { ascending: false })
+        .from("kjorebok")
+        .select("*")
+        .eq("bruker_id", user.id)
+        .order("dato", { ascending: false });
 
-      if (!error && data) setLogg(data)
-    }
+      if (!error && data) setLogg(data);
+    };
 
-    hentTurer()
-  }, [user, status])
+    hentTurer();
+  }, [user, status]);
 
   const lagreTur = async () => {
-    if (!user || !user.id) return setStatus('feil')
-    const { error } = await supabase.from('kjorebok').insert([
+    if (!user?.id) return setStatus("feil");
+
+    const { error } = await supabase.from("kjorebok").insert([
       {
         ...tur,
         bruker_id: user.id,
       },
-    ])
-    if (error) setStatus('feil')
+    ]);
+
+    if (error) setStatus("feil");
     else {
       setTur({
-        dato: '',
-        fra: '',
-        til: '',
+        dato: "",
+        fra: "",
+        til: "",
         kilometer: 0,
-        transportmiddel: '',
+        transportmiddel: "",
         bompenger: 0,
         ferge: 0,
         drivstoff: 0,
-        formål: '',
-        prosjektnr: '',
-        referanse: '',
-      })
-      setStatus('lagret')
+        formål: "",
+        prosjektnr: "",
+        referanse: "",
+      });
+      setStatus("lagret");
     }
-  }
+  };
 
   return (
     <>
@@ -92,41 +95,38 @@ export default function Kjorebok() {
         <div className="bg-white p-6 rounded-xl shadow max-w-3xl mb-10">
           <h2 className="text-xl font-semibold mb-4">Ny tur</h2>
           {[
-            { label: 'Dato', key: 'dato', type: 'date' },
-            { label: 'Fra', key: 'fra' },
-            { label: 'Til', key: 'til' },
-            { label: 'Kilometer', key: 'kilometer', type: 'number' },
-            { label: 'Transportmiddel', key: 'transportmiddel' },
-            { label: 'Bompenger', key: 'bompenger', type: 'number' },
-            { label: 'Ferge', key: 'ferge', type: 'number' },
-            { label: 'Drivstoff', key: 'drivstoff', type: 'number' },
-            { label: 'Formål', key: 'formål' },
-            { label: 'Prosjektnummer', key: 'prosjektnr' },
-            { label: 'Referanse', key: 'referanse' },
+            { label: "Dato", key: "dato", type: "date" },
+            { label: "Fra", key: "fra" },
+            { label: "Til", key: "til" },
+            { label: "Kilometer", key: "kilometer", type: "number" },
+            { label: "Transportmiddel", key: "transportmiddel" },
+            { label: "Bompenger", key: "bompenger", type: "number" },
+            { label: "Ferge", key: "ferge", type: "number" },
+            { label: "Drivstoff", key: "drivstoff", type: "number" },
+            { label: "Formål", key: "formål" },
+            { label: "Prosjektnummer", key: "prosjektnr" },
+            { label: "Referanse", key: "referanse" },
           ].map((felt) => (
             <input
               key={felt.key}
-              type={felt.type || 'text'}
+              type={felt.type || "text"}
               placeholder={felt.label}
               value={(tur as any)[felt.key]}
               onChange={(e) =>
                 setTur({
                   ...tur,
-                  [felt.key]: felt.type === 'number' ? Number(e.target.value) : e.target.value,
+                  [felt.key]: felt.type === "number" ? Number(e.target.value) : e.target.value,
                 })
               }
               className="w-full p-2 border rounded mb-4"
             />
           ))}
 
-          <button
-            onClick={lagreTur}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
+          <button onClick={lagreTur} className="bg-black text-white px-4 py-2 rounded">
             Lagre tur
           </button>
-          {status === 'lagret' && <p className="text-green-600 mt-2">Tur lagret!</p>}
-          {status === 'feil' && <p className="text-red-600 mt-2">Noe gikk galt.</p>}
+          {status === "lagret" && <p className="text-green-600 mt-2">Tur lagret!</p>}
+          {status === "feil" && <p className="text-red-600 mt-2">Noe gikk galt.</p>}
         </div>
 
         {/* Tidligere turer */}
@@ -143,7 +143,7 @@ export default function Kjorebok() {
                   Bompenger: {t.bompenger} kr | Ferge: {t.ferge} kr | Drivstoff: {t.drivstoff} kr
                 </p>
                 <p className="text-sm text-gray-600">
-                  Prosjektnr: {t.prosjektnr || '-'} | Referanse: {t.referanse || '-'}
+                  Prosjektnr: {t.prosjektnr || "-"} | Referanse: {t.referanse || "-"}
                 </p>
                 <p>{t.formål}</p>
               </li>
@@ -152,5 +152,5 @@ export default function Kjorebok() {
         </div>
       </main>
     </>
-  )
+  );
 }
