@@ -2,6 +2,7 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 type Prosjekt = {
@@ -12,14 +13,17 @@ type Prosjekt = {
 }
 
 export default function MineProsjekter() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser && typeof rawUser === 'object' && rawUser !== null && 'id' in rawUser
+    ? (rawUser as User)
+    : null
+
   const [prosjekter, setProsjekter] = useState<Prosjekt[]>([])
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
 
-      // Finn prosjekter brukeren er med i
       const { data: deltakelser, error } = await supabase
         .from('prosjektdeltakere')
         .select('prosjekt_id, rolle, prosjekter ( id, navn, beskrivelse )')
