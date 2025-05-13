@@ -1,28 +1,23 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
-import Link from "next/link";
-import { Bell } from "lucide-react";
-import getNotifications from "@/lib/getNotifications";
-import supabase from "@/lib/supabaseClient"; // ← lagt til her
 
-interface Epost {
+type Epost = {
   id: string;
   fra: string;
   til: string;
   innhold: string;
   opprettet: string;
   vedlegg?: { url: string; filnavn: string }[];
-}
+};
 
-export default function Innboks() {
-  const user = useUser();
+type Props = {
+  brukerId: string;
+};
+
+export default function EpostInnboks({ brukerId }: Props) {
   const [meldinger, setMeldinger] = useState<Epost[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      const brukerId = user && "id" in user ? (user.id as string) : null;
-      if (!brukerId) return;
-
       const { data } = await supabase
         .from("epost")
         .select("*")
@@ -33,9 +28,7 @@ export default function Innboks() {
     };
 
     hent();
-  }, [user]);
-
-  if (!user) return null;
+  }, [brukerId]);
 
   return (
     <div className="p-4 bg-white rounded shadow">
@@ -57,6 +50,7 @@ export default function Innboks() {
                     <a
                       href={v.url}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="text-blue-600 underline"
                     >
                       {v.filnavn}
