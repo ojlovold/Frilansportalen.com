@@ -23,7 +23,7 @@ export default function Statistikk() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return;
+      if (!user || !user.id) return;
 
       const [stillinger, meldinger, faktura, varsler] = await Promise.all([
         supabase.from("stillinger").select("id").eq("arbeidsgiver_id", user.id),
@@ -45,7 +45,7 @@ export default function Statistikk() {
     hent();
   }, [user]);
 
-  if (!user) return null; // ← trygging mot tidlig render
+  if (!user) return null; // hindrer for tidlig visning
 
   return (
     <Layout>
