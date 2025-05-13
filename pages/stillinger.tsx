@@ -21,14 +21,16 @@ type Stilling = {
   beskrivelse: string
 }
 
+type FilterFelt = 'sted' | 'type' | 'frist' | 'bransje'
+
 export default function Stillinger() {
-  const rawUser = useUser();
-  const user = rawUser as unknown as User | null;
+  const rawUser = useUser()
+  const user = rawUser as unknown as User | null
 
   const [stillinger, setStillinger] = useState<Stilling[]>([])
   const [filtrert, setFiltrert] = useState<Stilling[]>([])
   const [favoritter, setFavoritter] = useState<Record<string, boolean>>({})
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<Record<FilterFelt, string>>({
     sted: '',
     type: '',
     frist: '',
@@ -73,7 +75,7 @@ export default function Stillinger() {
     }
   }, [filter, stillinger, user])
 
-  const unike = (felt: keyof Stilling) =>
+  const unike = (felt: FilterFelt) =>
     Array.from(new Set(stillinger.map((s) => s[felt])))
 
   const toggleFavoritt = async (id: string) => {
@@ -99,7 +101,7 @@ export default function Stillinger() {
         <h1 className="text-3xl font-bold mb-6">Ledige stillinger</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {(['sted', 'type', 'frist', 'bransje'] as (keyof Stilling)[]).map((felt) => (
+          {(['sted', 'type', 'frist', 'bransje'] as FilterFelt[]).map((felt) => (
             <select
               key={felt}
               value={filter[felt]}
