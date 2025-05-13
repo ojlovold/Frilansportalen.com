@@ -22,7 +22,7 @@ export default function Meldinger() {
   const [nyMelding, setNyMelding] = useState('')
   const [sendt, setSendt] = useState(false)
 
-  const mottaker = 'system' // eller admin-id
+  const mottaker = 'system'
   const modul = 'melding'
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function Meldinger() {
         <h1 className="text-3xl font-bold mb-6">Meldingssentral</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <SuggestionBox suggestion="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt.'" />
+          <SuggestionBox forslag="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt.'" onAccept={() => {}} />
           <ErrorBox />
           <ReportBox />
         </div>
