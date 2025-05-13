@@ -2,37 +2,29 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 type Props = {
-  fakturaId: string;
-  data: {
-    tjeneste: string;
-    belop: number;
-    dato: string;
-    mottaker: string;
-  };
+  tittel: string;
+  filnavn: string;
+  kolonner: string[];
+  rader: any[][];
 };
 
-export default function PdfExport({ fakturaId, data }: Props) {
+export default function PdfExport({ tittel, filnavn, kolonner, rader }: Props) {
   const lagPdf = () => {
     const doc = new jsPDF();
 
-    doc.text("Faktura", 14, 20);
-    doc.text(`Faktura ID: ${fakturaId}`, 14, 30);
-    doc.text(`Tjeneste: ${data.tjeneste}`, 14, 40);
-    doc.text(`Mottaker: ${data.mottaker}`, 14, 50);
-    doc.text(`Dato: ${data.dato}`, 14, 60);
-    doc.text(`Beløp: ${data.belop} kr`, 14, 70);
+    doc.text(tittel, 14, 20);
 
     autoTable(doc, {
-      startY: 80,
-      head: [["Beskrivelse", "Beløp"]],
-      body: [[data.tjeneste, `${data.belop} kr`]],
+      startY: 30,
+      head: [kolonner],
+      body: rader,
     });
 
-    doc.save(`faktura_${fakturaId}.pdf`);
+    doc.save(`${filnavn}.pdf`);
   };
 
   return (
-    <button onClick={lagPdf} className="bg-black text-white px-4 py-2 rounded">
+    <button onClick={lagPdf} className="bg-black text-white px-4 py-2 rounded text-sm">
       Last ned PDF
     </button>
   );
