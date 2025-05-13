@@ -3,15 +3,16 @@ import Dashboard from "@/components/Dashboard";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 export default function SjappaStatistikk() {
-  const user = useUser();
+  const user = useUser() as User | null;
   const [antall, setAntall] = useState(0);
   const [fordeling, setFordeling] = useState<{ [type: string]: number }>({});
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return;
+      if (!user) return;
 
       const { data } = await supabase
         .from("annonser")
