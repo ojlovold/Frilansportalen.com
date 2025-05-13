@@ -1,47 +1,50 @@
 // pages/mine-signaturer.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { useUser } from '@supabase/auth-helpers-react';
+import supabase from '../lib/supabaseClient';
 
 type Rad = {
-  id: string
-  dokument_id: string
-  signatur: string
-  tidspunkt: string
-  url?: string
-}
+  id: string;
+  dokument_id: string;
+  signatur: string;
+  tidspunkt: string;
+  url?: string | null;
+};
 
 export default function MineSignaturer() {
-  const user = useUser()
-  const [liste, setListe] = useState<Rad[]>([])
+  const user = useUser();
+  const [liste, setListe] = useState<Rad[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return
+      const brukerId = (user as any)?.id;
+      if (!brukerId) return;
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('signaturer')
         .select('*')
-        .eq('bruker_id', user.id)
-        .order('tidspunkt', { ascending: false })
+        .eq('bruker_id', brukerId)
+        .order('tidspunkt', { ascending: false });
 
-      const medUrl = data?.map((s) => {
-        const path = `${user.id}/${s.dokument_id}.pdf`
+      if (error || !data) return;
+
+      const medUrl = data.map((s) => {
+        const path = `${brukerId}/${s.dokument_id}.pdf`;
         const { data: urlData } = supabase.storage
           .from('signerte-dokumenter')
-          .getPublicUrl(path)
+          .getPublicUrl(path);
         return {
           ...s,
           url: urlData?.publicUrl || null,
-        }
-      }) || []
+        };
+      });
 
-      setListe(medUrl)
-    }
+      setListe(medUrl);
+    };
 
-    hent()
-  }, [user])
+    hent();
+  }, [user]);
 
   return (
     <>
@@ -79,5 +82,5 @@ export default function MineSignaturer() {
         )}
       </main>
     </>
-  )
+  );
 }
