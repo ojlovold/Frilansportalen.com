@@ -4,6 +4,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 import type { User } from "@supabase/supabase-js";
 import Layout from "@/components/Layout";
 import { hentFavoritter } from "@/lib/hentFavoritter";
+import supabase from "@/lib/supabaseClient"; // ← manglet
 
 export default function FavoritterSide() {
   const user = useUser() as unknown as User;
