@@ -1,61 +1,64 @@
 // pages/stilling/[id]/soknad.tsx
-import Head from 'next/head'
-import { GetServerSideProps } from 'next'
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../../../lib/supabaseClient'
-import { hentUtkast, lagreUtkast, slettUtkast } from '../../../lib/utkast'
+import Head from "next/head";
+import { GetServerSideProps } from "next";
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import supabase from "../../../lib/supabaseClient";
+import { hentUtkast, lagreUtkast, slettUtkast } from "../../../lib/utkast";
 
 type Props = {
   stilling: {
-    id: string
-    tittel: string
-    sted: string
-    type: string
-    frist: string
-    bransje: string
-  } | null
-}
+    id: string;
+    tittel: string;
+    sted: string;
+    type: string;
+    frist: string;
+    bransje: string;
+  } | null;
+};
 
 export default function Soknad({ stilling }: Props) {
-  const user = useUser()
-  const [tekst, setTekst] = useState('')
-  const [sendt, setSendt] = useState(false)
-  const mottaker = stilling?.id || ''
-  const modul = 'soknad'
+  const rawUser = useUser();
+  const user = rawUser as unknown as User | null;
+
+  const [tekst, setTekst] = useState("");
+  const [sendt, setSendt] = useState(false);
+  const mottaker = stilling?.id || "";
+  const modul = "soknad";
 
   useEffect(() => {
-    if (!user?.id || !mottaker) return
+    if (!user?.id || !mottaker) return;
     hentUtkast(user.id, mottaker, modul).then((utkast) => {
-      setTekst(utkast)
-    })
-  }, [user, mottaker])
+      setTekst(utkast);
+    });
+  }, [user, mottaker]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (user?.id && mottaker && tekst) {
-        lagreUtkast(user.id, mottaker, modul, tekst)
+        lagreUtkast(user.id, mottaker, modul, tekst);
       }
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [tekst])
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [tekst, user, mottaker]);
 
   const sendSoknad = async () => {
-    if (!user?.id || !stilling?.id || !tekst) return
+    if (!user?.id || !stilling?.id || !tekst) return;
 
-    await supabase.from('epost').insert([
+    await supabase.from("epost").insert([
       {
         fra: user.id,
         til: stilling.id,
         innhold: tekst,
         opprettet: new Date().toISOString(),
       },
-    ])
+    ]);
 
-    await slettUtkast(user.id, mottaker, modul)
-    setTekst('')
-    setSendt(true)
-  }
+    await slettUtkast(user.id, mottaker, modul);
+    setTekst("");
+    setSendt(true);
+  };
 
   if (!stilling) {
     return (
@@ -63,7 +66,7 @@ export default function Soknad({ stilling }: Props) {
         <h1 className="text-3xl font-bold">Stilling ikke funnet</h1>
         <p>Stillingen du prøver å søke på er ikke tilgjengelig.</p>
       </main>
-    )
+    );
   }
 
   return (
@@ -92,5 +95,5 @@ export default function Soknad({ stilling }: Props) {
         {sendt && <p className="text-green-600 mt-3">Søknad sendt!</p>}
       </main>
     </>
-  )
+  );
 }
