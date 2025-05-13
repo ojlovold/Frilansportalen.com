@@ -9,7 +9,9 @@ import MineProsjekter from "@/components/prosjekt/MineProsjekter";
 
 export default function ProsjektOversikt() {
   const rawUser = useUser();
-  const user = rawUser?.id ? (rawUser as User) : null;
+  const user = rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser
+    ? (rawUser as User)
+    : null;
 
   if (!user) {
     return (
