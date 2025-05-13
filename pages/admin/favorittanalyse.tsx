@@ -1,4 +1,3 @@
-// pages/admin/favorittanalyse.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import supabase from '../../lib/supabaseClient'
@@ -16,40 +15,57 @@ export default function FavorittAnalyse() {
 
   useEffect(() => {
     const hent = async () => {
-      const { data: grupper, error } = await supabase
+      const { data: favoritter, error } = await supabase
         .from('favoritter')
-        .select('objekt_id, type, count:objekt_id')
-        .group('objekt_id, type')
-        .order('count', { ascending: false })
-        .limit(50)
+        .select('objekt_id, type')
 
-      if (!error && grupper) {
-        const detaljer = await Promise.all(
-          grupper.map(async (item: any) => {
-            const tabell =
-              item.type === 'stilling'
-                ? 'stillinger'
-                : item.type === 'tjeneste'
-                ? 'tjenester'
-                : item.type === 'gjenbruk'
-                ? 'gjenbruk'
-                : 'brukerprofiler'
-
-            const { data: d } = await supabase
-              .from(tabell)
-              .select('tittel, navn')
-              .eq('id', item.objekt_id)
-              .maybeSingle()
-
-            return {
-              ...item,
-              tittel: d?.tittel || d?.navn || 'Ukjent',
-            }
-          })
-        )
-
-        setData(detaljer)
+      if (error || !favoritter) {
+        console.error('Feil ved henting av favoritter:', error?.message)
+        return
       }
+
+      // Manuell gruppering og telling
+      const grupper: Record<string, { objekt_id: string; type: string; antall: number }> = {}
+
+      for (const f of favoritter) {
+        const key = `${f.objekt_id}:${f.type}`
+        if (!grupper[key]) {
+          grupper[key] = { objekt_id: f.objekt_id, type: f.type, antall: 0 }
+        }
+        grupper[key].antall++
+      }
+
+      // Sorter og ta de 50 mest populære
+      const topp = Object.values(grupper)
+        .sort((a, b) => b.antall - a.antall)
+        .slice(0, 50)
+
+      // Hent tittel/navn fra tilhørende tabell
+      const detaljer = await Promise.all(
+        topp.map(async (item) => {
+          const tabell =
+            item.type === 'stilling'
+              ? 'stillinger'
+              : item.type === 'tjeneste'
+              ? 'tjenester'
+              : item.type === 'gjenbruk'
+              ? 'gjenbruk'
+              : 'brukerprofiler'
+
+          const { data: d } = await supabase
+            .from(tabell)
+            .select('tittel, navn')
+            .eq('id', item.objekt_id)
+            .maybeSingle()
+
+          return {
+            ...item,
+            tittel: d?.tittel || d?.navn || 'Ukjent',
+          }
+        })
+      )
+
+      setData(detaljer)
     }
 
     hent()
