@@ -3,12 +3,13 @@ import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 
 export function useAuthGuard() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Brukeren er lastet inn og finnes ikke => redirect
+    if (user === null) {
       router.push('/login')
     }
-  }, [user, isLoading, router])
+  }, [user, router])
 }
