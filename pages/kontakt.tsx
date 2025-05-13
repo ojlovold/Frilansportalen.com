@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+import supabase from "../utils/supabaseClient";
 
 export default function Kontakt() {
   const [navn, setNavn] = useState("");
@@ -13,7 +13,7 @@ export default function Kontakt() {
     if (!navn || !epost || !melding) return;
 
     await supabase.from("varsler").insert({
-      bruker_id: "admin", // Bytt ut med admin-ID eller bruk systemkonto
+      bruker_id: "admin", // Du kan bytte dette til faktisk admin-ID
       tekst: `Kontaktmelding fra ${navn} (${epost}): ${melding}`,
       lenke: "/kontakt",
     });
