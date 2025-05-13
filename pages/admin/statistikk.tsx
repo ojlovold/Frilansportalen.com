@@ -2,6 +2,7 @@ import Head from "next/head";
 import Layout from "../../components/Layout";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabaseClient";
 
 type Stat = {
@@ -12,7 +13,7 @@ type Stat = {
 };
 
 export default function Statistikk() {
-  const user = useUser();
+  const user = useUser() as unknown as User; // ← Dette løser feilen
   const [stat, setStat] = useState<Stat>({
     stillinger: 0,
     meldinger: 0,
@@ -23,7 +24,7 @@ export default function Statistikk() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return;
+      if (!user?.id) return;
 
       const [stillinger, meldinger, faktura, varsler] = await Promise.all([
         supabase.from("stillinger").select("id").eq("arbeidsgiver_id", user.id),
@@ -44,8 +45,6 @@ export default function Statistikk() {
 
     hent();
   }, [user]);
-
-  if (!user) return null; // hindrer for tidlig visning
 
   return (
     <Layout>
