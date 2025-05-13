@@ -1,3 +1,4 @@
+// pages/kontroll.tsx
 import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
@@ -20,9 +21,9 @@ export default function Kontroll() {
 
         resultater.push({
           navn: p.navn,
-          cv: cv.data?.length > 0,
-          kontrakt: kontrakter.data?.length > 0,
-          attest: attester.data?.length > 0,
+          cv: !!cv?.data?.length,
+          kontrakt: !!kontrakter?.data?.length,
+          attest: !!attester?.data?.length,
         });
       }
 
