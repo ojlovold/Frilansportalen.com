@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabaseClient";
-import type { FileObject } from "@supabase/storage-js"; // ← riktig type fra Supabase
+import type { FileObject } from "@supabase/storage-js";
 
-export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
+type Props = {
+  brukerId: string;
+};
+
+export default function MineKvitteringer({ brukerId }: Props) {
   const [filer, setFiler] = useState<FileObject[]>([]);
   const [status, setStatus] = useState("");
 
@@ -11,7 +15,11 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
       .from("dokumenter")
       .list(`kvitteringer/${brukerId}`, { limit: 100 });
 
-    if (!error && data) setFiler(data); // ← data er allerede FileObject[]
+    if (!error && data) {
+      setFiler(data);
+    } else {
+      console.error("Feil ved henting av kvitteringer:", error);
+    }
   };
 
   useEffect(() => {
@@ -26,6 +34,7 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
       setStatus("Kvittering slettet");
       hentKvitteringer();
     } else {
+      console.error("Sletting feilet:", error);
       setStatus("Kunne ikke slette kvittering");
     }
   };
@@ -47,11 +56,15 @@ export default function MineKvitteringer({ brukerId }: { brukerId: string }) {
                   .from("dokumenter")
                   .getPublicUrl(`kvitteringer/${brukerId}/${f.name}`).data.publicUrl}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-blue-600 underline"
               >
                 {f.name}
               </a>
-              <button onClick={() => slett(f.name)} className="text-red-600 text-sm underline">
+              <button
+                onClick={() => slett(f.name)}
+                className="text-red-600 text-sm underline"
+              >
                 Slett
               </button>
             </li>
