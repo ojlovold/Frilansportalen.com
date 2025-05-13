@@ -2,11 +2,10 @@ import Head from "next/head";
 import Layout from "../../components/Layout";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabaseClient";
 
 export default function Statistikk() {
-  const user = useUser() as User | null;
+  const user = useUser(); // ← IKKE bruk `as User | null`
   const [stat, setStat] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
