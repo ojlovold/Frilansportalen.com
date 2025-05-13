@@ -1,21 +1,26 @@
 // pages/tjenesteovervaking.tsx
 import Head from 'next/head'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 
 type Overvaking = {
   id: string
-  sted?: string
   kategori?: string
+  sted?: string
+  tilgjengelighet?: string
 }
 
 export default function Tjenesteovervaking() {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser as unknown as User | null
+
   const [liste, setListe] = useState<Overvaking[]>([])
   const [ny, setNy] = useState({
-    sted: '',
     kategori: '',
+    sted: '',
+    tilgjengelighet: '',
   })
 
   const hent = async () => {
@@ -40,7 +45,7 @@ export default function Tjenesteovervaking() {
         bruker_id: user.id,
       },
     ])
-    setNy({ sted: '', kategori: '' })
+    setNy({ kategori: '', sted: '', tilgjengelighet: '' })
     hent()
   }
 
@@ -53,13 +58,20 @@ export default function Tjenesteovervaking() {
     <>
       <Head>
         <title>Tjenesteovervåking | Frilansportalen</title>
-        <meta name="description" content="Få varsel når nye tjenester legges ut" />
+        <meta name="description" content="Hold oversikt over nye tjenester du er interessert i" />
       </Head>
       <main className="min-h-screen bg-portalGul p-8 text-black max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Mine tjenestevarslere</h1>
+        <h1 className="text-3xl font-bold mb-6">Mine tjenestevarsler</h1>
 
         <div className="bg-white p-4 rounded shadow mb-8">
           <h2 className="text-lg font-semibold mb-2">Ny overvåkning</h2>
+          <input
+            type="text"
+            placeholder="Kategori"
+            value={ny.kategori}
+            onChange={(e) => setNy({ ...ny, kategori: e.target.value })}
+            className="w-full p-2 border rounded mb-2"
+          />
           <input
             type="text"
             placeholder="Sted"
@@ -69,9 +81,9 @@ export default function Tjenesteovervaking() {
           />
           <input
             type="text"
-            placeholder="Kategori (f.eks. renhold)"
-            value={ny.kategori}
-            onChange={(e) => setNy({ ...ny, kategori: e.target.value })}
+            placeholder="Tilgjengelighet (f.eks. heltid)"
+            value={ny.tilgjengelighet}
+            onChange={(e) => setNy({ ...ny, tilgjengelighet: e.target.value })}
             className="w-full p-2 border rounded mb-4"
           />
           <button
@@ -83,12 +95,13 @@ export default function Tjenesteovervaking() {
         </div>
 
         <div className="space-y-4">
-          {liste.length === 0 && <p>Ingen aktive varslinger.</p>}
+          {liste.length === 0 && <p>Ingen aktive overvåkninger.</p>}
           {liste.map((o) => (
             <div key={o.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
               <div className="text-sm">
-                <p>Sted: {o.sted || 'alle'}</p>
                 <p>Kategori: {o.kategori || 'alle'}</p>
+                <p>Sted: {o.sted || 'alle'}</p>
+                <p>Tilgjengelighet: {o.tilgjengelighet || 'alle'}</p>
               </div>
               <button
                 onClick={() => slett(o.id)}
