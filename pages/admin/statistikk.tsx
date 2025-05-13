@@ -4,9 +4,21 @@ import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { supabase } from "../../utils/supabaseClient";
 
+type Stat = {
+  stillinger: number;
+  meldinger: number;
+  faktura: number;
+  varsler: number;
+};
+
 export default function Statistikk() {
-  const user = useUser(); // ← IKKE bruk `as User | null`
-  const [stat, setStat] = useState<any>({});
+  const user = useUser();
+  const [stat, setStat] = useState<Stat>({
+    stillinger: 0,
+    meldinger: 0,
+    faktura: 0,
+    varsler: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +44,8 @@ export default function Statistikk() {
 
     hent();
   }, [user]);
+
+  if (!user) return null; // ← trygging mot tidlig render
 
   return (
     <Layout>
