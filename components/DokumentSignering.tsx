@@ -21,10 +21,12 @@ export default function DokumentSignering({ brukerId }: { brukerId: string }) {
       return setStatus("feil");
     }
 
+    const dokumentId = fil.name.replace(".pdf", "");
+
     const { error: insertError } = await supabase.from("signaturer").insert([
       {
         bruker_id: brukerId,
-        dokument_id: fil.name.replace(".pdf", ""),
+        dokument_id: dokumentId,
         signatur,
       },
     ]);
@@ -58,7 +60,10 @@ export default function DokumentSignering({ brukerId }: { brukerId: string }) {
         className="block w-full border p-2 rounded"
       />
 
-      <button onClick={send} className="bg-black text-white px-4 py-2 rounded text-sm">
+      <button
+        onClick={send}
+        className="bg-black text-white px-4 py-2 rounded text-sm"
+      >
         Send
       </button>
 
