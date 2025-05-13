@@ -1,7 +1,6 @@
-// pages/visningslogg.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
+import { useUser, User } from '@supabase/auth-helpers-react'
 import supabase from '../lib/supabaseClient'
 
 type Logg = {
@@ -20,12 +19,12 @@ type Detalj = {
 }
 
 export default function Visningslogg() {
-  const user = useUser()
+  const user = useUser() as User | null
   const [logg, setLogg] = useState<(Logg & { data?: Detalj | null })[]>([])
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
 
       const { data: base } = await supabase
         .from('visningslogg')
