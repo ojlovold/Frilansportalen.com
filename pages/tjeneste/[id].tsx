@@ -3,6 +3,7 @@ import { GetServerSideProps } from 'next'
 import Head from 'next/head'
 import { useEffect } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../../lib/supabaseClient'
 import { loggVisning } from '../../lib/visningslogg'
 
@@ -18,7 +19,8 @@ type Props = {
 }
 
 export default function TjenesteVisning({ tjeneste }: Props) {
-  const user = useUser()
+  const rawUser = useUser()
+  const user = rawUser as unknown as User | null
 
   useEffect(() => {
     if (user?.id && tjeneste?.id) {
@@ -47,24 +49,4 @@ export default function TjenesteVisning({ tjeneste }: Props) {
           <p className="text-sm text-gray-600 mb-4">
             {tjeneste.kategori} | {tjeneste.sted} | {tjeneste.tilgjengelighet}
           </p>
-          <p>{tjeneste.beskrivelse}</p>
-        </div>
-      </main>
-    </>
-  )
-}
-
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const id = ctx.params?.id
-  const { data, error } = await supabase
-    .from('tjenester')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  return {
-    props: {
-      tjeneste: error ? null : data,
-    },
-  }
-}
+          <
