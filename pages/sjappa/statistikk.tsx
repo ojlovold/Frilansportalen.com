@@ -11,7 +11,7 @@ export default function SjappaStatistikk() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return;
+      if (!user || !user.id) return;
 
       const { data } = await supabase
         .from("annonser")
