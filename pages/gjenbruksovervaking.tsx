@@ -1,53 +1,57 @@
-// pages/gjenbruksovervaking.tsx
-import Head from 'next/head'
-import { useUser } from '@supabase/auth-helpers-react'
-import { useEffect, useState } from 'react'
-import supabase from '../lib/supabaseClient'
+import Head from "next/head";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
+import supabase from "../lib/supabaseClient";
 
 type Overvaking = {
-  id: string
-  sted?: string
-  kategori?: string
-}
+  id: string;
+  sted?: string;
+  kategori?: string;
+};
 
 export default function Gjenbruksovervaking() {
-  const user = useUser()
-  const [liste, setListe] = useState<Overvaking[]>([])
+  const user = useUser() as unknown as User;
+  const [liste, setListe] = useState<Overvaking[]>([]);
   const [ny, setNy] = useState({
-    sted: '',
-    kategori: '',
-  })
+    sted: "",
+    kategori: "",
+  });
 
   const hent = async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
+
     const { data } = await supabase
-      .from('gjenbruksovervaking')
-      .select('*')
-      .eq('bruker_id', user.id)
-      .order('opprettet', { ascending: false })
-    if (data) setListe(data)
-  }
+      .from("gjenbruksovervaking")
+      .select("*")
+      .eq("bruker_id", user.id)
+      .order("opprettet", { ascending: false });
+
+    if (data) setListe(data);
+  };
 
   useEffect(() => {
-    hent()
-  }, [user])
+    hent();
+  }, [user]);
 
   const lagre = async () => {
-    if (!user?.id) return
-    await supabase.from('gjenbruksovervaking').insert([
+    if (!user?.id) return;
+
+    await supabase.from("gjenbruksovervaking").insert([
       {
         ...ny,
         bruker_id: user.id,
       },
-    ])
-    setNy({ sted: '', kategori: '' })
-    hent()
-  }
+    ]);
+
+    setNy({ sted: "", kategori: "" });
+    hent();
+  };
 
   const slett = async (id: string) => {
-    await supabase.from('gjenbruksovervaking').delete().eq('id', id)
-    hent()
-  }
+    await supabase.from("gjenbruksovervaking").delete().eq("id", id);
+    hent();
+  };
 
   return (
     <>
@@ -85,10 +89,13 @@ export default function Gjenbruksovervaking() {
         <div className="space-y-4">
           {liste.length === 0 && <p>Ingen aktive varslinger.</p>}
           {liste.map((o) => (
-            <div key={o.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
+            <div
+              key={o.id}
+              className="bg-white p-4 rounded shadow flex justify-between items-center"
+            >
               <div className="text-sm">
-                <p>Sted: {o.sted || 'alle'}</p>
-                <p>Kategori: {o.kategori || 'alle'}</p>
+                <p>Sted: {o.sted || "alle"}</p>
+                <p>Kategori: {o.kategori || "alle"}</p>
               </div>
               <button
                 onClick={() => slett(o.id)}
@@ -101,5 +108,5 @@ export default function Gjenbruksovervaking() {
         </div>
       </main>
     </>
-  )
+  );
 }
