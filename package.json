@@ -37,7 +37,6 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@types/stripe": "^8.0.0",
-    "@types/sendgrid__mail": "^7.7.0",
     "typescript": "^5.2.2"
   }
 }
