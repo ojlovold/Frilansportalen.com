@@ -9,7 +9,9 @@ import Link from "next/link";
 
 export default function ProsjektArkiv() {
   const rawUser = useUser();
-  const user = rawUser && typeof rawUser === "object" && "id" in rawUser ? (rawUser as User) : null;
+  const user = rawUser && typeof rawUser === "object" && rawUser !== null && "id" in rawUser
+    ? (rawUser as unknown as User)
+    : null;
 
   const [prosjekter, setProsjekter] = useState<any[]>([]);
 
