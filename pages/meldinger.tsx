@@ -93,7 +93,7 @@ export default function Meldinger() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <SuggestionBox forslag="Svar raskt og vennlig – AI foreslår: 'Hei! Jeg er interessert i oppdraget ditt.'" onAccept={() => {}} />
           <ErrorBox feil="" />
-          <ReportBox />
+          <ReportBox onSend={() => {}} />
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow mb-8">
