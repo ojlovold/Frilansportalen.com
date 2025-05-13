@@ -28,4 +28,32 @@ export default function DokumentSignering({ brukerId }: { brukerId: string }) {
       {
         bruker_id: brukerId,
         dokument_id: fil.name.replace(".pdf", ""),
-        sign
+        signatur: "Signert elektronisk",
+        tidspunkt: new Date().toISOString(),
+      },
+    ]);
+
+    setFil(null);
+    setStatus("ferdig");
+  };
+
+  return (
+    <div className="bg-white p-6 rounded shadow">
+      <h2 className="text-xl font-bold mb-4">Signer dokument</h2>
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFil(e.target.files?.[0] || null)}
+        className="mb-4"
+      />
+      <button
+        onClick={lastOpp}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
+        Last opp og signer
+      </button>
+      {status === "ferdig" && <p className="text-green-600 mt-2">Dokument signert!</p>}
+      {status === "feil" && <p className="text-red-600 mt-2">Noe gikk galt.</p>}
+    </div>
+  );
+}
