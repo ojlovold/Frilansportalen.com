@@ -14,12 +14,16 @@ type Forespørsel = {
 
 export default function ProfilForespørsler() {
   const rawUser = useUser()
-  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser ? (rawUser as User) : null
+  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser
+    ? (rawUser as User)
+    : null
+
   const [forespørsler, setForespørsler] = useState<Forespørsel[]>([])
 
   useEffect(() => {
     const hent = async () => {
       if (!user?.id) return
+
       const { data, error } = await supabase
         .from('profiltilgang')
         .select('*')
