@@ -1,7 +1,7 @@
-// pages/attester.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
+import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 type Attest = {
@@ -13,7 +13,7 @@ type Attest = {
 }
 
 export default function Attester() {
-  const user = useUser()
+  const user = useUser() as unknown as User;
   const [navn, setNavn] = useState('')
   const [dato, setDato] = useState('')
   const [fil, setFil] = useState<File | null>(null)
@@ -22,19 +22,22 @@ export default function Attester() {
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id) return
+      if (!user?.id) return
+
       const { data, error } = await supabase
         .from('attester')
         .select('*')
         .eq('bruker_id', user.id)
         .order('utlopsdato', { ascending: true })
+
       if (!error && data) setListe(data)
     }
+
     hent()
   }, [user, status])
 
   const lastOpp = async () => {
-    if (!user || !fil || !navn || !dato) return setStatus('feil')
+    if (!user?.id || !fil || !navn || !dato) return setStatus('feil')
     setStatus('lagrer')
 
     const sti = `attester/${user.id}/${Date.now()}-${fil.name}`
