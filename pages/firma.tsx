@@ -1,31 +1,32 @@
 // pages/firma.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
+import supabase from "../lib/supabaseClient";
 
 type Firmadok = {
-  id: string
-  tittel: string
-  kategori: string
-  fil_url: string
-  firma_id: string
-  kun_for: string[] | null
-}
+  id: string;
+  tittel: string;
+  kategori: string;
+  fil_url: string;
+  firma_id: string;
+  kun_for: string[] | null;
+};
 
 export default function FirmaBibliotek() {
-  const user = useUser()
-  const [firmaId, setFirmaId] = useState('') // Dette hentes normalt fra profilen
-  const [dokumenter, setDokumenter] = useState<Firmadok[]>([])
+  const user = useUser() as unknown as User;
+  const [firmaId, setFirmaId] = useState(""); // Normalt hentet fra profilen
+  const [dokumenter, setDokumenter] = useState<Firmadok[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      if (!user || !user.id || !firmaId) return
+      if (!user?.id || !firmaId) return;
 
       const { data, error } = await supabase
-        .from('firmadokumenter')
-        .select('*')
-        .eq('firma_id', firmaId)
+        .from("firmadokumenter")
+        .select("*")
+        .eq("firma_id", firmaId);
 
       if (!error && data) {
         const synlige = data.filter(
@@ -33,13 +34,13 @@ export default function FirmaBibliotek() {
             !d.kun_for ||
             d.kun_for.length === 0 ||
             d.kun_for.includes(user.id)
-        )
-        setDokumenter(synlige)
+        );
+        setDokumenter(synlige);
       }
-    }
+    };
 
-    hent()
-  }, [user, firmaId])
+    hent();
+  }, [user, firmaId]);
 
   return (
     <>
@@ -61,7 +62,9 @@ export default function FirmaBibliotek() {
         </div>
 
         <div className="grid gap-4">
-          {dokumenter.length === 0 && <p>Ingen dokumenter funnet eller tilgjengelige.</p>}
+          {dokumenter.length === 0 && (
+            <p>Ingen dokumenter funnet eller tilgjengelige.</p>
+          )}
           {dokumenter.map((d) => (
             <div key={d.id} className="bg-white p-4 rounded shadow">
               <h2 className="text-lg font-semibold">{d.tittel}</h2>
@@ -79,5 +82,5 @@ export default function FirmaBibliotek() {
         </div>
       </main>
     </>
-  )
+  );
 }
