@@ -2,7 +2,6 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
-import type { User } from '@supabase/supabase-js'
 import supabase from '../lib/supabaseClient'
 
 type Forespørsel = {
@@ -13,21 +12,19 @@ type Forespørsel = {
 }
 
 export default function ProfilForespørsler() {
-  const rawUser = useUser()
-  const user = rawUser && typeof rawUser === 'object' && 'id' in rawUser
-    ? (rawUser as User)
-    : null
+  const user = useUser()
+  const brukerId = typeof user === 'object' && user !== null && 'id' in user ? (user as any).id as string : null
 
   const [forespørsler, setForespørsler] = useState<Forespørsel[]>([])
 
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return
+      if (!brukerId) return
 
       const { data, error } = await supabase
         .from('profiltilgang')
         .select('*')
-        .eq('til', user.id)
+        .eq('til', brukerId)
         .eq('status', 'venter')
         .order('opprettet', { ascending: false })
 
@@ -35,7 +32,7 @@ export default function ProfilForespørsler() {
     }
 
     hent()
-  }, [user])
+  }, [brukerId])
 
   const oppdaterStatus = async (id: string, status: 'godkjent' | 'avslått') => {
     await supabase.from('profiltilgang').update({ status }).eq('id', id)
