@@ -2,6 +2,7 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useEffect } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
+import type { User } from "@supabase/supabase-js";
 import supabase from "../../lib/supabaseClient";
 import { loggVisning } from "../../lib/visningslogg";
 
@@ -17,7 +18,7 @@ type Props = {
 };
 
 export default function GjenbrukVisning({ oppforing }: Props) {
-  const user = useUser();
+  const user = useUser() as unknown as User;
 
   useEffect(() => {
     if (user?.id && oppforing?.id) {
