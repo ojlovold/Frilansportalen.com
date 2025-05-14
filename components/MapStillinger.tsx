@@ -20,7 +20,7 @@ type Stilling = {
 };
 
 export default function MapStillinger({ stillinger }: { stillinger: Stilling[] }) {
-  const midtpunkt = [60.472, 8.468]; // Norge sentrum
+  const midtpunkt: [number, number] = [60.472, 8.468]; // Norge sentrum
 
   return (
     <div className="h-[500px] w-full rounded shadow">
