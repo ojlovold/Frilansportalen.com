@@ -1,4 +1,3 @@
-import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -17,34 +16,29 @@ export default function HomePage() {
     <main className="min-h-screen bg-yellow-300 text-black p-4 relative">
       {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <span className="cursor-pointer" title="Velg språk">
-          <Globe />
-        </span>
-        <span className="cursor-pointer" title="Tekst til tale">
-          <Volume2 />
-        </span>
-        <span className="cursor-pointer" title="Logg inn">
-          <LogIn />
-        </span>
+        <span className="cursor-pointer" title="Velg språk">🌐</span>
+        <span className="cursor-pointer" title="Tekst til tale">🔊</span>
+        <span className="cursor-pointer" title="Logg inn">🔐</span>
       </div>
 
-      {/* Logo og velkomsttekst */}
-      <div className="flex flex-col items-center text-center mb-8">
+      {/* Logo */}
+      <div className="flex justify-center mb-8">
         <Image
           src="/Frilansportalen_logo_skarp.jpeg"
           alt="Frilansportalen logo"
-          width={400}
-          height={100}
-          priority
+          width={300}
+          height={60}
         />
-        <h1 className="text-4xl font-bold mt-4">Velkommen til Frilansportalen</h1>
-        <p className="text-lg mt-2 max-w-xl">
-          Din komplette plattform for frilansere, arbeidsgivere, tjenestetilbydere og jobbsøkere.
-          Her finner du alt du trenger for å jobbe, ansette, selge og samarbeide.
+      </div>
+
+      {/* Velkomsttekst */}
+      <div className="text-center mb-12">
+        <h1 className="text-3xl font-bold mb-2">Velkommen til Frilansportalen</h1>
+        <p className="text-lg">\          Finn frilansere, jobbmuligheter, tjenester og mer – alt samlet på ett sted.
         </p>
       </div>
 
-      {/* Boksene i to rader */}
+      {/* Seksjoner */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
         <Link href="/arbeidsgiver" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
@@ -73,7 +67,7 @@ export default function HomePage() {
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
-            <Briefcase className="text-2xl" /> Dugnadsportalen
+            <Globe className="text-2xl" /> Dugnadsportalen
           </a>
         </Link>
       </div>
