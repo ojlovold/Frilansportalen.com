@@ -7,7 +7,10 @@ import {
   Search,
   Hammer,
   Store,
-  HeartHandshake,
+  Handshake,
+  Globe,
+  Volume2,
+  LogIn,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -16,18 +19,18 @@ export default function HomePage() {
       {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
         <span className="cursor-pointer" title="Velg språk">
-          🌐
+          <Globe />
         </span>
         <span className="cursor-pointer" title="Tekst til tale">
-          🔊
+          <Volume2 />
         </span>
         <span className="cursor-pointer" title="Logg inn">
-          ➡️
+          <LogIn />
         </span>
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mb-2 mt-4">
+      <div className="flex justify-center mt-8 mb-4">
         <Image
           src="/Frilansportalen_logo_skarp.jpeg"
           alt="Frilansportalen logo"
@@ -37,13 +40,12 @@ export default function HomePage() {
       </div>
 
       {/* Velkomsttekst */}
-      <h1 className="text-center text-xl font-semibold mb-6 px-4">
-        Velkommen til Frilansportalen – plattformen for arbeidsgivere, frilansere,
-        jobbsøkere og tjenester
+      <h1 className="text-center text-lg font-semibold mb-8 px-4">
+        Velkommen til Frilansportalen – plattformen for arbeidsgivere, frilansere, jobbsøkere og tjenester
       </h1>
 
-      {/* Knapper */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+      {/* Hovedvalg */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
         <Link href="/arbeidsgiver" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
             <Briefcase className="text-2xl" />
@@ -76,7 +78,7 @@ export default function HomePage() {
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
-            <HeartHandshake className="text-2xl" />
+            <Handshake className="text-2xl" />
             Dugnadsportalen
           </a>
         </Link>
