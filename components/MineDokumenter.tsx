@@ -28,7 +28,7 @@ export default function MineDokumenter() {
         {dokumenter.map((doc) => (
           <li key={doc.name} className="bg-white rounded shadow p-3">
             <a
-              href={`https://{ditt-prosjekt}.supabase.co/storage/v1/object/public/dokumenter/${user.id}/${doc.name}`}
+              href={`https://{ditt-prosjekt}.supabase.co/storage/v1/object/public/dokumenter/${user?.id}/${doc.name}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 underline"
