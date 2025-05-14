@@ -1,3 +1,4 @@
+// pages/index.tsx
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -6,7 +7,7 @@ import {
   Search,
   Hammer,
   Store,
-  HeartHandshake,
+  Users,
   Globe,
   Volume2,
   LogIn
@@ -14,61 +15,61 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-portalGul text-black">
-      <header className="flex justify-between items-center p-4">
-        <Image src="/Frilansportalen_logo_skarp.jpeg" alt="Logo" width={200} height={60} />
+    <main className="min-h-screen bg-yellow-300 flex flex-col items-center justify-center p-6">
+      {/* Topp: Logo og ikoner */}
+      <div className="flex justify-between items-center w-full max-w-6xl mb-6">
+        <Image
+          src="/Frilansportalen_logo_skarp.jpeg"
+          alt="Frilansportalen Logo"
+          width={250}
+          height={80}
+          priority
+        />
         <div className="flex gap-4">
-          <Globe className="cursor-pointer" title="Velg språk" />
-          <Volume2 className="cursor-pointer" title="Tekst til tale" />
-          <LogIn className="cursor-pointer" title="Logg inn" />
+          <div title="Velg språk">
+            <Globe className="cursor-pointer" />
+          </div>
+          <div title="Tekst til tale">
+            <Volume2 className="cursor-pointer" />
+          </div>
+          <div title="Logg inn">
+            <LogIn className="cursor-pointer" />
+          </div>
         </div>
-      </header>
+      </div>
 
-      <main className="flex flex-col items-center justify-center py-10 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
-          <Link href="/arbeidsgiver">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <Briefcase size={48} />
-              <span className="text-lg font-bold mt-4">Arbeidsgiver</span>
-            </div>
-          </Link>
+      {/* Velkomsttekst */}
+      <h1 className="text-3xl font-bold text-center mb-10">
+        Velkommen til Frilansportalen – din komplette plattform for arbeid og tjenester
+      </h1>
 
-          <Link href="/frilanser">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <User size={48} />
-              <span className="text-lg font-bold mt-4">Frilanser</span>
-            </div>
-          </Link>
-
-          <Link href="/jobbsoker">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <Search size={48} />
-              <span className="text-lg font-bold mt-4">Jobbsøker</span>
-            </div>
-          </Link>
-
-          <Link href="/tjenestetilbyder">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <Hammer size={48} />
-              <span className="text-lg font-bold mt-4">Tjenestetilbyder</span>
-            </div>
-          </Link>
-
-          <Link href="/markeder">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <Store size={48} />
-              <span className="text-lg font-bold mt-4">Markeder</span>
-            </div>
-          </Link>
-
-          <Link href="/dugnadsportalen">
-            <div className="bg-gray-200 rounded-2xl shadow-lg p-8 flex flex-col items-center text-center hover:shadow-xl">
-              <HeartHandshake size={48} />
-              <span className="text-lg font-bold mt-4">Dugnadsportalen</span>
-            </div>
-          </Link>
-        </div>
-      </main>
-    </div>
+      {/* Seksjon med 6 bokser */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+        <Link href="/arbeidsgiver" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <Briefcase className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Arbeidsgiver</h2>
+        </Link>
+        <Link href="/frilanser" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <User className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Frilanser</h2>
+        </Link>
+        <Link href="/jobbsoker" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <Search className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Jobbsøker</h2>
+        </Link>
+        <Link href="/tjenestetilbyder" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <Hammer className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Tjenestetilbyder</h2>
+        </Link>
+        <Link href="/markeder" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <Store className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Markeder</h2>
+        </Link>
+        <Link href="/dugnadsportalen" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
+          <Users className="mx-auto mb-2" size={32} />
+          <h2 className="text-lg font-semibold">Dugnadsportalen</h2>
+        </Link>
+      </div>
+    </main>
   );
 }
