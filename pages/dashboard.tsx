@@ -5,14 +5,14 @@ import supabase from "../lib/supabaseClient";
 import AutoPDFKnapp from "../components/AutoPDFKnapp";
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const user = useUser();
   const [rapporter, setRapporter] = useState<any[]>([]);
   const [fakturaer, setFakturaer] = useState<any[]>([]);
   const [kjorebok, setKjorebok] = useState<any[]>([]);
 
   useEffect(() => {
     const hentData = async () => {
-      if (!user || !user.id) return;
+      if (!user?.id) return;
 
       const brukerId = user.id;
 
