@@ -16,9 +16,15 @@ export default function HomePage() {
     <main className="min-h-screen bg-yellow-300 text-black p-4 relative">
       {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <span className="cursor-pointer" title="Velg språk">🌐</span>
-        <span className="cursor-pointer" title="Tekst til tale">🔊</span>
-        <span className="cursor-pointer" title="Logg inn">🔐</span>
+        <span className="cursor-pointer" title="Velg språk">
+          <Globe />
+        </span>
+        <span className="cursor-pointer" title="Tekst til tale">
+          <Volume2 />
+        </span>
+        <span className="cursor-pointer" title="Logg inn">
+          <LogIn />
+        </span>
       </div>
 
       {/* Logo */}
@@ -27,19 +33,18 @@ export default function HomePage() {
           src="/Frilansportalen_logo_skarp.jpeg"
           alt="Frilansportalen logo"
           width={300}
-          height={60}
+          height={80}
         />
       </div>
 
       {/* Velkomsttekst */}
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold mb-2">Velkommen til Frilansportalen</h1>
-        <p className="text-lg">\          Finn frilansere, jobbmuligheter, tjenester og mer – alt samlet på ett sted.
-        </p>
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold">Velkommen til Frilansportalen</h1>
+        <p className="text-lg mt-2">Velg rollen som passer deg for å komme i gang</p>
       </div>
 
-      {/* Seksjoner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+      {/* Navigasjonsbokser */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
         <Link href="/arbeidsgiver" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
             <Briefcase className="text-2xl" /> Arbeidsgiver
@@ -67,7 +72,7 @@ export default function HomePage() {
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
-            <Globe className="text-2xl" /> Dugnadsportalen
+            <Hammer className="text-2xl" /> Dugnadsportalen
           </a>
         </Link>
       </div>
