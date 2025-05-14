@@ -11,7 +11,13 @@ export default function NyStilling() {
   const [kategori, setKategori] = useState("fast");
   const [fagfelt, setFagfelt] = useState("");
   const [lokasjonTekst, setLokasjonTekst] = useState("");
-  const [lokasjonObjekt, setLokasjonObjekt] = useState(null);
+  const [lokasjonObjekt, setLokasjonObjekt] = useState<{
+    tekst: string;
+    postnummer: string | null;
+    kommune: string | null;
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [foreslatt, setForeslatt] = useState("");
   const [publisert, setPublisert] = useState(false);
 
