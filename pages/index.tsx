@@ -1,6 +1,6 @@
+// pages/index.tsx
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Globe, Volume2, LogIn } from "lucide-react";
 
 export default function HomePage() {
