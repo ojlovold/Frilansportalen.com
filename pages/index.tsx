@@ -30,17 +30,19 @@ export default function HomePage() {
       {/* Logo */}
       <div className="flex justify-center mb-8">
         <Image
-          src="/logo.jpeg"
+          src="/logo.png"
           alt="Frilansportalen logo"
-          width={300}
-          height={80}
+          width={400}
+          height={100}
         />
       </div>
 
       {/* Velkomsttekst */}
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold">Velkommen til Frilansportalen</h1>
-        <p className="text-lg mt-2">Velg rollen som passer deg for å komme i gang</p>
+        <p className="text-lg mt-2">
+          Her starter samarbeidet som forandrer hverdagen – for frilansere, arbeidsgivere og tjenestetilbydere over hele landet.
+        </p>
       </div>
 
       {/* Navigasjonsbokser */}
