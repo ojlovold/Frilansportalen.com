@@ -1,73 +1,52 @@
 // pages/index.tsx
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Briefcase,
-  User,
-  Search,
-  Hammer,
-  Store,
-  Users,
-  Globe,
-  Volume2,
-  LogIn
-} from "lucide-react";
+import { Globe, Volume2, LogIn, Briefcase, User, Search, Hammer, Store, HeartHandshake } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-yellow-300 flex flex-col items-center justify-center p-6">
-      {/* Topp: Logo og ikoner */}
-      <div className="flex justify-between items-center w-full max-w-6xl mb-6">
-        <Image
-          src="/Frilansportalen_logo_skarp.jpeg"
-          alt="Frilansportalen Logo"
-          width={250}
-          height={80}
-          priority
-        />
-        <div className="flex gap-4">
-          <div title="Velg språk">
-            <Globe className="cursor-pointer" />
-          </div>
-          <div title="Tekst til tale">
-            <Volume2 className="cursor-pointer" />
-          </div>
-          <div title="Logg inn">
-            <LogIn className="cursor-pointer" />
-          </div>
-        </div>
+    <main className="min-h-screen bg-yellow-300 text-black flex flex-col items-center justify-start p-6">
+      {/* Logo */}
+      <Image
+        src="/frilansportalen_logo.jpeg"
+        alt="Frilansportalen logo"
+        width={300}
+        height={100}
+        className="mb-8 mt-6"
+      />
+
+      {/* Ikoner oppe til høyre */}
+      <div className="absolute top-4 right-4 flex gap-4">
+        <Globe className="cursor-pointer" title="Velg språk" />
+        <Volume2 className="cursor-pointer" title="Tekst til tale" />
+        <LogIn className="cursor-pointer" title="Logg inn" />
       </div>
 
-      {/* Velkomsttekst */}
-      <h1 className="text-3xl font-bold text-center mb-10">
-        Velkommen til Frilansportalen – din komplette plattform for arbeid og tjenester
-      </h1>
-
-      {/* Seksjon med 6 bokser */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
-        <Link href="/arbeidsgiver" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <Briefcase className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Arbeidsgiver</h2>
+      {/* Bokser */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+        <Link href="/arbeidsgiver" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <Briefcase className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Arbeidsgiver</span>
         </Link>
-        <Link href="/frilanser" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <User className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Frilanser</h2>
+        <Link href="/frilanser" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <User className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Frilanser</span>
         </Link>
-        <Link href="/jobbsoker" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <Search className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Jobbsøker</h2>
+        <Link href="/jobbsoker" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <Search className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Jobbsøker</span>
         </Link>
-        <Link href="/tjenestetilbyder" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <Hammer className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Tjenestetilbyder</h2>
+        <Link href="/tjenestetilbyder" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <Hammer className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Tjenestetilbyder</span>
         </Link>
-        <Link href="/markeder" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <Store className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Markeder</h2>
+        <Link href="/markeder" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <Store className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Markeder</span>
         </Link>
-        <Link href="/dugnadsportalen" className="bg-gray-100 p-6 rounded-2xl shadow-lg hover:scale-105 transition text-center">
-          <Users className="mx-auto mb-2" size={32} />
-          <h2 className="text-lg font-semibold">Dugnadsportalen</h2>
+        <Link href="/dugnadsportalen" className="bg-gray-200 p-6 rounded-2xl shadow text-center hover:bg-gray-300">
+          <HeartHandshake className="mx-auto mb-2" />
+          <span className="text-lg font-semibold">Dugnadsportalen</span>
         </Link>
       </div>
     </main>
