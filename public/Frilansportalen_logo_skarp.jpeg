@@ -1,0 +1,6 @@
+<Image
+  src="/Frilansportalen_logo_skarp.jpeg"
+  alt="Frilansportalen logo"
+  width={400}
+  height={100}
+/>
