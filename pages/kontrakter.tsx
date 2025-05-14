@@ -21,14 +21,15 @@ export default function Kontrakter() {
   const user = useUser() as unknown as User;
   const [liste, setListe] = useState<Kontrakt[]>([]);
 
+  const brukerId = user?.id;
+  if (!brukerId) return null;
+
   useEffect(() => {
     const hent = async () => {
-      if (!user?.id) return;
-
       const { data, error } = await supabase
         .from("kontrakter")
         .select("*")
-        .or(`oppretter.eq.${user.id},mottaker.eq.${user.id}`)
+        .or(`oppretter.eq.${brukerId},mottaker.eq.${brukerId}`)
         .not("slettet", "is", true)
         .order("opprettet", { ascending: false });
 
@@ -36,7 +37,7 @@ export default function Kontrakter() {
     };
 
     hent();
-  }, [user]);
+  }, [brukerId]);
 
   return (
     <Dashboard>
@@ -45,8 +46,8 @@ export default function Kontrakter() {
       </Head>
 
       <div className="space-y-6">
-        <LastOppKontrakt brukerId={user.id} />
-        <EksporterKontraktPDF brukerId={user.id} />
+        <LastOppKontrakt brukerId={brukerId} />
+        <EksporterKontraktPDF brukerId={brukerId} />
 
         <h2 className="text-xl font-bold mt-10">Dine kontrakter</h2>
         <ul className="space-y-3">
