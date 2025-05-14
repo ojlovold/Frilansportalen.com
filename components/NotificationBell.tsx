@@ -1,40 +1,36 @@
-import { useUser } from '@supabase/auth-helpers-react'
-import { useEffect, useState } from 'react'
-import supabase from '../lib/supabaseClient'
-import { Bell } from 'lucide-react' // forutsetter at du har lucide-react installert
+import { useUser } from '@supabase/auth-helpers-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient'; // <-- Fikset linje
+import { Bell } from 'lucide-react'; // forutsetter at du har lucide-react installert
 
 export default function NotificationBell() {
-  const user = useUser()
-  const [antall, setAntall] = useState(0)
+  const user = useUser();
+  const [ulesteVarsler, setUlesteVarsler] = useState(0);
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!user) return;
 
     const hentVarsler = async () => {
       const { data, error } = await supabase
         .from('varsler')
         .select('id')
         .eq('bruker_id', user.id)
-        .eq('lest', false)
+        .eq('lest', false);
 
-      if (error) {
-        console.error('Feil ved henting av varsler:', error.message)
-      } else {
-        setAntall(data?.length || 0)
-      }
-    }
+      if (!error && data) setUlesteVarsler(data.length);
+    };
 
-    hentVarsler()
-  }, [user])
+    hentVarsler();
+  }, [user]);
 
   return (
-    <div className="relative inline-block">
+    <div className="relative">
       <Bell className="w-6 h-6 text-black" />
-      {antall > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-          {antall}
+      {ulesteVarsler > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-2">
+          {ulesteVarsler}
         </span>
       )}
     </div>
-  )
+  );
 }
