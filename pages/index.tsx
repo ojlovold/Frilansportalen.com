@@ -1,32 +1,33 @@
-import Head from "next/head";
-import TilgjengelighetsBar from "@/components/globalt/TilgjengelighetsBar";
+// pages/index.tsx
+import Head from 'next/head'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-portalGul text-black">
+    <div className="min-h-screen bg-yellow-300 flex flex-col items-center justify-center text-black">
       <Head>
-        <title>Frilansportalen | Velkommen</title>
+        <title>Frilansportalen</title>
+        <meta name="description" content="Frilansportalen for arbeidsgivere, frilansere og tjenestetilbydere" />
       </Head>
 
-      <TilgjengelighetsBar />
+      <header className="absolute top-0 left-0 right-0 flex justify-between items-center p-4">
+        <Image src="/logo.png" alt="Frilansportalen logo" width={160} height={40} />
+        <Link href="/login" className="text-sm text-blue-600 underline">
+          Logg inn
+        </Link>
+      </header>
 
-      <main className="p-8 space-y-8 pt-[60px]">
-        <h1 className="text-3xl font-bold">Velkommen til Frilansportalen</h1>
-        <p>
-          Frilansportalen kobler frilansere, arbeidsgivere og frivillige gjennom en intelligent og åpen plattform.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <section className="bg-white p-6 rounded shadow">
-            <h2 className="text-xl font-bold mb-2">Opprett profil</h2>
-            <p className="text-sm text-gray-700">Start med å lage din frilanser-, arbeidsgiver- eller privatprofil.</p>
-          </section>
-
-          <section className="bg-white p-6 rounded shadow">
-            <h2 className="text-xl font-bold mb-2">Se ledige stillinger</h2>
-            <p className="text-sm text-gray-700">Utforsk jobber, småoppdrag og dugnader på tvers av hele landet.</p>
-          </section>
-        </div>
+      <main className="flex flex-col items-center space-y-6 mt-24">
+        {["Arbeidsgiver", "Frilanser", "Jobbsøker", "Tjenestetilbyder", "Markeder"].map((label) => (
+          <Link
+            key={label}
+            href={`/${label.toLowerCase().replace('ø', 'o')}`}
+            className="w-64 bg-white text-center py-4 rounded-xl shadow text-lg font-semibold hover:bg-gray-100 transition"
+          >
+            {label}
+          </Link>
+        ))}
       </main>
     </div>
   );
