@@ -1,85 +1,120 @@
-// pages/firma.tsx
 import Head from "next/head";
-import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
-import supabase from "../lib/supabaseClient";
+import { useState, useEffect } from "react";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 
-type Firmadok = {
-  id: string;
-  tittel: string;
-  kategori: string;
-  fil_url: string;
-  firma_id: string;
-  kun_for: string[] | null;
-};
-
-export default function FirmaBibliotek() {
-  const user = useUser() as unknown as User;
-  const [firmaId, setFirmaId] = useState(""); // Normalt hentet fra profilen
-  const [dokumenter, setDokumenter] = useState<Firmadok[]>([]);
+export default function FirmaProfil() {
+  const [orgnr, setOrgnr] = useState("");
+  const [firmanavn, setFirmanavn] = useState("");
+  const [lokasjon, setLokasjon] = useState("");
+  const [testvalg, setTestvalg] = useState("none");
+  const [testlenke, setTestlenke] = useState("");
 
   useEffect(() => {
-    const hent = async () => {
-      if (!user?.id || !firmaId) return;
-
-      const { data, error } = await supabase
-        .from("firmadokumenter")
-        .select("*")
-        .eq("firma_id", firmaId);
-
-      if (!error && data) {
-        const synlige = data.filter(
-          (d) =>
-            !d.kun_for ||
-            d.kun_for.length === 0 ||
-            d.kun_for.includes(user.id)
+    const hentFirmainfo = async () => {
+      if (orgnr.length !== 9) return;
+      try {
+        const res = await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${orgnr}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setFirmanavn(data.navn || "");
+        setLokasjon(
+          data.forretningsadresse?.postnummer +
+            " " +
+            data.forretningsadresse?.kommune || ""
         );
-        setDokumenter(synlige);
+      } catch (err) {
+        console.error("Feil ved henting av firmainfo", err);
       }
     };
-
-    hent();
-  }, [user, firmaId]);
+    hentFirmainfo();
+  }, [orgnr]);
 
   return (
     <>
       <Head>
-        <title>Firmabibliotek | Frilansportalen</title>
-        <meta name="description" content="Se delte dokumenter fra din arbeidsgiver" />
+        <title>Firmaprofil | Frilansportalen</title>
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Firmabibliotek</h1>
 
-        <div className="max-w-lg mb-6">
-          <input
-            type="text"
-            placeholder="Firma-ID (orgnr)"
-            value={firmaId}
-            onChange={(e) => setFirmaId(e.target.value)}
-            className="p-2 border rounded w-full"
-          />
-        </div>
+      <main className="min-h-screen bg-yellow-300 text-black p-6">
+        <section className="max-w-2xl mx-auto space-y-6">
+          <h1 className="text-3xl font-bold">Opprett firmaprofil</h1>
 
-        <div className="grid gap-4">
-          {dokumenter.length === 0 && (
-            <p>Ingen dokumenter funnet eller tilgjengelige.</p>
-          )}
-          {dokumenter.map((d) => (
-            <div key={d.id} className="bg-white p-4 rounded shadow">
-              <h2 className="text-lg font-semibold">{d.tittel}</h2>
-              <p className="text-sm text-gray-600 mb-2">{d.kategori}</p>
-              <a
-                href={d.fil_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                Last ned
-              </a>
-            </div>
-          ))}
-        </div>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <label className="block">
+                Organisasjonsnummer:
+                <Input
+                  type="text"
+                  value={orgnr}
+                  onChange={(e) => setOrgnr(e.target.value)}
+                  placeholder="935411343"
+                />
+              </label>
+              <label className="block">
+                Firmanavn:
+                <Input
+                  type="text"
+                  value={firmanavn}
+                  onChange={(e) => setFirmanavn(e.target.value)}
+                  placeholder="Navn på firma"
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card id="plassering">
+            <CardContent className="p-4 space-y-4">
+              <label className="block">
+                Lokasjon (postnummer, sted eller GPS):
+                <Input
+                  type="text"
+                  value={lokasjon}
+                  onChange={(e) => setLokasjon(e.target.value)}
+                  placeholder="Oslo, 0150"
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card id="personlighetstester">
+            <CardContent className="p-4 space-y-4">
+              <label className="block">
+                Velg testalternativ:
+                <select
+                  className="w-full border border-black rounded p-2"
+                  value={testvalg}
+                  onChange={(e) => setTestvalg(e.target.value)}
+                >
+                  <option value="none">Ingen test</option>
+                  <option value="bigfive">Big Five (innebygd)</option>
+                  <option value="disc">DISC (innebygd)</option>
+                  <option value="lenke">Ekstern testlenke</option>
+                  <option value="ai">AI-generert test (automatisk)</option>
+                </select>
+              </label>
+
+              {testvalg === "lenke" && (
+                <label className="block">
+                  Testlenke:
+                  <Input
+                    type="url"
+                    value={testlenke}
+                    onChange={(e) => setTestlenke(e.target.value)}
+                    placeholder="https://alvalabs.io/..."
+                  />
+                </label>
+              )}
+
+              {testvalg === "ai" && (
+                <p className="text-sm italic">AI-generert test vil bli satt opp automatisk og analysert i intervju-dashbordet.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Button>Lagre firmaprofil</Button>
+        </section>
       </main>
     </>
   );
