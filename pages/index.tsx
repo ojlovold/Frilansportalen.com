@@ -28,7 +28,7 @@ export default function HomePage() {
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mt-8 sm:mt-0 mb-8">
         <Image
           src="/logo_transparent.png"
           alt="Frilansportalen logo"
