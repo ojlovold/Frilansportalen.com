@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import type { User } from "@supabase/supabase-js";
-import supabase from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient"; // <-- Endret linje
 
 type Rapport = {
   name: string;
