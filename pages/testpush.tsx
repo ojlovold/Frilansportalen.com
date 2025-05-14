@@ -1,0 +1,1 @@
+export default function TestPush() { return <h1>Dette er en test</h1> }
