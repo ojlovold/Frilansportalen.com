@@ -32,8 +32,8 @@ export default function HomePage() {
         <Image
           src="/logo_transparent.png"
           alt="Frilansportalen logo"
-          width={400}
-          height={100}
+          width={500}
+          height={125}
         />
       </div>
 
