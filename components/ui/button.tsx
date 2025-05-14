@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { cn } from "../../lib/utils"; // <-- riktig sti, basert på din mappestruktur
+import { cn } from "../../lib/utils";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "outline";
