@@ -9,7 +9,17 @@ const defaultIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-export default function MapStillinger({ stillinger }) {
+type Stilling = {
+  id: string;
+  tittel: string;
+  lokasjon?: {
+    tekst?: string;
+    lat?: number;
+    lng?: number;
+  };
+};
+
+export default function MapStillinger({ stillinger }: { stillinger: Stilling[] }) {
   const midtpunkt = [60.472, 8.468]; // Norge sentrum
 
   return (
