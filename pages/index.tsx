@@ -1,63 +1,50 @@
 // pages/index.tsx
 import Image from "next/image";
 import Link from "next/link";
+import { Briefcase, User, Search, Hammer, Store, Heart, Globe, Volume2, LogIn } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-yellow-300 text-black p-6 relative">
-      {/* Øvre høyre hjørne – språk, tale, innlogging */}
+    <main className="min-h-screen bg-yellow-300 text-black p-4 relative">
+      {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <span className="cursor-pointer" title="Velg språk">🌐</span>
-        <span className="cursor-pointer" title="Tekst til tale">🔊</span>
-        <span className="cursor-pointer" title="Logg inn">🔐</span>
+        <span className="cursor-pointer" title="Velg språk"><Globe /></span>
+        <span className="cursor-pointer" title="Tekst til tale"><Volume2 /></span>
+        <span className="cursor-pointer" title="Logg inn"><LogIn /></span>
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-4 mt-6">
         <Image
-          src="/Frilansportalen_logo_skarp.jpeg"
+          src="/IMG_6629.jpeg"
           alt="Frilansportalen logo"
-          width={300}
-          height={80}
+          width={400}
+          height={100}
         />
       </div>
 
       {/* Velkomsttekst */}
-      <h1 className="text-center text-2xl font-bold mb-8">
-        Velkommen til Frilansportalen – Norges mest komplette plattform for arbeid og tjenester
-      </h1>
+      <h1 className="text-center text-2xl font-bold mb-6">Velkommen til Frilansportalen</h1>
 
-      {/* Hovedboksene */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        <Link href="/arbeidsgiver">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            👔 Arbeidsgiver
-          </div>
+      {/* Knappene */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto">
+        <Link href="/arbeidsgiver" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <Briefcase /> Arbeidsgiver
         </Link>
-        <Link href="/frilanser">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            🧑‍💻 Frilanser
-          </div>
+        <Link href="/frilanser" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <User /> Frilanser
         </Link>
-        <Link href="/jobbsoker">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            🔎 Jobbsøker
-          </div>
+        <Link href="/jobbsoker" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <Search /> Jobbsøker
         </Link>
-        <Link href="/tjenestetilbyder">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            🧰 Tjenestetilbyder
-          </div>
+        <Link href="/tjenestetilbyder" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <Hammer /> Tjenestetilbyder
         </Link>
-        <Link href="/markeder">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            🛒 Markeder
-          </div>
+        <Link href="/markeder" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <Store /> Markeder
         </Link>
-        <Link href="/dugnadsportalen">
-          <div className="bg-gray-200 rounded-2xl p-6 shadow text-center text-xl hover:bg-gray-300">
-            ❤️ Dugnadsportalen
-          </div>
+        <Link href="/dugnadsportalen" className="bg-gray-100 rounded-2xl p-4 shadow-md hover:shadow-lg flex items-center gap-4 text-lg">
+          <Heart /> Dugnadsportalen
         </Link>
       </div>
     </main>
