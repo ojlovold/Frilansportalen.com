@@ -7,7 +7,7 @@ import {
   Search,
   Hammer,
   Store,
-  Handshake,
+  Users,
   Globe,
   Volume2,
   LogIn,
@@ -16,7 +16,7 @@ import {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-yellow-300 text-black p-4 relative">
-      {/* Ikoner oppe til høyre */}
+      {/* Øverste hjørneikoner */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
         <span className="cursor-pointer" title="Velg språk">
           <Globe />
@@ -30,22 +30,23 @@ export default function HomePage() {
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mt-8 mb-4">
+      <div className="flex justify-center mt-4">
         <Image
           src="/Frilansportalen_logo_skarp.jpeg"
           alt="Frilansportalen logo"
           width={400}
           height={100}
+          priority
         />
       </div>
 
       {/* Velkomsttekst */}
-      <h1 className="text-center text-lg font-semibold mb-8 px-4">
+      <h1 className="text-center text-xl font-semibold mt-6 mb-4">
         Velkommen til Frilansportalen – plattformen for arbeidsgivere, frilansere, jobbsøkere og tjenester
       </h1>
 
-      {/* Hovedvalg */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+      {/* Knapper */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto mt-4">
         <Link href="/arbeidsgiver" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
             <Briefcase className="text-2xl" />
@@ -78,7 +79,7 @@ export default function HomePage() {
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
-            <Handshake className="text-2xl" />
+            <Users className="text-2xl" />
             Dugnadsportalen
           </a>
         </Link>
