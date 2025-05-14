@@ -1,6 +1,6 @@
 import { useUser } from '@supabase/auth-helpers-react'
 import { useEffect, useState } from 'react'
-import supabase from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabaseClient' // <-- fikset
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
