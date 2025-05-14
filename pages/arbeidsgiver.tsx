@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 
 export default function ArbeidsgiverPage() {
   return (
@@ -45,26 +45,6 @@ export default function ArbeidsgiverPage() {
                 <p className="mb-4">Få tilgang til dashboard, fakturering og organisasjonstjenester ved å registrere ditt firma. Firmainformasjon hentes automatisk fra organisasjonsnummer.</p>
                 <Link href="/profil/firma">
                   <Button>Opprett firmaprofil</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <h2 className="text-xl font-semibold mb-2">Angi plassering</h2>
-                <p className="mb-4">Oppgi firmaets geografiske plassering manuelt, via GPS eller postnummer. Brukes til kart og reiseberegning.</p>
-                <Link href="/profil/firma#plassering">
-                  <Button>Sett plassering</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <h2 className="text-xl font-semibold mb-2">Personlighetstester</h2>
-                <p className="mb-4">Velg mellom innebygde tester (Big Five, DISC), legg inn ekstern testlenke eller aktiver AI-analyse i jobbintervjuet.</p>
-                <Link href="/profil/firma#personlighetstester">
-                  <Button>Konfigurer tester</Button>
                 </Link>
               </CardContent>
             </Card>
