@@ -1,8 +1,8 @@
 import Head from "next/head";
 import { useState } from "react";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
 
 export default function FirmaProfil() {
   const [orgnr, setOrgnr] = useState("");
