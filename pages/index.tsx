@@ -30,7 +30,7 @@ export default function HomePage() {
       {/* Logo */}
       <div className="flex justify-center mb-8">
         <Image
-          src="/frilansportalen_logo.jpeg"
+          src="/logo.jpeg"
           alt="Frilansportalen logo"
           width={300}
           height={80}
