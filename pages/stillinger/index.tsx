@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 const MapStillinger = dynamic(() => import("../../components/MapStillinger"), { ssr: false });
 
 export default function StillingerPage() {
-  const [stillinger, setStillinger] = useState([]);
+  const [stillinger, setStillinger] = useState<any[]>([]);
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function StillingerPage() {
   }, []);
 
   const filtrert = stillinger.filter((s) =>
-    s.tittel.toLowerCase().includes(filter.toLowerCase()) ||
+    s.tittel?.toLowerCase().includes(filter.toLowerCase()) ||
     s.fagfelt?.toLowerCase().includes(filter.toLowerCase()) ||
     s.lokasjon?.tekst?.toLowerCase().includes(filter.toLowerCase())
   );
