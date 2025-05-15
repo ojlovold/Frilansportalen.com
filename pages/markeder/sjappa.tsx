@@ -1,13 +1,11 @@
 import Head from "next/head";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 
-const MarkedsListe = dynamic(() =>
-  import("@/components/markedsplass/MarkedsListe"), {
-    ssr: false,
-  }
-);
+const MarkedsListe = dynamic(() => import("@/components/markedsplass/MarkedsListe"), {
+  ssr: false,
+});
 
 export default function SjappaPage() {
   return (
@@ -16,10 +14,15 @@ export default function SjappaPage() {
         <title>Sjappa | Frilansportalen</title>
       </Head>
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-4 flex items-center justify-between">
           <Link href="/markeder" legacyBehavior>
             <a className="inline-flex items-center gap-2 text-black hover:underline">
               <ArrowLeft size={20} /> Tilbake til markedsvalg
+            </a>
+          </Link>
+          <Link href="/markeder/ny" legacyBehavior>
+            <a className="bg-gray-200 rounded-xl shadow-md px-4 py-2 inline-flex items-center gap-2 hover:bg-gray-300">
+              <Plus size={18} /> Legg ut ny annonse
             </a>
           </Link>
         </div>
