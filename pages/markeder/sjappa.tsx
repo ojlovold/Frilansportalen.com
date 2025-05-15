@@ -3,9 +3,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-const MarkedsListe = dynamic(() => import("@/components/markedsplass/MarkedsListe"), {
-  ssr: false,
-});
+const MarkedsListe = dynamic(() =>
+  import("@/components/markedsplass/MarkedsListe"), {
+    ssr: false,
+  }
+);
 
 export default function SjappaPage() {
   return (
@@ -23,11 +25,11 @@ export default function SjappaPage() {
         </div>
 
         <h1 className="text-4xl font-bold mb-4">Sjappa</h1>
-        <p className="text-lg mb-8">
-          Utforsk annonser for kjøp og salg av produkter og tjenester i ditt område. Filtrer og finn det du trenger.
+        <p className="text-lg mb-6">
+          Utforsk produkter og tjenester til salgs. Filtrer og finn det du trenger i ditt nærområde.
         </p>
 
-        <div className="bg-gray-200 p-4 rounded-2xl shadow-lg">
+        <div className="bg-gray-200 rounded-2xl p-6 shadow-2xl">
           <MarkedsListe />
         </div>
       </div>
