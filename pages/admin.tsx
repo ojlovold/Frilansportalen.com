@@ -2,8 +2,10 @@ import Head from "next/head";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
 
 export default function Admin() {
+  const user = useUser();
   const [moduler, setModuler] = useState<any[]>([]);
   const [melding, setMelding] = useState("");
 
@@ -47,26 +49,38 @@ export default function Admin() {
       <div className="max-w-2xl mx-auto py-10">
         <h1 className="text-2xl font-bold mb-6">Modulkontroll</h1>
 
+        {!user && (
+          <p className="text-red-600 text-sm">Du må være innlogget for å se dette panelet.</p>
+        )}
+
+        {user && (
+          <div className="mb-6 text-sm text-gray-700">
+            <p>Innlogget som: <strong>{user.email}</strong></p>
+          </div>
+        )}
+
         {melding && <p className="text-sm text-green-600 mb-4">{melding}</p>}
 
-        <ul className="space-y-4 text-sm">
-          {moduler.map((m) => (
-            <li key={m.id} className="bg-white border rounded p-4 shadow-sm flex justify-between items-center">
-              <div>
-                <p className="font-semibold">{m.navn}</p>
-                <p className="text-gray-600 text-xs">{m.beskrivelse}</p>
-              </div>
-              <button
-                onClick={() => toggle(m.id, m.aktiv)}
-                className={`px-4 py-1 rounded text-sm ${
-                  m.aktiv ? "bg-green-600 text-white" : "bg-gray-300"
-                }`}
-              >
-                {m.aktiv ? "Aktiv" : "Inaktiv"}
-              </button>
-            </li>
-          ))}
-        </ul>
+        {user && (
+          <ul className="space-y-4 text-sm">
+            {moduler.map((m) => (
+              <li key={m.id} className="bg-white border rounded p-4 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="font-semibold">{m.navn}</p>
+                  <p className="text-gray-600 text-xs">{m.beskrivelse}</p>
+                </div>
+                <button
+                  onClick={() => toggle(m.id, m.aktiv)}
+                  className={`px-4 py-1 rounded text-sm ${
+                    m.aktiv ? "bg-green-600 text-white" : "bg-gray-300"
+                  }`}
+                >
+                  {m.aktiv ? "Aktiv" : "Inaktiv"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </Layout>
   );
