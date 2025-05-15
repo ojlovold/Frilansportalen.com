@@ -1,16 +1,8 @@
 import Head from "next/head";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Store, RefreshCcw } from "lucide-react";
-import { useState } from "react";
-
-const MarkedsListe = dynamic(() => import("@/components/markedsplass/MarkedsListe"), {
-  ssr: false,
-});
 
 export default function MarkederPage() {
-  const [valg, setValg] = useState("sjappa");
-
   return (
     <main className="min-h-screen bg-yellow-300 text-black p-6">
       <Head>
@@ -24,21 +16,18 @@ export default function MarkederPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-          <button
-            onClick={() => setValg("sjappa")}
-            className="bg-white rounded-2xl shadow p-6 flex items-center justify-center gap-4 text-lg hover:bg-gray-100 w-full"
-          >
-            <Store className="text-2xl" /> Sjappa
-          </button>
+          <Link href="/markeder/sjappa" legacyBehavior>
+            <a className="bg-gray-200 rounded-2xl shadow-lg p-6 flex items-center justify-center gap-4 text-lg hover:bg-gray-300 w-full">
+              <Store className="text-2xl" /> Sjappa
+            </a>
+          </Link>
 
           <Link href="/gjenbruksportalen" legacyBehavior>
-            <a className="bg-white rounded-2xl shadow p-6 flex items-center justify-center gap-4 text-lg hover:bg-gray-100 w-full">
+            <a className="bg-gray-200 rounded-2xl shadow-lg p-6 flex items-center justify-center gap-4 text-lg hover:bg-gray-300 w-full">
               <RefreshCcw className="text-2xl" /> Gjenbruksportalen
             </a>
           </Link>
         </div>
-
-        {valg === "sjappa" && <MarkedsListe />}
       </div>
     </main>
   );
