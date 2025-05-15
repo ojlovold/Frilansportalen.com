@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import StedFilter from "@/components/ui/StedFilter";
+import FavorittKnapp from "@/components/markedsplass/FavorittKnapp";
 
 export default function MarkedsListe() {
   const [annonser, setAnnonser] = useState<any[]>([]);
@@ -15,6 +16,7 @@ export default function MarkedsListe() {
   const [minPris, setMinPris] = useState("");
   const [maxPris, setMaxPris] = useState("");
   const [kunMedBilde, setKunMedBilde] = useState(false);
+  const [aiKategori, setAiKategori] = useState("");
 
   useEffect(() => {
     const hentAnnonser = async () => {
@@ -23,28 +25,42 @@ export default function MarkedsListe() {
         .select("*")
         .order("opprettet", { ascending: false });
 
-      if (error) {
-        console.error("Feil ved henting:", error.message);
-      } else {
-        setAnnonser(data || []);
-      }
+      if (!error && data) setAnnonser(data || []);
     };
-
     hentAnnonser();
   }, []);
+
+  useEffect(() => {
+    const hentAiKategori = async () => {
+      if (!filter) return setAiKategori("");
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: `Hvilken gjenbrukskategori passer best til dette søket: \"${filter}\"? Svar kun med ett ord.` })
+      });
+      const json = await res.json();
+      setAiKategori(json.svar || "");
+    };
+
+    const delay = setTimeout(hentAiKategori, 600);
+    return () => clearTimeout(delay);
+  }, [filter]);
 
   const filtrert = annonser
     .filter((a) => {
       const tittel = a.tittel?.toLowerCase() || "";
+      const beskrivelse = a.beskrivelse?.toLowerCase() || "";
       const lokasjonData = a.lokasjon?.toLowerCase() || "";
       const tittelMatch = tittel.includes(filter.toLowerCase());
+      const beskrivelseMatch = beskrivelse.includes(filter.toLowerCase());
+      const aiMatch = aiKategori && a.ai_kategori?.toLowerCase() === aiKategori.toLowerCase();
       const kategoriMatch = kategori === "" || a.kategori === kategori;
       const typeMatch = type === "" || a.type === type;
       const stedMatch = lokasjon === "" || lokasjonData.includes(lokasjon.toLowerCase());
       const minPrisMatch = !minPris || (a.pris ?? 0) >= parseInt(minPris);
       const maxPrisMatch = !maxPris || (a.pris ?? 0) <= parseInt(maxPris);
       const bildeMatch = !kunMedBilde || !!a.bilde;
-      return tittelMatch && kategoriMatch && typeMatch && stedMatch && minPrisMatch && maxPrisMatch && bildeMatch;
+      return (tittelMatch || beskrivelseMatch || aiMatch) && kategoriMatch && typeMatch && stedMatch && minPrisMatch && maxPrisMatch && bildeMatch;
     })
     .sort((a, b) => {
       if (sortering === "nyeste") return b.opprettet?.localeCompare?.(a.opprettet ?? "") ?? 0;
@@ -125,7 +141,7 @@ export default function MarkedsListe() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtrert.map((a) => (
           <Card key={a.id} className="bg-gray-100 shadow-xl">
-            <CardContent className="p-4">
+            <CardContent className="p-4 relative">
               {a.bilde && (
                 <div className="mb-4 rounded overflow-hidden shadow">
                   <Image
@@ -137,6 +153,7 @@ export default function MarkedsListe() {
                   />
                 </div>
               )}
+              <FavorittKnapp annonseId={a.id} />
               <h2 className="text-xl font-semibold mb-1">{a.tittel}</h2>
               <p className="text-sm text-gray-700 mb-2">
                 {a.kategori} – {a.type} – {a.lokasjon}
