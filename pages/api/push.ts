@@ -15,6 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const branch = "main";
 
   try {
+    const logs: any = {};
+
     // 1. Lag blob
     const blobRes = await fetch(`https://api.github.com/repos/${repo}/git/blobs`, {
       method: "POST",
@@ -28,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }),
     });
     const blob = await blobRes.json();
-    console.log("Blob:", blob);
+    logs.blob = blob;
     if (!blob.sha) throw new Error("Kunne ikke opprette blob");
 
     // 2. Hent HEAD-ref
@@ -36,10 +38,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: { Authorization: `Bearer ${token}` },
     });
     const refData = await refRes.json();
-    console.log("Ref:", refData);
+    logs.ref = refData;
     if (!refData.object?.sha) throw new Error("Kunne ikke hente ref sha");
 
-    // 3. Lag nytt tre
+    // 3. Lag nytt tree
     const treeRes = await fetch(`https://api.github.com/repos/${repo}/git/trees`, {
       method: "POST",
       headers: {
@@ -47,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        base_tree: refData.object.sha,
+        base_tree: refData.object?.sha,
         tree: [
           {
             path: filnavn,
@@ -59,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }),
     });
     const tree = await treeRes.json();
-    console.log("Tree:", tree);
+    logs.tree = tree;
     if (!tree.sha) throw new Error("Kunne ikke opprette tree");
 
     // 4. Lag commit
@@ -72,11 +74,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify({
         message: commitMelding,
         tree: tree.sha,
-        parents: [refData.object.sha],
+        parents: [refData.object?.sha],
       }),
     });
     const commit = await commitRes.json();
-    console.log("Commit:", commit);
+    logs.commit = commit;
     if (!commit.sha) throw new Error("Kunne ikke opprette commit");
 
     // 5. Oppdater HEAD
@@ -89,13 +91,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify({ sha: commit.sha }),
     });
     const update = await updateRes.json();
-    console.log("Update:", update);
-    if (!update.object?.sha) throw new Error("Kunne ikke oppdatere HEAD");
+    logs.update = update;
+    logs.updateStatus = updateRes.status;
 
-    return res.status(200).json({
-      message: "Push utført",
-      commitSha: commit.sha,
-    });
+    if (updateRes.status !== 200) {
+      throw new Error(`HEAD-oppdatering feilet: ${JSON.stringify(update)}`);
+    }
+
+    return res.status(200).json({ message: "Push utført", commitSha: commit.sha, logs });
   } catch (err: any) {
     console.error("Feil i push-handler:", err.message || err);
     return res.status(500).json({ error: "Push feilet", details: err.message || err });
