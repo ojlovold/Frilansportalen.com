@@ -6,7 +6,7 @@ export default function StedFilter({ onChange }: { onChange: (sted: string) => v
   const [valgtKommune, setValgtKommune] = useState("");
 
   const fylker = Object.keys(fylkerOgKommuner);
-  const kommuner = valgtFylke ? fylkerOgKommuner[valgtFylke] : [];
+  const kommuner = valgtFylke ? (fylkerOgKommuner as any)[valgtFylke] : [];
 
   useEffect(() => {
     if (valgtKommune) {
