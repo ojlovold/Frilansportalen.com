@@ -77,6 +77,11 @@ export default function HomePage() {
             <Hammer className="text-2xl" /> Dugnadsportalen
           </a>
         </Link>
+        <Link href="/fagshoppen" legacyBehavior>
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+            <Store className="text-2xl" /> Fagshoppen
+          </a>
+        </Link>
       </div>
     </main>
   );
