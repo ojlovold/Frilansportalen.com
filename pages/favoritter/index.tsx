@@ -11,14 +11,14 @@ export default function Favoritter() {
   useEffect(() => {
     const hentFavoritter = async () => {
       const { data: userData } = await supabase.auth.getUser();
-      const id = userData?.user?.id;
+      const id = userData?.user?.id ?? null;
       setBrukerId(id);
 
       if (!id) return;
 
       const { data: favorittData } = await supabase
         .from("favoritter")
-        .select("annonse_id");
+        .select("annonse_id, bruker_id");
 
       const favorittIds = (favorittData || [])
         .filter((f) => f.bruker_id === id)
