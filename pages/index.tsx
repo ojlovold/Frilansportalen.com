@@ -48,37 +48,37 @@ export default function HomePage() {
       {/* Navigasjonsbokser */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
         <Link href="/registrer-arbeidsgiver" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Briefcase className="text-2xl" /> Arbeidsgiver
           </a>
         </Link>
         <Link href="/frilanser" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <User className="text-2xl" /> Frilanser
           </a>
         </Link>
         <Link href="/jobbsoker" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Search className="text-2xl" /> Jobbsøker
           </a>
         </Link>
         <Link href="/tjenestetilbyder" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Hammer className="text-2xl" /> Tjenestetilbyder
           </a>
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Hammer className="text-2xl" /> Dugnadsportalen
           </a>
         </Link>
         <Link href="/gjenbruksportalen" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Store className="text-2xl" /> Gjenbruksportalen
           </a>
         </Link>
         <Link href="/fagshoppen" legacyBehavior>
-          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
+          <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
             <Store className="text-2xl" /> Fagshoppen
           </a>
         </Link>
