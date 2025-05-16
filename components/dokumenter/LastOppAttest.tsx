@@ -1,45 +1,49 @@
-import { useUser } from '@supabase/auth-helpers-react'
-import { useState } from 'react'
-import supabase from '@/lib/supabaseClient'
+import { useUser } from "@supabase/auth-helpers-react";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function LastOppAttest() {
-  const user = useUser()
-  const [fil, setFil] = useState<File | null>(null)
-  const [status, setStatus] = useState("")
+  const user = useUser();
+  const [fil, setFil] = useState<File | null>(null);
+  const [status, setStatus] = useState("");
 
   const lastOpp = async () => {
-    if (!user?.id || !fil) return
+    if (!user || !fil) {
+      setStatus("Du må være innlogget og velge en fil.");
+      return;
+    }
 
-    const path = `attester/${user.id}/${fil.name}`
+    const filnavn = `${user.id}/${Date.now()}-${fil.name}`;
+
     const { error } = await supabase.storage
-      .from('attester')
-      .upload(path, fil, { upsert: true })
+      .from("attester")
+      .upload(filnavn, fil);
 
     if (error) {
-      setStatus('Feil ved opplasting')
-      console.error(error.message)
+      setStatus("Feil ved opplasting: " + error.message);
     } else {
-      setStatus('Attest lastet opp')
-      setFil(null)
+      setStatus("Attest lastet opp!");
     }
-  }
+  };
 
   return (
-    <div className="p-4 bg-white rounded shadow">
+    <div className="bg-gray-100 p-4 rounded-xl shadow max-w-md mx-auto">
+      <h2 className="text-xl font-bold mb-4">Last opp attest</h2>
+
       <input
         type="file"
-        accept=".pdf"
         onChange={(e) => setFil(e.target.files?.[0] || null)}
-        className="mb-2"
+        className="mb-4"
       />
+
       <button
         onClick={lastOpp}
         className="bg-black text-white px-4 py-2 rounded"
-        disabled={!fil}
       >
-        Last opp attest
+        Last opp
       </button>
-      {status && <p className="mt-2 text-sm text-gray-600">{status}</p>}
+
+      {status && <p className="mt-4 text-sm">{status}</p>}
     </div>
-  )
+  );
 }
