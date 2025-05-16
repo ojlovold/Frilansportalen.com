@@ -46,12 +46,10 @@ export default function Gjenbruksportalen() {
 
   const filtrert = annonser.filter((a) => {
     const tekst = (a.tittel + " " + a.beskrivelse).toLowerCase();
-    const kategoriOk =
-      kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
+    const kategoriOk = kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
     const typeOk = type === "Alle" || a.type === type;
     const fylkeOk = fylke === "Alle" || (a.fylke || "").toLowerCase() === fylke.toLowerCase();
     const kommuneOk = kommune === "Alle" || (a.kommune || "").toLowerCase() === kommune.toLowerCase();
-
     return kategoriOk && typeOk && fylkeOk && kommuneOk;
   });
 
@@ -61,17 +59,15 @@ export default function Gjenbruksportalen() {
         <title>Gjenbruksportalen | Frilansportalen</title>
       </Head>
 
-      <main className="min-h-screen bg-portalGul text-black p-6">
-        {/* Topp */}
-        <div className="flex justify-between items-center mb-6">
+      <main className="min-h-screen bg-portalGul text-black px-4 py-6">
+        {/* Topptekst og tilbakeknapp */}
+        <div className="flex justify-between items-center mb-6 max-w-screen-lg mx-auto">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
-          <Link href="/" className="text-sm underline text-blue-600">
-            Tilbake til forsiden
-          </Link>
+          <Link href="/" className="text-sm underline text-blue-600">Tilbake til forsiden</Link>
         </div>
 
-        {/* Filterboks */}
-        <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Filterbokser */}
+        <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold mb-1">Kategori</label>
             <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-2 rounded border">
@@ -98,14 +94,16 @@ export default function Gjenbruksportalen() {
           </div>
         </div>
 
-        {/* Annonser */}
-        {filtrert.length === 0 ? (
-          <p>Ingen annonser funnet.</p>
-        ) : (
-          filtrert.map((annonse) => (
-            <AnnonseKort key={annonse.id} annonse={annonse} />
-          ))
-        )}
+        {/* Annonsevisning */}
+        <div className="max-w-screen-lg mx-auto space-y-4">
+          {filtrert.length === 0 ? (
+            <p>Ingen annonser funnet.</p>
+          ) : (
+            filtrert.map((annonse) => (
+              <AnnonseKort key={annonse.id} annonse={annonse} />
+            ))
+          )}
+        </div>
       </main>
     </>
   );
