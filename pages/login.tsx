@@ -1,61 +1,65 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
 import { useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [passord, setPassord] = useState("");
-  const [feil, setFeil] = useState("");
-  const router = useRouter();
+  const [status, setStatus] = useState("");
 
-  const loggInn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFeil("");
-
+  const handleLogin = async () => {
+    setStatus("Logger inn...");
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
 
     if (error) {
-      setFeil("Feil e-post eller passord.");
+      setStatus("Feil: " + error.message);
     } else {
-      router.push("/dashboard");
+      setStatus("Innlogging vellykket!");
+      setTimeout(() => router.push("/"), 1000);
     }
   };
 
   return (
-    <Layout>
+    <main className="min-h-screen bg-yellow-300 text-black p-6">
       <Head>
         <title>Logg inn | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Logg inn</h1>
+      <div className="max-w-md mx-auto bg-gray-200 p-6 rounded-2xl shadow">
+        <h1 className="text-2xl font-bold mb-4">Logg inn</h1>
 
-      <form onSubmit={loggInn} className="grid gap-4 max-w-sm">
+        <label className="block font-semibold mb-1">E-post</label>
         <input
           type="email"
-          placeholder="E-post"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="p-2 border rounded"
-          required
+          className="w-full p-2 mb-4 rounded border"
         />
+
+        <label className="block font-semibold mb-1">Passord</label>
         <input
           type="password"
-          placeholder="Passord"
           value={passord}
           onChange={(e) => setPassord(e.target.value)}
-          className="p-2 border rounded"
-          required
+          className="w-full p-2 mb-4 rounded border"
         />
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">
+
+        <button onClick={handleLogin} className="bg-black text-white px-4 py-2 rounded">
           Logg inn
         </button>
-        {feil && <p className="text-red-600 text-sm">{feil}</p>}
-      </form>
-    </Layout>
+
+        {status && <p className="mt-4 text-sm">{status}</p>}
+
+        <Link href="/" className="block text-sm text-blue-600 underline mt-6">
+          Tilbake til forsiden
+        </Link>
+      </div>
+    </main>
   );
 }
