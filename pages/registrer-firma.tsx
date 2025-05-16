@@ -33,26 +33,31 @@ export default function RegistrerFirma() {
 
     setStatus("Lagrer firmaprofil...");
 
-    const { data, error } = await supabase.from("firmaer").upsert({
-      organisasjonsnummer: firma.organisasjonsnummer,
-      navn: firma.navn,
-      adresse: firma.forretningsadresse?.adresse?.[0] || null,
-      postnummer: firma.forretningsadresse?.postnummer || null,
-      poststed: firma.forretningsadresse?.poststed || null,
-      kommune: firma.forretningsadresse?.kommune || null,
-      fylke: firma.forretningsadresse?.kommunenummer?.slice(0, 2) || null,
-      nettside: firma.hjemmeside || null,
-      bransje: firma.naeringskode1?.beskrivelse || null
-    });
+    const { data, error } = await supabase
+      .from("firmaer")
+      .upsert({
+        organisasjonsnummer: firma.organisasjonsnummer,
+        navn: firma.navn,
+        adresse: firma.forretningsadresse?.adresse?.[0] || null,
+        postnummer: firma.forretningsadresse?.postnummer || null,
+        poststed: firma.forretningsadresse?.poststed || null,
+        kommune: firma.forretningsadresse?.kommune || null,
+        fylke: firma.forretningsadresse?.kommunenummer?.slice(0, 2) || null,
+        nettside: firma.hjemmeside || null,
+        bransje: firma.naeringskode1?.beskrivelse || null
+      })
+      .select();
 
-    if (error) {
-      setStatus("Feil ved lagring: " + error.message);
+    if (error || !data) {
+      setStatus("Feil ved lagring: " + error?.message || "Ukjent feil");
       return;
     }
 
-    const { data: kobling, error: brukerError } = await supabase
+    const firmaId = Array.isArray(data) ? data[0]?.id : null;
+
+    const { error: brukerError } = await supabase
       .from("brukere")
-      .update({ firma_id: data?.id || null })
+      .update({ firma_id: firmaId })
       .eq("id", bruker.id);
 
     if (brukerError) {
