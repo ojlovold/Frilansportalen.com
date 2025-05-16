@@ -11,26 +11,34 @@ const kategorier = [
   "Hobby", "Bil og motor", "Hage", "Annet"
 ];
 
-const steder = [
-  "Hele landet", "Oslo", "Viken", "Innlandet", "Vestfold og Telemark", "Agder",
+const typer = ["Alle", "Til salgs", "Gis bort", "Ønskes kjøpt", "Ønskes"];
+
+const fylker = [
+  "Alle", "Oslo", "Viken", "Innlandet", "Vestfold og Telemark", "Agder",
   "Rogaland", "Vestland", "Møre og Romsdal", "Trøndelag", "Nordland", "Troms og Finnmark"
+];
+
+const kommuner = [
+  "Alle", "Bergen", "Oslo", "Stavanger", "Trondheim", "Tønsberg", "Tromsø",
+  "Fredrikstad", "Kristiansand", "Drammen", "Sandnes", "Bodø", "Larvik", "Halden"
 ];
 
 export default function Gjenbruksportalen() {
   const [annonser, setAnnonser] = useState<any[]>([]);
   const [kategori, setKategori] = useState("Alle");
-  const [sted, setSted] = useState("Hele landet");
-  const [brukerId, setBrukerId] = useState<string | null>(null);
+  const [type, setType] = useState("Alle");
+  const [fylke, setFylke] = useState("Alle");
+  const [kommune, setKommune] = useState("Alle");
 
   useEffect(() => {
     const hent = async () => {
-      const { data: annonserData } = await supabase.from("annonser").select("*").order("created_at", { ascending: false });
-      setAnnonser(annonserData || []);
+      const { data } = await supabase
+        .from("annonser")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      const { data: brukerData } = await supabase.auth.getUser();
-      setBrukerId(brukerData?.user?.id ?? null);
+      setAnnonser(data || []);
     };
-
     hent();
   }, []);
 
@@ -38,9 +46,13 @@ export default function Gjenbruksportalen() {
 
   const filtrert = annonser.filter((a) => {
     const tekst = (a.tittel + " " + a.beskrivelse).toLowerCase();
-    const kategoriMatch = kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
-    const stedMatch = sted === "Hele landet" || (a.sted || "").toLowerCase().includes(sted.toLowerCase());
-    return kategoriMatch && stedMatch;
+    const kategoriOk =
+      kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
+    const typeOk = type === "Alle" || a.type === type;
+    const fylkeOk = fylke === "Alle" || (a.fylke || "").toLowerCase() === fylke.toLowerCase();
+    const kommuneOk = kommune === "Alle" || (a.kommune || "").toLowerCase() === kommune.toLowerCase();
+
+    return kategoriOk && typeOk && fylkeOk && kommuneOk;
   });
 
   return (
@@ -50,39 +62,41 @@ export default function Gjenbruksportalen() {
       </Head>
 
       <main className="min-h-screen bg-portalGul text-black p-6">
+        {/* Topp */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
           <Link href="/" className="text-sm text-blue-600 underline">Tilbake til forsiden</Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Filtre */}
+        <div className="bg-gray-100 rounded-2xl p-4 shadow mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Kategori</label>
-            <select
-              value={kategori}
-              onChange={(e) => setKategori(e.target.value)}
-              className="w-full p-2 rounded border"
-            >
-              {kategorier.map((kat) => (
-                <option key={kat} value={kat}>{kat}</option>
-              ))}
+            <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-2 rounded border">
+              {kategorier.map((k) => <option key={k}>{k}</option>)}
             </select>
           </div>
-
           <div>
-            <label className="block text-sm font-medium mb-1">Sted</label>
-            <select
-              value={sted}
-              onChange={(e) => setSted(e.target.value)}
-              className="w-full p-2 rounded border"
-            >
-              {steder.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+            <label className="block text-sm font-medium mb-1">Type</label>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="w-full p-2 rounded border">
+              {typer.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Fylke</label>
+            <select value={fylke} onChange={(e) => setFylke(e.target.value)} className="w-full p-2 rounded border">
+              {fylker.map((f) => <option key={f}>{f}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Kommune</label>
+            <select value={kommune} onChange={(e) => setKommune(e.target.value)} className="w-full p-2 rounded border">
+              {kommuner.map((k) => <option key={k}>{k}</option>)}
             </select>
           </div>
         </div>
 
+        {/* Resultat */}
         {filtrert.length === 0 ? (
           <p>Ingen annonser funnet.</p>
         ) : (
