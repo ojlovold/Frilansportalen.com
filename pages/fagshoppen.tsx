@@ -23,7 +23,10 @@ export default function Fagshoppen() {
   const [kommune, setKommune] = useState("Alle");
   const [kommuneSøk, setKommuneSøk] = useState("");
   const [visKommunevalg, setVisKommunevalg] = useState(false);
-  const [firmanavn, setFirmanavn] = useState("");
+
+  const [firmaSøk, setFirmaSøk] = useState("");
+  const [valgteFirma, setValgteFirma] = useState<any | null>(null);
+  const [visFirmaforslag, setVisFirmaforslag] = useState(false);
 
   const aktiveKommuner =
     fylke === "Alle"
@@ -34,11 +37,21 @@ export default function Fagshoppen() {
     k.toLowerCase().startsWith(kommuneSøk.toLowerCase()) && k !== kommune
   );
 
+  const unikeFirmaer = Array.from(
+    new Map(
+      annonser.map((a) => [a.bruker_id, { id: a.bruker_id, navn: a.bruker_navn, url: a.nettbutikk_url }])
+    ).values()
+  );
+
+  const firmaforslag = unikeFirmaer.filter((f) =>
+    f.navn?.toLowerCase().startsWith(firmaSøk.toLowerCase())
+  );
+
   useEffect(() => {
     const hent = async () => {
       const { data } = await supabase
         .from("annonser")
-        .select("*, brukere(type)")
+        .select("*, brukere(id, type, navn)")
         .order("created_at", { ascending: false });
 
       const kunFirma = (data || []).filter((a) => a.brukere?.type === "firma");
@@ -52,12 +65,12 @@ export default function Fagshoppen() {
 
   const filtrert = annonser.filter((a) => {
     const tekst = (a.tittel + " " + a.beskrivelse).toLowerCase();
-    const firmanavnOk = !firmanavn || a.bruker_navn?.toLowerCase().includes(firmanavn.toLowerCase());
     const kategoriOk = kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
     const typeOk = type === "Alle" || a.type === type;
     const fylkeOk = fylke === "Alle" || (a.fylke || "").toLowerCase() === fylke.toLowerCase();
     const kommuneOk = kommune === "Alle" || (a.kommune || "").toLowerCase() === kommune.toLowerCase();
-    return kategoriOk && typeOk && fylkeOk && kommuneOk && firmanavnOk;
+    const firmaOk = !valgteFirma || a.bruker_id === valgteFirma.id;
+    return kategoriOk && typeOk && fylkeOk && kommuneOk && firmaOk;
   });
 
   return (
@@ -137,15 +150,39 @@ export default function Fagshoppen() {
           </div>
         </div>
 
-        <div className="max-w-screen-lg mx-auto mb-8">
+        <div className="max-w-screen-lg mx-auto mb-8 relative">
           <label className="block text-sm font-semibold mb-1">Finn firma / butikk</label>
           <input
             type="text"
-            value={firmanavn}
-            onChange={(e) => setFirmanavn(e.target.value)}
-            placeholder="Søk etter firmanavn..."
+            value={firmaSøk}
+            onChange={(e) => {
+              setFirmaSøk(e.target.value);
+              setVisFirmaforslag(true);
+            }}
+            onFocus={() => setVisFirmaforslag(true)}
             className="w-full p-2 rounded border"
+            placeholder="Søk etter firmanavn..."
           />
+          {visFirmaforslag && firmaSøk.length > 0 && (
+            <ul className="absolute z-10 w-full bg-white border mt-1 rounded max-h-48 overflow-y-auto">
+              {firmaforslag.map((f) => (
+                <li
+                  key={f.id}
+                  onClick={() => {
+                    setValgteFirma(f);
+                    setFirmaSøk(f.navn);
+                    setVisFirmaforslag(false);
+                  }}
+                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                >
+                  {f.navn}
+                </li>
+              ))}
+              {firmaforslag.length === 0 && (
+                <li className="px-3 py-2 text-gray-500 text-sm">Ingen treff</li>
+              )}
+            </ul>
+          )}
         </div>
 
         <div className="max-w-screen-lg mx-auto space-y-4">
@@ -153,7 +190,16 @@ export default function Fagshoppen() {
             <p>Ingen firmaannonser funnet.</p>
           ) : (
             filtrert.map((annonse) => (
-              <AnnonseKort key={annonse.id} annonse={annonse} />
+              <div key={annonse.id} className="space-y-1">
+                <AnnonseKort annonse={annonse} />
+                <Link
+                  href={annonse.nettbutikk_url || `/firma/${annonse.bruker_id}`}
+                  className="inline-block text-blue-600 underline text-sm"
+                  target="_blank"
+                >
+                  {annonse.nettbutikk_url ? "Besøk nettbutikk" : "Se firmaprofil"}
+                </Link>
+              </div>
             ))
           )}
         </div>
