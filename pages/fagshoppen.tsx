@@ -22,7 +22,6 @@ export default function Fagshoppen() {
   const [firmaSøk, setFirmaSøk] = useState("");
   const [firmaTreff, setFirmaTreff] = useState<any[]>([]);
   const [visFirmaforslag, setVisFirmaforslag] = useState(false);
-  const [feil, setFeil] = useState<string | null>(null);
 
   const aktiveKommuner =
     fylke === "Alle"
@@ -35,19 +34,14 @@ export default function Fagshoppen() {
 
   useEffect(() => {
     const hent = async () => {
-      try {
-        const { data } = await supabase
-          .from("annonser")
-          .select("*, brukere(id, type, navn)")
-          .order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("annonser")
+        .select("*, brukere(id, type, navn)")
+        .order("created_at", { ascending: false });
 
-        const kunFirma = (data || []).filter((a) => a.brukere?.type === "firma");
-        setAnnonser(kunFirma);
-      } catch (err) {
-        setFeil("Klarte ikke hente annonser.");
-      }
+      const kunFirma = (data || []).filter((a) => a.brukere?.type === "firma");
+      setAnnonser(kunFirma);
     };
-
     hent();
   }, []);
 
@@ -55,15 +49,9 @@ export default function Fagshoppen() {
     const hentFraBrreg = async () => {
       if (firmaSøk.length < 3) return setFirmaTreff([]);
 
-      try {
-        const res = await fetch(`/api/firmasok?q=${firmaSøk}`);
-        if (!res.ok) throw new Error("Søk feilet");
-        const data = await res.json();
-        setFirmaTreff(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setFirmaTreff([]);
-        setFeil("Klarte ikke hente firmasøk.");
-      }
+      const res = await fetch(`/api/firmasok?q=${firmaSøk}`);
+      const data = await res.json();
+      setFirmaTreff(Array.isArray(data) ? data : []);
     };
 
     const delay = setTimeout(() => {
@@ -95,12 +83,6 @@ export default function Fagshoppen() {
           <h1 className="text-3xl font-bold">Fagshoppen</h1>
           <Link href="/" className="text-sm underline text-blue-600">Tilbake til forsiden</Link>
         </div>
-
-        {feil && (
-          <div className="max-w-screen-lg mx-auto mb-6 text-red-700 bg-red-100 p-4 rounded">
-            {feil}
-          </div>
-        )}
 
         <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-8 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div>
@@ -158,6 +140,7 @@ export default function Fagshoppen() {
           </div>
         </div>
 
+        {/* Firma-søk med import */}
         <div className="max-w-screen-lg mx-auto mb-8 relative">
           <label className="block text-sm font-semibold mb-1">Søk etter firma (Brønnøysund)</label>
           <input
@@ -173,18 +156,32 @@ export default function Fagshoppen() {
           />
           {visFirmaforslag && firmaSøk.length > 2 && (
             <ul className="absolute z-10 w-full bg-white border mt-1 rounded max-h-60 overflow-y-auto">
-              {firmaTreff.length > 0 ? (
-                firmaTreff.map((firma) => (
-                  <li key={firma.organisasjonsnummer} className="px-3 py-2 hover:bg-gray-100 text-sm">
+              {firmaTreff.map((firma) => (
+                <li key={firma.organisasjonsnummer} className="px-3 py-2 hover:bg-gray-100 text-sm">
+                  <div className="flex flex-col gap-1">
                     <Link
                       href={`/firma/${firma.organisasjonsnummer}`}
-                      className="block text-blue-600 underline"
+                      className="text-blue-600 underline"
                     >
                       {firma.navn} (Org.nr: {firma.organisasjonsnummer})
                     </Link>
-                  </li>
-                ))
-              ) : (
+                    <button
+                      onClick={async () => {
+                        const res = await fetch(`/api/importerFirma?orgnr=${firma.organisasjonsnummer}`, { method: "POST" });
+                        if (res.ok) {
+                          alert(`Firmaet ${firma.navn} er importert!`);
+                        } else {
+                          alert("Import feilet. Kanskje firmaet finnes fra før?");
+                        }
+                      }}
+                      className="text-xs text-green-700 underline"
+                    >
+                      Importer til Frilansportalen
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {firmaTreff.length === 0 && (
                 <li className="px-3 py-2 text-gray-500 text-sm">Ingen treff</li>
               )}
             </ul>
