@@ -1,61 +1,67 @@
-// components/dokumenter/MineAttester.tsx
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../../lib/supabaseClient'
+import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Dokument = {
-  navn: string
-  url: string
-}
+  name: string;
+  url: string;
+};
 
 export default function MineAttester() {
-  const user = useUser()
-  const [attester, setAttester] = useState<Dokument[]>([])
+  const user = useUser();
+  const [dokumenter, setDokumenter] = useState<Dokument[]>([]);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const hent = async () => {
-      const brukerId = user && 'id' in user ? (user.id as string) : null
-      if (!brukerId) return
+      if (!user) return;
 
-      const { data: filer } = await supabase.storage.from('attester').list(brukerId)
-      if (!filer) return
+      const { data, error } = await supabase.storage
+        .from("attester")
+        .list(`${user.id}/`, { limit: 100 });
 
-      const filerMedUrl = filer.map((fil: any) => {
-        const sti = `${brukerId}/${fil.name}`
-        const { data: link } = supabase.storage.from('attester').getPublicUrl(sti)
-        return {
-          navn: fil.name,
-          url: link?.publicUrl || '#',
-        }
-      })
+      if (error) {
+        setStatus("Feil ved henting: " + error.message);
+        return;
+      }
 
-      setAttester(filerMedUrl)
-    }
+      const filer = await Promise.all(
+        (data || []).map(async (fil) => {
+          const { data: urlData } = await supabase.storage
+            .from("attester")
+            .createSignedUrl(`${user.id}/${fil.name}`, 60 * 10); // 10 min
+          return {
+            name: fil.name,
+            url: urlData?.signedUrl || "#",
+          };
+        })
+      );
 
-    hent()
-  }, [user])
+      setDokumenter(filer);
+    };
 
-  const brukerId = user && 'id' in user ? (user.id as string) : null
-  if (!brukerId) return null
+    hent();
+  }, [user]);
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow mt-4">
-      <h2 className="text-xl font-semibold mb-3">Mine helseattester og dokumenter</h2>
+    <div className="bg-gray-100 p-6 rounded-xl shadow max-w-xl mx-auto mt-6">
+      <h2 className="text-xl font-bold mb-4">Mine attester</h2>
 
-      {attester.length === 0 ? (
-        <p>Du har ingen attester lagret ennå.</p>
+      {status && <p className="mb-4 text-sm text-red-600">{status}</p>}
+
+      {dokumenter.length === 0 ? (
+        <p>Ingen attester funnet.</p>
       ) : (
-        <ul className="text-sm space-y-2">
-          {attester.map((a, i) => (
-            <li key={i} className="flex justify-between items-center border-b pb-1">
-              <span>{a.navn}</span>
-              <a href={a.url} target="_blank" className="text-blue-600 underline">
-                Last ned
+        <ul className="list-disc pl-5 space-y-2">
+          {dokumenter.map((d) => (
+            <li key={d.name}>
+              <a href={d.url} target="_blank" className="text-blue-600 underline">
+                {d.name}
               </a>
             </li>
           ))}
         </ul>
       )}
     </div>
-  )
+  );
 }
