@@ -5,56 +5,42 @@ import AnnonseKort from "@/components/AnnonseKort";
 import Link from "next/link";
 import { aiMatch } from "@/lib/aiMatch";
 
+const kategorier = [
+  "Alle", "Klær", "Møbler", "Elektronikk", "Kjøkken", "Verktøy", "Sport og fritid", "Barneutstyr",
+  "Bygg og oppussing", "Kontor", "Data", "Interiør", "Leker", "Bøker", "Skjønnhet", "Musikk",
+  "Hobby", "Bil og motor", "Hage", "Annet"
+];
+
+const steder = [
+  "Hele landet", "Oslo", "Viken", "Innlandet", "Vestfold og Telemark", "Agder",
+  "Rogaland", "Vestland", "Møre og Romsdal", "Trøndelag", "Nordland", "Troms og Finnmark"
+];
+
 export default function Gjenbruksportalen() {
   const [annonser, setAnnonser] = useState<any[]>([]);
-  const [søk, setSøk] = useState("");
+  const [kategori, setKategori] = useState("Alle");
+  const [sted, setSted] = useState("Hele landet");
   const [brukerId, setBrukerId] = useState<string | null>(null);
-  const [sortering, setSortering] = useState("nyeste");
 
   useEffect(() => {
-    const hentData = async () => {
-      const { data } = await supabase
-        .from("annonser")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const hent = async () => {
+      const { data: annonserData } = await supabase.from("annonser").select("*").order("created_at", { ascending: false });
+      setAnnonser(annonserData || []);
 
-      setAnnonser(data || []);
-
-      const { data: brukerdata } = await supabase.auth.getUser();
-      setBrukerId(brukerdata?.user?.id || null);
+      const { data: brukerData } = await supabase.auth.getUser();
+      setBrukerId(brukerData?.user?.id ?? null);
     };
 
-    hentData();
+    hent();
   }, []);
 
-  const håndterSøk = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (brukerId && søk.trim()) {
-      await supabase.from("brukermønster").insert([
-        {
-          bruker_id: brukerId,
-          handling: "søk",
-          verdi: søk,
-        },
-      ]);
-    }
-  };
-
-  const synonymer = aiMatch(søk);
+  const aiKategorier = aiMatch(kategori === "Alle" ? "" : kategori);
 
   const filtrert = annonser.filter((a) => {
-    if (!søk) return true;
-
-    const tekst = (a.tittel + a.beskrivelse).toLowerCase();
-    return synonymer.some((ord) => tekst.includes(ord.toLowerCase()));
-  });
-
-  const sortert = [...filtrert].sort((a, b) => {
-    if (sortering === "favoritter") {
-      return (b.favoritter || 0) - (a.favoritter || 0);
-    }
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    const tekst = (a.tittel + " " + a.beskrivelse).toLowerCase();
+    const kategoriMatch = kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
+    const stedMatch = sted === "Hele landet" || (a.sted || "").toLowerCase().includes(sted.toLowerCase());
+    return kategoriMatch && stedMatch;
   });
 
   return (
@@ -66,43 +52,41 @@ export default function Gjenbruksportalen() {
       <main className="min-h-screen bg-portalGul text-black p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
-          <Link href="/" className="text-sm text-blue-600 underline">
-            Tilbake til forsiden
-          </Link>
+          <Link href="/" className="text-sm text-blue-600 underline">Tilbake til forsiden</Link>
         </div>
 
-        <form onSubmit={håndterSøk} className="flex gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Søk etter annonse"
-            value={søk}
-            onChange={(e) => setSøk(e.target.value)}
-            className="p-2 border rounded w-full"
-          />
-          <button type="submit" className="px-4 py-2 bg-black text-white rounded">
-            Søk
-          </button>
-        </form>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">Kategori</label>
+            <select
+              value={kategori}
+              onChange={(e) => setKategori(e.target.value)}
+              className="w-full p-2 rounded border"
+            >
+              {kategorier.map((kat) => (
+                <option key={kat} value={kat}>{kat}</option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <label htmlFor="sortering" className="text-sm font-medium">
-            Sorter etter:
-          </label>
-          <select
-            id="sortering"
-            value={sortering}
-            onChange={(e) => setSortering(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="nyeste">Nyeste</option>
-            <option value="favoritter">Mest populære</option>
-          </select>
+          <div>
+            <label className="block text-sm font-medium mb-1">Sted</label>
+            <select
+              value={sted}
+              onChange={(e) => setSted(e.target.value)}
+              className="w-full p-2 rounded border"
+            >
+              {steder.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {sortert.length === 0 ? (
+        {filtrert.length === 0 ? (
           <p>Ingen annonser funnet.</p>
         ) : (
-          sortert.map((annonse) => (
+          filtrert.map((annonse) => (
             <AnnonseKort key={annonse.id} annonse={annonse} />
           ))
         )}
