@@ -6,7 +6,7 @@ import Link from "next/link";
 import { aiMatch } from "@/lib/aiMatch";
 import fylkerOgKommuner from "@/data/fylkerOgKommuner.json";
 
-const kategorier = ["Alle", "Klær", "Verktøy", "Bygg", "Transport", "Skjønnhet", "Helse", "Annet"];
+const kategorier = ["Alle", "Verktøy", "Bygg", "Transport", "Skjønnhet", "Helse", "Annet"];
 const typer = ["Alle", "Til salgs", "Tjeneste", "Utleie", "Ønskes kjøpt"];
 const fylker = ["Alle", ...Object.keys(fylkerOgKommuner)];
 
@@ -46,18 +46,16 @@ export default function Fagshoppen() {
   }, []);
 
   useEffect(() => {
-    const hentFirmaer = async () => {
+    const hentFraBrreg = async () => {
       if (firmaSøk.length < 3) return setFirmaTreff([]);
 
-      const res = await fetch(
-        `https://data.brreg.no/enhetsregisteret/api/enheter?sok=${firmaSøk}`
-      );
-      const json = await res.json();
-      setFirmaTreff(json._embedded?.enheter || []);
+      const res = await fetch(`/api/firmasok?q=${firmaSøk}`);
+      const data = await res.json();
+      setFirmaTreff(data);
     };
 
     const delay = setTimeout(() => {
-      if (firmaSøk) hentFirmaer();
+      if (firmaSøk) hentFraBrreg();
     }, 300);
 
     return () => clearTimeout(delay);
@@ -86,7 +84,6 @@ export default function Fagshoppen() {
           <Link href="/" className="text-sm underline text-blue-600">Tilbake til forsiden</Link>
         </div>
 
-        {/* Filterboks */}
         <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-8 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Kategori</label>
@@ -143,7 +140,6 @@ export default function Fagshoppen() {
           </div>
         </div>
 
-        {/* Firma-søk */}
         <div className="max-w-screen-lg mx-auto mb-8 relative">
           <label className="block text-sm font-semibold mb-1">Søk etter firma (Brønnøysund)</label>
           <input
@@ -181,9 +177,7 @@ export default function Fagshoppen() {
             <p>Ingen firmaannonser funnet.</p>
           ) : (
             filtrert.map((annonse) => (
-              <div key={annonse.id} className="space-y-1">
-                <AnnonseKort annonse={annonse} />
-              </div>
+              <AnnonseKort key={annonse.id} annonse={annonse} />
             ))
           )}
         </div>
