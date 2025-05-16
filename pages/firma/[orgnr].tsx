@@ -2,8 +2,30 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { useEffect, useState } from "react";
 
 export default function FirmaProfil({ firma }: { firma: any }) {
+  const [bruker, setBruker] = useState<any>(null);
+  const [eier, setEier] = useState(false);
+
+  useEffect(() => {
+    const hent = async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) return;
+
+      const { data: profil } = await supabase
+        .from("brukere")
+        .select("firma_id")
+        .eq("id", user.user.id)
+        .single();
+
+      if (profil?.firma_id === firma?.id) {
+        setEier(true);
+      }
+    };
+    hent();
+  }, [firma?.id]);
+
   if (!firma) {
     return (
       <main className="min-h-screen bg-yellow-300 text-black p-8">
@@ -16,7 +38,12 @@ export default function FirmaProfil({ firma }: { firma: any }) {
 
   return (
     <main className="min-h-screen bg-yellow-300 text-black p-8">
-      <h1 className="text-3xl font-bold mb-4">{firma.navn}</h1>
+      <Head>
+        <title>{firma.navn} | Frilansportalen</title>
+      </Head>
+
+      <h1 className="text-3xl font-bold mb-6">{firma.navn}</h1>
+
       <p><strong>Organisasjonsnummer:</strong> {firma.organisasjonsnummer}</p>
       {firma.adresse && <p><strong>Adresse:</strong> {firma.adresse}</p>}
       {firma.postnummer && firma.poststed && (
@@ -33,7 +60,20 @@ export default function FirmaProfil({ firma }: { firma: any }) {
           </a>
         </p>
       )}
+
       <Link href="/" className="text-blue-600 underline mt-6 block">Tilbake til forsiden</Link>
+
+      {eier && (
+        <div className="mt-10 p-6 bg-gray-200 rounded-2xl shadow max-w-xl">
+          <h2 className="text-xl font-bold mb-4">Firmadashboard</h2>
+          <ul className="space-y-2">
+            <li><Link href="/firma/rediger" className="text-blue-600 underline">Rediger firmaprofil</Link></li>
+            <li><Link href="/stillinger/ny" className="text-blue-600 underline">Legg ut stillingsannonse</Link></li>
+            <li><Link href="/firma/stillinger" className="text-blue-600 underline">Se aktive stillinger</Link></li>
+            <li><Link href="/firma/soknader" className="text-blue-600 underline">Se innsendte søknader</Link></li>
+          </ul>
+        </div>
+      )}
     </main>
   );
 }
