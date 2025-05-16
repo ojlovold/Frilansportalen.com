@@ -1,8 +1,10 @@
 import { supabase } from "@/lib/supabaseClient";
 
 /**
- * Registrerer en ny annonse.
- * Automatisk pris: 0 kr (privat), 100 kr (firma), 500 kr (spam)
+ * Registrerer en ny annonse med automatisk prislogikk og spamdeteksjon.
+ * - Privatperson: 0 kr
+ * - Firma: 100 kr
+ * - Spam (samme annonse > 2 ganger): 500 kr
  */
 export async function registrerAnnonse(annonse: any, bruker: any) {
   let pris = 0;
@@ -11,15 +13,14 @@ export async function registrerAnnonse(annonse: any, bruker: any) {
   if (erFirma) pris = 100;
 
   try {
-    // Sjekk etter duplikater (samme tittel + beskrivelse fra samme bruker)
-    const { data: duplikater } = await supabase
+    const { data: duplikater = [], error } = await supabase
       .from("annonser")
       .select("*")
       .eq("tittel", annonse.tittel)
       .eq("beskrivelse", annonse.beskrivelse)
       .eq("bruker_id", bruker.id);
 
-    if (duplikater?.length >= 2) {
+    if (Array.isArray(duplikater) && duplikater.length >= 2) {
       pris = 500;
 
       await supabase
@@ -31,7 +32,7 @@ export async function registrerAnnonse(annonse: any, bruker: any) {
         .eq("id", duplikater[0].id);
     }
   } catch (err) {
-    console.warn("Duplikatsjekk feilet, men vi fortsetter.");
+    console.warn("Duplikatsjekk feilet, men fortsetter registrering.");
   }
 
   try {
