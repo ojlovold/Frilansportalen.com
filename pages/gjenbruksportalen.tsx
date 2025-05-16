@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import AnnonseKort from "@/components/AnnonseKort";
 import Link from "next/link";
 import { aiMatch } from "@/lib/aiMatch";
-import kommuner from "@/lib/kommuner";
+import kommunerPerFylke from "@/lib/kommunerPerFylke";
 
 const kategorier = [
   "Alle", "Klær", "Møbler", "Elektronikk", "Kjøkken", "Verktøy", "Sport og fritid", "Barneutstyr",
@@ -14,10 +14,7 @@ const kategorier = [
 
 const typer = ["Alle", "Til salgs", "Gis bort", "Ønskes kjøpt", "Ønskes"];
 
-const fylker = [
-  "Alle", "Oslo", "Viken", "Innlandet", "Vestfold og Telemark", "Agder",
-  "Rogaland", "Vestland", "Møre og Romsdal", "Trøndelag", "Nordland", "Troms og Finnmark"
-];
+const fylker = ["Alle", ...Object.keys(kommunerPerFylke)];
 
 export default function Gjenbruksportalen() {
   const [annonser, setAnnonser] = useState<any[]>([]);
@@ -27,6 +24,12 @@ export default function Gjenbruksportalen() {
   const [kommune, setKommune] = useState("Alle");
   const [kommuneSøk, setKommuneSøk] = useState("");
   const [visKommunevalg, setVisKommunevalg] = useState(false);
+
+  const aktiveKommuner = fylke === "Alle" ? [] : kommunerPerFylke[fylke] || [];
+
+  const filtrerteKommunevalg = aktiveKommuner.filter((k) =>
+    k.toLowerCase().startsWith(kommuneSøk.toLowerCase()) && k !== kommune
+  );
 
   useEffect(() => {
     const hent = async () => {
@@ -50,10 +53,6 @@ export default function Gjenbruksportalen() {
     const kommuneOk = kommune === "Alle" || (a.kommune || "").toLowerCase() === kommune.toLowerCase();
     return kategoriOk && typeOk && fylkeOk && kommuneOk;
   });
-
-  const filtrerteKommunevalg = kommuner.filter((k) =>
-    k.toLowerCase().includes(kommuneSøk.toLowerCase()) && k !== kommune
-  );
 
   return (
     <>
@@ -84,7 +83,15 @@ export default function Gjenbruksportalen() {
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Fylke</label>
-            <select value={fylke} onChange={(e) => setFylke(e.target.value)} className="w-full p-2 rounded border">
+            <select
+              value={fylke}
+              onChange={(e) => {
+                setFylke(e.target.value);
+                setKommune("Alle");
+                setKommuneSøk("");
+              }}
+              className="w-full p-2 rounded border"
+            >
               {fylker.map((f) => <option key={f}>{f}</option>)}
             </select>
           </div>
@@ -98,9 +105,10 @@ export default function Gjenbruksportalen() {
               }}
               onFocus={() => setVisKommunevalg(true)}
               className="w-full p-2 rounded border"
-              placeholder="Søk kommune..."
+              placeholder={fylke === "Alle" ? "Velg fylke først" : "Søk kommune..."}
+              disabled={fylke === "Alle"}
             />
-            {visKommunevalg && (
+            {visKommunevalg && fylke !== "Alle" && (
               <ul className="absolute z-10 w-full bg-white border mt-1 rounded max-h-48 overflow-y-auto">
                 {filtrerteKommunevalg.map((k) => (
                   <li
