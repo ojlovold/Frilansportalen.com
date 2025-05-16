@@ -1,33 +1,13 @@
 {
-  "Agder": [
-    "Arendal", "Birkenes", "Bygland", "Bykle", "Evje og Hornnes", "Farsund", "Flekkefjord", "Froland", "Gjerstad", "Grimstad", "Hægebostad", "Iveland", "Kristiansand", "Lillesand", "Lindesnes", "Risør", "Sirdal", "Tvedestrand", "Valle", "Vegårshei", "Vennesla", "Åmli"
-  ],
-  "Innlandet": [
-    "Alvdal", "Dovre", "Eidskog", "Elverum", "Engerdal", "Etnedal", "Folldal", "Gausdal", "Gjøvik", "Gran", "Grue", "Hamar", "Kongsvinger", "Lesja", "Lillehammer", "Lom", "Løten", "Nord-Aurdal", "Nord-Fron", "Nord-Odal", "Os", "Rendalen", "Ringebu", "Ringsaker", "Sel", "Skjåk", "Sør-Aurdal", "Sør-Fron", "Sør-Odal", "Stange", "Stor-Elvdal", "Søndre Land", "Tolga", "Trysil", "Tynset", "Vang", "Vestre Slidre", "Vestre Toten", "Vågå", "Våler", "Østre Toten", "Øyer", "Øystre Slidre"
-  ],
-  "Møre og Romsdal": [
-    "Aukra", "Aure", "Averøy", "Fjord", "Giske", "Gjemnes", "Hareid", "Herøy", "Hustadvika", "Kristiansund", "Molde", "Rauma", "Sande", "Smøla", "Stranda", "Sula", "Sunndal", "Surnadal", "Sykkylven", "Tingvoll", "Ulstein", "Vanylven", "Vestnes", "Volda", "Ålesund"
-  ],
-  "Nordland": [
-    "Alstahaug", "Andøy", "Beiarn", "Bindal", "Bodø", "Brønnøy", "Bø", "Dønna", "Evenes", "Fauske", "Flakstad", "Gildeskål", "Grane", "Hadsel", "Hamarøy", "Hattfjelldal", "Hemnes", "Herøy", "Leirfjord", "Lurøy", "Lødingen", "Meløy", "Moskenes", "Narvik", "Nesna", "Rana", "Rødøy", "Røst", "Saltdal", "Sortland", "Steigen", "Sømna", "Sørfold", "Træna", "Vefsn", "Vega", "Vestvågøy", "Vågan", "Værøy", "Øksnes"
-  ],
+  "Agder": ["Arendal", "Birkenes", "Bygland", "Bykle", "Evje og Hornnes", "Farsund", "Flekkefjord", "Froland", "Gjerstad", "Grimstad", "Hægebostad", "Iveland", "Kristiansand", "Lillesand", "Lindesnes", "Risør", "Sirdal", "Tvedestrand", "Valle", "Vegårshei", "Vennesla", "Åmli"],
+  "Innlandet": ["Alvdal", "Dovre", "Eidskog", "Elverum", "Engerdal", "Etnedal", "Folldal", "Gausdal", "Gjøvik", "Gran", "Grue", "Hamar", "Kongsvinger", "Lesja", "Lillehammer", "Lom", "Løten", "Nord-Aurdal", "Nord-Fron", "Nord-Odal", "Os", "Rendalen", "Ringebu", "Ringsaker", "Sel", "Skjåk", "Sør-Aurdal", "Sør-Fron", "Sør-Odal", "Stange", "Stor-Elvdal", "Søndre Land", "Tolga", "Trysil", "Tynset", "Vang", "Vestre Slidre", "Vestre Toten", "Vågå", "Våler", "Østre Toten", "Øyer", "Øystre Slidre"],
+  "Møre og Romsdal": ["Aukra", "Aure", "Averøy", "Fjord", "Giske", "Gjemnes", "Hareid", "Herøy", "Hustadvika", "Kristiansund", "Molde", "Rauma", "Sande", "Smøla", "Stranda", "Sula", "Sunndal", "Surnadal", "Sykkylven", "Tingvoll", "Ulstein", "Vanylven", "Vestnes", "Volda", "Ålesund"],
+  "Nordland": ["Alstahaug", "Andøy", "Beiarn", "Bindal", "Bodø", "Brønnøy", "Bø", "Dønna", "Evenes", "Fauske", "Flakstad", "Gildeskål", "Grane", "Hadsel", "Hamarøy", "Hattfjelldal", "Hemnes", "Herøy", "Leirfjord", "Lurøy", "Lødingen", "Meløy", "Moskenes", "Narvik", "Nesna", "Rana", "Rødøy", "Røst", "Saltdal", "Sortland", "Steigen", "Sømna", "Sørfold", "Træna", "Vefsn", "Vega", "Vestvågøy", "Vågan", "Værøy", "Øksnes"],
   "Oslo": ["Oslo"],
-  "Rogaland": [
-    "Bjerkreim", "Bokn", "Eigersund", "Gjesdal", "Haugesund", "Hjelmeland", "Hå", "Karmøy", "Klepp", "Kvitsøy", "Lund", "Randaberg", "Sandnes", "Sauda", "Sokndal", "Sola", "Stavanger", "Strand", "Time", "Tysvær", "Utsira", "Vindafjord"
-  ],
-  "Troms og Finnmark": [
-    "Alta", "Balsfjord", "Bardu", "Berlevåg", "Båtsfjord", "Dyrøy", "Gamvik", "Gratangen", "Hammerfest", "Harstad", "Hasvik", "Ibestad", "Karasjok", "Kárášjohka", "Kautokeino", "Kvæfjord", "Kvænangen", "Lebesby", "Loppa", "Lyngen", "Målselv", "Måsøy", "Nesseby", "Nordkapp", "Nordreisa", "Porsanger", "Salangen", "Sør-Varanger", "Senja", "Skjervøy", "Storfjord", "Tana", "Tjeldsund", "Tromsø", "Vadsø", "Vardø"
-  ],
-  "Trøndelag": [
-    "Flatanger", "Frosta", "Frøya", "Grong", "Heim", "Hitra", "Holtålen", "Inderøy", "Indre Fosen", "Leka", "Levanger", "Lierne", "Malvik", "Melhus", "Meråker", "Midtre Gauldal", "Namsos", "Namsskogan", "Oppdal", "Orkland", "Os", "Osen", "Overhalla", "Rennebu", "Rennebu", "Rindal", "Røros", "Røyrvik", "Selbu", "Skaun", "Snåsa", "Steinkjer", "Stjørdal", "Trondheim", "Tydal", "Verdal", "Verran", "Vikna"
-  ],
-  "Vestfold og Telemark": [
-    "Bamble", "Drangedal", "Færder", "Fyresdal", "Hjartdal", "Holmestrand", "Horten", "Kragerø", "Kviteseid", "Larvik", "Midt-Telemark", "Nissedal", "Nome", "Notodden", "Porsgrunn", "Sandefjord", "Seljord", "Siljan", "Skien", "Tinn", "Tokke", "Tønsberg", "Vinje"
-  ],
-  "Vestland": [
-    "Alver", "Askvoll", "Askøy", "Aurland", "Austevoll", "Austrheim", "Bergen", "Bjørnafjorden", "Bremanger", "Bømlo", "Etne", "Eidfjord", "Fitjar", "Fjaler", "Flåm", "Gloppen", "Gulen", "Hyllestad", "Høyanger", "Kinn", "Kvam", "Kvinnherad", "Luster", "Lærdal", "Masfjorden", "Modalen", "Osterøy", "Sogndal", "Solund", "Stad", "Stord", "Stryn", "Sunnfjord", "Sveio", "Tysnes", "Ullensvang", "Ulvik", "Vaksdal", "Vik", "Voss"
-  ],
-  "Viken": [
-    "Aremark", "Asker", "Aurskog-Høland", "Bærum", "Drammen", "Eidsvoll", "Enebakk", "Flå", "Frogn", "Gjerdrum", "Gol", "Halden", "Hemsedal", "Hol", "Hole", "Hurdal", "Hvaler", "Indre Østfold", "Jevnaker", "Kongsberg", "Lier", "Lillestrøm", "Lunner", "Lørenskog", "Marker", "Modum", "Moss", "Nannestad", "Nes", "Nesbyen", "Nesodden", "Nittedal", "Nordre Follo", "Nore og Uvdal", "Rakkestad", "Ringerike", "Rollag", "Rælingen", "Råde", "Sarpsborg", "Sigdal", "Skiptvet", "Ullensaker", "Vestby", "Våler", "Ål", "Ås"
-  ]
+  "Rogaland": ["Bjerkreim", "Bokn", "Eigersund", "Gjesdal", "Haugesund", "Hjelmeland", "Hå", "Karmøy", "Klepp", "Kvitsøy", "Lund", "Randaberg", "Sandnes", "Sauda", "Sokndal", "Sola", "Stavanger", "Strand", "Time", "Tysvær", "Utsira", "Vindafjord"],
+  "Troms og Finnmark": ["Alta", "Balsfjord", "Bardu", "Berlevåg", "Båtsfjord", "Dyrøy", "Gamvik", "Gratangen", "Hammerfest", "Harstad", "Hasvik", "Ibestad", "Karasjok", "Kautokeino", "Kvæfjord", "Kvænangen", "Lebesby", "Loppa", "Lyngen", "Målselv", "Måsøy", "Nesseby", "Nordkapp", "Nordreisa", "Porsanger", "Salangen", "Senja", "Skjervøy", "Storfjord", "Sør-Varanger", "Tana", "Tjeldsund", "Tromsø", "Vadsø", "Vardø"],
+  "Trøndelag": ["Flatanger", "Frosta", "Frøya", "Grong", "Heim", "Hitra", "Holtålen", "Inderøy", "Indre Fosen", "Leka", "Levanger", "Lierne", "Malvik", "Melhus", "Meråker", "Midtre Gauldal", "Namsos", "Namsskogan", "Oppdal", "Orkland", "Osen", "Overhalla", "Rennebu", "Rindal", "Røros", "Røyrvik", "Selbu", "Skaun", "Snåsa", "Steinkjer", "Stjørdal", "Trondheim", "Tydal", "Verdal", "Verran", "Vikna"],
+  "Vestfold og Telemark": ["Bamble", "Drangedal", "Færder", "Fyresdal", "Hjartdal", "Holmestrand", "Horten", "Kragerø", "Kviteseid", "Larvik", "Midt-Telemark", "Nissedal", "Nome", "Notodden", "Porsgrunn", "Sandefjord", "Seljord", "Siljan", "Skien", "Tinn", "Tokke", "Tønsberg", "Vinje"],
+  "Vestland": ["Alver", "Askvoll", "Askøy", "Aurland", "Austevoll", "Austrheim", "Bergen", "Bjørnafjorden", "Bremanger", "Bømlo", "Eidfjord", "Etne", "Fitjar", "Fjaler", "Gloppen", "Gulen", "Hyllestad", "Høyanger", "Kinn", "Kvam", "Kvinnherad", "Luster", "Lærdal", "Masfjorden", "Modalen", "Osterøy", "Sogndal", "Solund", "Stad", "Stord", "Stryn", "Sunnfjord", "Sveio", "Tysnes", "Ullensvang", "Ulvik", "Vaksdal", "Vik", "Voss"],
+  "Viken": ["Aremark", "Asker", "Aurskog-Høland", "Bærum", "Drammen", "Eidsvoll", "Enebakk", "Flå", "Frogn", "Gjerdrum", "Gol", "Halden", "Hemsedal", "Hol", "Hole", "Hurdal", "Hvaler", "Indre Østfold", "Jevnaker", "Kongsberg", "Lier", "Lillestrøm", "Lunner", "Lørenskog", "Marker", "Modum", "Moss", "Nannestad", "Nes", "Nesbyen", "Nesodden", "Nittedal", "Nordre Follo", "Nore og Uvdal", "Rakkestad", "Ringerike", "Rollag", "Rælingen", "Råde", "Sarpsborg", "Sigdal", "Skiptvet", "Ullensaker", "Vestby", "Våler", "Ål", "Ås"]
 }
