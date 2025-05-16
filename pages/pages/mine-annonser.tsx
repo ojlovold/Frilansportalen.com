@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AnnonseKort from "@/components/AnnonseKort";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 export default function MineAnnonser() {
   const [annonser, setAnnonser] = useState<any[]>([]);
   const [brukerId, setBrukerId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const hent = async () => {
       const { data: userData } = await supabase.auth.getUser();
-      const id = userData?.user?.id;
+      const id = userData?.user?.id ?? null;
       setBrukerId(id);
 
       if (id) {
@@ -36,6 +38,10 @@ export default function MineAnnonser() {
     setAnnonser((a) => a.filter((x) => x.id !== id));
   };
 
+  const redigerAnnonse = (id: string) => {
+    router.push(`/rediger-annonse?id=${id}`);
+  };
+
   return (
     <>
       <Head>
@@ -54,14 +60,22 @@ export default function MineAnnonser() {
           <p>Du har ikke lagt ut noen annonser enda.</p>
         ) : (
           annonser.map((annonse) => (
-            <div key={annonse.id}>
+            <div key={annonse.id} className="mb-8">
               <AnnonseKort annonse={annonse} />
-              <button
-                onClick={() => slettAnnonse(annonse.id)}
-                className="bg-red-600 text-white px-4 py-1 rounded mb-8"
-              >
-                Slett
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => redigerAnnonse(annonse.id)}
+                  className="bg-blue-600 text-white px-4 py-1 rounded"
+                >
+                  Rediger
+                </button>
+                <button
+                  onClick={() => slettAnnonse(annonse.id)}
+                  className="bg-red-600 text-white px-4 py-1 rounded"
+                >
+                  Slett
+                </button>
+              </div>
             </div>
           ))
         )}
