@@ -46,8 +46,7 @@ export default function Gjenbruksportalen() {
 
   const filtrert = annonser.filter((a) => {
     const tekst = (a.tittel + " " + a.beskrivelse).toLowerCase();
-    const kategoriOk =
-      kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
+    const kategoriOk = kategori === "Alle" || aiKategorier.some((k) => tekst.includes(k.toLowerCase()));
     const typeOk = type === "Alle" || a.type === type;
     const fylkeOk = fylke === "Alle" || (a.fylke || "").toLowerCase() === fylke.toLowerCase();
     const kommuneOk = kommune === "Alle" || (a.kommune || "").toLowerCase() === kommune.toLowerCase();
@@ -62,7 +61,6 @@ export default function Gjenbruksportalen() {
       </Head>
 
       <main className="min-h-screen bg-portalGul text-black p-6">
-        {/* Topp */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
           <Link href="/" className="text-sm underline text-blue-600">
@@ -70,7 +68,6 @@ export default function Gjenbruksportalen() {
           </Link>
         </div>
 
-        {/* Filterboks */}
         <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold mb-1">Kategori</label>
@@ -98,7 +95,6 @@ export default function Gjenbruksportalen() {
           </div>
         </div>
 
-        {/* Annonser */}
         {filtrert.length === 0 ? (
           <p>Ingen annonser funnet.</p>
         ) : (
