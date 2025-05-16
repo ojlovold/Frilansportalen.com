@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import AnnonseKort from "@/components/AnnonseKort";
 import Link from "next/link";
 import { aiMatch } from "@/lib/aiMatch";
-import kommuner from "@/lib/kommuner"; // Egen fil med alle 356 kommune-navn
+import kommuner from "@/lib/kommuner";
 
 const kategorier = [
   "Alle", "Klær", "Møbler", "Elektronikk", "Kjøkken", "Verktøy", "Sport og fritid", "Barneutstyr",
@@ -25,6 +25,8 @@ export default function Gjenbruksportalen() {
   const [type, setType] = useState("Alle");
   const [fylke, setFylke] = useState("Alle");
   const [kommune, setKommune] = useState("Alle");
+  const [kommuneSøk, setKommuneSøk] = useState("");
+  const [visKommunevalg, setVisKommunevalg] = useState(false);
 
   useEffect(() => {
     const hent = async () => {
@@ -49,6 +51,10 @@ export default function Gjenbruksportalen() {
     return kategoriOk && typeOk && fylkeOk && kommuneOk;
   });
 
+  const filtrerteKommunevalg = kommuner.filter((k) =>
+    k.toLowerCase().includes(kommuneSøk.toLowerCase()) && k !== kommune
+  );
+
   return (
     <>
       <Head>
@@ -56,15 +62,14 @@ export default function Gjenbruksportalen() {
       </Head>
 
       <main className="min-h-screen bg-yellow-300 text-black px-4 py-6">
-        <div className="flex justify-between items-center mb-6 max-w-screen-lg mx-auto">
+        <div className="flex justify-between items-center mb-8 max-w-screen-lg mx-auto">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
           <Link href="/" className="text-sm underline text-blue-600">
             Tilbake til forsiden
           </Link>
         </div>
 
-        {/* Filterboks */}
-        <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-8 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div>
             <label className="block text-sm font-semibold mb-1">Kategori</label>
             <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-2 rounded border">
@@ -83,24 +88,41 @@ export default function Gjenbruksportalen() {
               {fylker.map((f) => <option key={f}>{f}</option>)}
             </select>
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-sm font-semibold mb-1">Kommune</label>
             <input
-              list="kommuneliste"
-              value={kommune}
-              onChange={(e) => setKommune(e.target.value)}
+              value={kommuneSøk}
+              onChange={(e) => {
+                setKommuneSøk(e.target.value);
+                setVisKommunevalg(true);
+              }}
+              onFocus={() => setVisKommunevalg(true)}
               className="w-full p-2 rounded border"
-              placeholder="Begynn å skrive..."
+              placeholder="Søk kommune..."
             />
-            <datalist id="kommuneliste">
-              {kommuner.map((k) => (
-                <option key={k} value={k} />
-              ))}
-            </datalist>
+            {visKommunevalg && (
+              <ul className="absolute z-10 w-full bg-white border mt-1 rounded max-h-48 overflow-y-auto">
+                {filtrerteKommunevalg.map((k) => (
+                  <li
+                    key={k}
+                    onClick={() => {
+                      setKommune(k);
+                      setKommuneSøk(k);
+                      setVisKommunevalg(false);
+                    }}
+                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  >
+                    {k}
+                  </li>
+                ))}
+                {filtrerteKommunevalg.length === 0 && (
+                  <li className="px-3 py-2 text-gray-500 text-sm">Ingen treff</li>
+                )}
+              </ul>
+            )}
           </div>
         </div>
 
-        {/* Resultat */}
         <div className="max-w-screen-lg mx-auto space-y-4">
           {filtrert.length === 0 ? (
             <p>Ingen annonser funnet.</p>
