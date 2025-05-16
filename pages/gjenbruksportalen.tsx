@@ -65,38 +65,40 @@ export default function Gjenbruksportalen() {
         {/* Topp */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
-          <Link href="/" className="text-sm text-blue-600 underline">Tilbake til forsiden</Link>
+          <Link href="/" className="text-sm underline text-blue-600">
+            Tilbake til forsiden
+          </Link>
         </div>
 
-        {/* Filtre */}
-        <div className="bg-gray-100 rounded-2xl p-4 shadow mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Filterboks */}
+        <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Kategori</label>
+            <label className="block text-sm font-semibold mb-1">Kategori</label>
             <select value={kategori} onChange={(e) => setKategori(e.target.value)} className="w-full p-2 rounded border">
               {kategorier.map((k) => <option key={k}>{k}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Type</label>
+            <label className="block text-sm font-semibold mb-1">Type</label>
             <select value={type} onChange={(e) => setType(e.target.value)} className="w-full p-2 rounded border">
               {typer.map((t) => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Fylke</label>
+            <label className="block text-sm font-semibold mb-1">Fylke</label>
             <select value={fylke} onChange={(e) => setFylke(e.target.value)} className="w-full p-2 rounded border">
               {fylker.map((f) => <option key={f}>{f}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Kommune</label>
+            <label className="block text-sm font-semibold mb-1">Kommune</label>
             <select value={kommune} onChange={(e) => setKommune(e.target.value)} className="w-full p-2 rounded border">
               {kommuner.map((k) => <option key={k}>{k}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Resultat */}
+        {/* Annonser */}
         {filtrert.length === 0 ? (
           <p>Ingen annonser funnet.</p>
         ) : (
