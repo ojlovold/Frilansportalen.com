@@ -47,7 +47,7 @@ export default function HomePage() {
 
       {/* Navigasjonsbokser */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
-        <Link href="/arbeidsgiver" legacyBehavior>
+        <Link href="/registrer-arbeidsgiver" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
             <Briefcase className="text-2xl" /> Arbeidsgiver
           </a>
