@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import AnnonseKort from "@/components/AnnonseKort";
 import Link from "next/link";
 import { aiMatch } from "@/lib/aiMatch";
+import kommuner from "@/lib/kommuner"; // Egen fil med alle 356 kommune-navn
 
 const kategorier = [
   "Alle", "Klær", "Møbler", "Elektronikk", "Kjøkken", "Verktøy", "Sport og fritid", "Barneutstyr",
@@ -16,11 +17,6 @@ const typer = ["Alle", "Til salgs", "Gis bort", "Ønskes kjøpt", "Ønskes"];
 const fylker = [
   "Alle", "Oslo", "Viken", "Innlandet", "Vestfold og Telemark", "Agder",
   "Rogaland", "Vestland", "Møre og Romsdal", "Trøndelag", "Nordland", "Troms og Finnmark"
-];
-
-const kommuner = [
-  "Alle", "Bergen", "Oslo", "Stavanger", "Trondheim", "Tønsberg", "Tromsø",
-  "Fredrikstad", "Kristiansand", "Drammen", "Sandnes", "Bodø", "Larvik", "Halden"
 ];
 
 export default function Gjenbruksportalen() {
@@ -59,14 +55,15 @@ export default function Gjenbruksportalen() {
         <title>Gjenbruksportalen | Frilansportalen</title>
       </Head>
 
-      <main className="min-h-screen bg-portalGul text-black px-4 py-6">
-        {/* Topptekst og tilbakeknapp */}
+      <main className="min-h-screen bg-yellow-300 text-black px-4 py-6">
         <div className="flex justify-between items-center mb-6 max-w-screen-lg mx-auto">
           <h1 className="text-3xl font-bold">Gjenbruksportalen</h1>
-          <Link href="/" className="text-sm underline text-blue-600">Tilbake til forsiden</Link>
+          <Link href="/" className="text-sm underline text-blue-600">
+            Tilbake til forsiden
+          </Link>
         </div>
 
-        {/* Filterbokser */}
+        {/* Filterboks */}
         <div className="bg-gray-200 rounded-2xl p-4 shadow-inner mb-6 max-w-screen-lg mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold mb-1">Kategori</label>
@@ -88,13 +85,22 @@ export default function Gjenbruksportalen() {
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">Kommune</label>
-            <select value={kommune} onChange={(e) => setKommune(e.target.value)} className="w-full p-2 rounded border">
-              {kommuner.map((k) => <option key={k}>{k}</option>)}
-            </select>
+            <input
+              list="kommuneliste"
+              value={kommune}
+              onChange={(e) => setKommune(e.target.value)}
+              className="w-full p-2 rounded border"
+              placeholder="Begynn å skrive..."
+            />
+            <datalist id="kommuneliste">
+              {kommuner.map((k) => (
+                <option key={k} value={k} />
+              ))}
+            </datalist>
           </div>
         </div>
 
-        {/* Annonsevisning */}
+        {/* Resultat */}
         <div className="max-w-screen-lg mx-auto space-y-4">
           {filtrert.length === 0 ? (
             <p>Ingen annonser funnet.</p>
