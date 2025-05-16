@@ -9,6 +9,7 @@ export default function Gjenbruksportalen() {
   const [annonser, setAnnonser] = useState<any[]>([]);
   const [søk, setSøk] = useState("");
   const [brukerId, setBrukerId] = useState<string | null>(null);
+  const [sortering, setSortering] = useState("nyeste");
 
   useEffect(() => {
     const hentData = async () => {
@@ -49,6 +50,13 @@ export default function Gjenbruksportalen() {
     return synonymer.some((ord) => tekst.includes(ord.toLowerCase()));
   });
 
+  const sortert = [...filtrert].sort((a, b) => {
+    if (sortering === "favoritter") {
+      return (b.favoritter || 0) - (a.favoritter || 0);
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
   return (
     <>
       <Head>
@@ -76,10 +84,25 @@ export default function Gjenbruksportalen() {
           </button>
         </form>
 
-        {filtrert.length === 0 ? (
+        <div className="flex items-center gap-4 mb-6">
+          <label htmlFor="sortering" className="text-sm font-medium">
+            Sorter etter:
+          </label>
+          <select
+            id="sortering"
+            value={sortering}
+            onChange={(e) => setSortering(e.target.value)}
+            className="p-2 border rounded"
+          >
+            <option value="nyeste">Nyeste</option>
+            <option value="favoritter">Mest populære</option>
+          </select>
+        </div>
+
+        {sortert.length === 0 ? (
           <p>Ingen annonser funnet.</p>
         ) : (
-          filtrert.map((annonse) => (
+          sortert.map((annonse) => (
             <AnnonseKort key={annonse.id} annonse={annonse} />
           ))
         )}
