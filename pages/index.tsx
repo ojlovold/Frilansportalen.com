@@ -67,9 +67,9 @@ export default function HomePage() {
             <Hammer className="text-2xl" /> Tjenestetilbyder
           </a>
         </Link>
-        <Link href="/markeder" legacyBehavior>
+        <Link href="/gjenbruksportalen" legacyBehavior>
           <a className="bg-gray-100 rounded-2xl shadow p-6 flex items-center gap-4 text-lg hover:bg-white">
-            <Store className="text-2xl" /> Markeder
+            <Store className="text-2xl" /> Gjenbruksportalen
           </a>
         </Link>
         <Link href="/dugnadsportalen" legacyBehavior>
