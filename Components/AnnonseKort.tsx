@@ -37,11 +37,11 @@ export default function AnnonseKort({ annonse }: { annonse: any }) {
     if (favoritt) {
       await fjernFavoritt(brukerId, annonse.id);
       setFavoritt(false);
-      setFavorittTeller((t) => t - 1);
+      setFavorittTeller((t: number) => t - 1);
     } else {
       await leggTilFavoritt(brukerId, annonse.id);
       setFavoritt(true);
-      setFavorittTeller((t) => t + 1);
+      setFavorittTeller((t: number) => t + 1);
     }
   };
 
