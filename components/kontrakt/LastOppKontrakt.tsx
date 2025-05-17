@@ -1,6 +1,6 @@
 // components/kontrakt/LastOppKontrakt.tsx
 import { useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function LastOppKontrakt({ brukerId }: { brukerId: string }) {
   const [fil, setFil] = useState<File | null>(null);
