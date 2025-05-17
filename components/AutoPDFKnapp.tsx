@@ -1,21 +1,38 @@
-import PdfEksportUniversal from "./PdfEksportUniversal";
+import { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
+import { brukerHarPremium } from "@/utils/brukerHarPremium";
+import PremiumBox from "@/components/PremiumBox";
+import { generatePDF } from "@/utils/pdfEksport";
 
-interface Props {
-  data: any[];
+interface AutoPDFKnappProps {
+  data: any;
 }
 
-export default function AutoPDFKnapp({ data }: Props) {
-  if (!data || data.length === 0) return null;
+export default function AutoPDFKnapp({ data }: AutoPDFKnappProps) {
+  const { user } = useUser();
+  const [harPremium, setHarPremium] = useState(false);
 
-  const eksempel = data[0];
+  useEffect(() => {
+    if (!user) return;
 
-  let type: "rapporter" | "faktura" | "kjørebok" | null = null;
+    const sjekkPremium = async () => {
+      const har = await brukerHarPremium(user.id);
+      setHarPremium(har);
+    };
 
-  if ("formål" in eksempel && "km" in eksempel) type = "kjørebok";
-  else if ("beløp" in eksempel && "kunde" in eksempel) type = "faktura";
-  else if ("status" in eksempel && "tittel" in eksempel) type = "rapporter";
+    sjekkPremium();
+  }, [user]);
 
-  if (!type) return null;
+  if (!user) return null;
 
-  return <PdfEksportUniversal type={type} data={data} />;
+  if (!harPremium) return <PremiumBox />;
+
+  return (
+    <button
+      onClick={() => generatePDF(data)}
+      className="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+    >
+      Last ned som PDF
+    </button>
+  );
 }
