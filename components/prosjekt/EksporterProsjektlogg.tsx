@@ -1,75 +1,45 @@
 import { jsPDF } from "jspdf";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useState } from "react";
 
 export default function EksporterProsjektlogg({ prosjektId }: { prosjektId: string }) {
   const [status, setStatus] = useState("");
 
-  const generer = async () => {
-    setStatus("Laster data...");
+  const eksporter = async () => {
+    setStatus("Eksporterer...");
 
-    const { data: chat } = await supabase
-      .from("prosjektmeldinger")
+    const { data, error } = await supabase
+      .from("prosjektlogg")
       .select("*")
-      .eq("prosjekt_id", prosjektId)
-      .order("opprettet", { ascending: true });
+      .eq("prosjekt_id", prosjektId);
 
-    const { data: filer } = await supabase
-      .from("prosjektfiler")
-      .select("*")
-      .eq("prosjekt_id", prosjektId)
-      .order("opplastet", { ascending: true });
+    if (error || !data) {
+      setStatus("Feil ved eksport.");
+      return;
+    }
 
     const doc = new jsPDF();
-    let y = 20;
+    doc.text("Prosjektlogg", 14, 20);
 
-    doc.setFontSize(14);
-    doc.text("Frilansportalen – Prosjektlogg", 10, y); y += 10;
-    doc.setFontSize(11);
-    doc.text(`Prosjekt-ID: ${prosjektId}`, 10, y); y += 8;
+    let y = 30;
+    data.forEach((logg, i) => {
+      doc.text(`- ${logg.tidspunkt}: ${logg.beskrivelse}`, 14, y);
+      y += 10;
+    });
 
-    // Chat
-    doc.setFontSize(12);
-    doc.text("Chatlogg", 10, y); y += 8;
-    doc.setFontSize(10);
-
-    for (const m of chat || []) {
-      doc.text(`${m.avsender_id} – ${new Date(m.opprettet).toLocaleString()}`, 10, y); y += 5;
-      const linjer = doc.splitTextToSize(m.innhold || "-", 180);
-      doc.text(linjer, 10, y);
-      y += linjer.length * 5 + 4;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-    }
-
-    y += 6;
-    doc.setFontSize(12);
-    doc.text("Fildeling", 10, y); y += 8;
-    doc.setFontSize(10);
-
-    for (const f of filer || []) {
-      doc.text(`• ${f.filnavn}`, 10, y); y += 5;
-      const url = f.url?.substring(0, 100) || "-";
-      doc.text(`  ${url}`, 10, y); y += 6;
-      doc.text(`  Opplastet: ${new Date(f.opplastet).toLocaleDateString()}`, 10, y); y += 8;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-    }
-
-    doc.save(`prosjektlogg_${prosjektId}_${Date.now()}.pdf`);
-    setStatus("PDF eksportert");
+    doc.save(`prosjektlogg_${prosjektId}.pdf`);
+    setStatus("Eksport fullført.");
   };
 
   return (
-    <div className="space-y-2 mt-6">
-      <button onClick={generer} className="bg-black text-white px-4 py-2 rounded">
-        Last ned prosjektlogg (PDF)
+    <div>
+      <button
+        onClick={eksporter}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
+        Eksporter prosjektlogg
       </button>
-      <p className="text-sm text-green-600">{status}</p>
+      <p className="mt-2 text-sm text-gray-700">{status}</p>
     </div>
   );
 }
