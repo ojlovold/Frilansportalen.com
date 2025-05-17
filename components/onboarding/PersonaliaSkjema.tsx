@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { brukerHarPremium } from "@/utils/brukerHarPremium";
 
 export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
@@ -31,7 +31,7 @@ export default function PersonaliaSkjema({ brukerId }: { brukerId: string }) {
         setAdresse(data.adresse || "");
         setTelefon(data.telefon || "");
         setEpost(data.epost || "");
-        setLagret(true); // allerede fylt ut
+        setLagret(true);
       }
     };
     sjekk();
