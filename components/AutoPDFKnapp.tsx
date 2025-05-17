@@ -5,34 +5,45 @@ import PremiumBox from "@/components/PremiumBox";
 import { generatePDF } from "@/utils/pdfEksport";
 
 interface AutoPDFKnappProps {
-  data: any;
+  tittel: string;
+  filnavn: string;
+  kolonner: string[];
+  rader: any[][];
 }
 
-export default function AutoPDFKnapp({ data }: AutoPDFKnappProps) {
+export default function AutoPDFKnapp({
+  tittel,
+  filnavn,
+  kolonner,
+  rader,
+}: AutoPDFKnappProps) {
   const { user } = useUser();
   const [harPremium, setHarPremium] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
-    const sjekkPremium = async () => {
+    const sjekk = async () => {
       const har = await brukerHarPremium(user.id);
       setHarPremium(har);
     };
 
-    sjekkPremium();
+    sjekk();
   }, [user]);
 
   if (!user) return null;
-
   if (!harPremium) return <PremiumBox />;
+
+  const handleClick = () => {
+    generatePDF({ tittel, filnavn, kolonner, rader });
+  };
 
   return (
     <button
-      onClick={() => generatePDF(data)}
-      className="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+      onClick={handleClick}
+      className="bg-black text-white px-4 py-2 rounded text-sm"
     >
-      Last ned som PDF
+      Last ned PDF
     </button>
   );
 }
