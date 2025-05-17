@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Søknader({ userId }: { userId: string }) {
   const [søknader, setSøknader] = useState<any[]>([]);
@@ -26,7 +26,9 @@ export default function Søknader({ userId }: { userId: string }) {
           <li key={i} className="border p-2 rounded bg-white text-black">
             <p><strong>Stilling:</strong> {s.stillingstittel}</p>
             <p><strong>Søknad:</strong> {s.tekst}</p>
-            <p className="text-sm text-gray-500">{new Date(s.opprettet).toLocaleString()}</p>
+            <p className="text-sm text-gray-500">
+              {new Date(s.opprettet).toLocaleString()}
+            </p>
           </li>
         ))}
       </ul>
