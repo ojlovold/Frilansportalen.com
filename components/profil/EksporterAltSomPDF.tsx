@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { jsPDF } from "jspdf";
 
 export default function EksporterAltSomPDF({ brukerId }: { brukerId: string }) {
