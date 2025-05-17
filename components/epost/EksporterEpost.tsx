@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useState } from "react";
 
 interface Epost {
