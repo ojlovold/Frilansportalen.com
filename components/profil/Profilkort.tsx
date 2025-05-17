@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Profilkort({ userId }: { userId: string }) {
   const [profil, setProfil] = useState<any>({
