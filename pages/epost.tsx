@@ -1,33 +1,73 @@
 import Head from "next/head";
-import { useUser } from "@supabase/auth-helpers-react";
-import type { User } from "@supabase/supabase-js";
-import Dashboard from "@/components/Dashboard";
-import EpostInnboks from "@/components/epost/Innboks";
-import NyEpost from "@/components/epost/NyEpost";
-import EksporterEpost from "@/components/epost/EksporterEpost";
+import { useUser } from "@/hooks/useUser";
+import { useEffect, useState } from "react";
+import { supabase } from "@/utils/supabase";
+import PremiumBox from "@/components/PremiumBox";
+import { brukerHarPremium } from "@/utils/brukerHarPremium";
+
+interface Epost {
+  id: string;
+  emne: string;
+  innhold: string;
+  fra: string;
+  til: string;
+  sendt: string;
+}
 
 export default function EpostSide() {
-  const user = useUser() as unknown as User;
+  const { user } = useUser();
+  const [eposter, setEposter] = useState<Epost[]>([]);
+  const [harPremium, setHarPremium] = useState(false);
 
-  if (!user?.id) {
-    return <p>Du må være innlogget for å bruke e-postsystemet.</p>;
-  }
+  useEffect(() => {
+    if (!user) return;
+
+    const hentEposter = async () => {
+      const har = await brukerHarPremium(user.id);
+      setHarPremium(har);
+
+      const { data, error } = await supabase
+        .from("epost")
+        .select("*")
+        .eq("til", user.email)
+        .order("sendt", { ascending: false });
+
+      if (!error && data) {
+        setEposter(data);
+      }
+    };
+
+    hentEposter();
+  }, [user]);
+
+  if (!user) return <div className="p-8">Laster e-post...</div>;
 
   return (
-    <Dashboard>
+    <>
       <Head>
-        <title>E-post | Frilansportalen</title>
+        <title>Min e-post | Frilansportalen</title>
       </Head>
+      <main className="min-h-screen bg-portalGul text-black p-8">
+        <h1 className="text-3xl font-bold mb-6">Innboks</h1>
 
-      <div className="space-y-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">E-post</h1>
-          <EksporterEpost brukerId={user.id} />
-        </div>
+        {!harPremium && <PremiumBox />}
 
-        <NyEpost fraId={user.id} />
-        <EpostInnboks brukerId={user.id} />
-      </div>
-    </Dashboard>
+        {eposter.length === 0 ? (
+          <p>Ingen e-poster funnet.</p>
+        ) : (
+          <ul className="space-y-4">
+            {eposter.map((epost) => (
+              <li key={epost.id} className="p-4 bg-white rounded-xl shadow">
+                <p className="text-sm text-gray-600">
+                  Fra: {epost.fra} – {new Date(epost.sendt).toLocaleString()}
+                </p>
+                <h2 className="text-lg font-semibold">{epost.emne}</h2>
+                <p>{epost.innhold}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </>
   );
 }
