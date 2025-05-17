@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Kontrakt {
   id: string;
@@ -38,7 +38,6 @@ export default function MineKontrakter({ brukerId }: { brukerId: string }) {
       .update({ [felt]: true })
       .eq("id", id);
 
-    // Oppdater status
     const kontrakt = kontrakter.find((k) => k.id === id);
     const beggeSignert =
       kontrakt?.signert_oppretter === true || rolle === "oppretter"
