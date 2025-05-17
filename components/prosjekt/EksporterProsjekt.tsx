@@ -1,25 +1,34 @@
-import { useState } from "react";
+import { jsPDF } from "jspdf";
 import { supabase } from "@/lib/supabaseClient";
+import { useState } from "react";
 
-export default function EksporterProsjekt({ prosjektId }: { prosjektId: string }) {
+export default function EksporterProsjektlogg({ prosjektId }: { prosjektId: string }) {
   const [status, setStatus] = useState("");
 
   const eksporter = async () => {
     setStatus("Eksporterer...");
 
     const { data, error } = await supabase
-      .from("prosjekt")
+      .from("prosjektlogg")
       .select("*")
-      .eq("id", prosjektId)
-      .single();
+      .eq("prosjekt_id", prosjektId);
 
-    if (error) {
+    if (error || !data) {
       setStatus("Feil ved eksport.");
-    } else {
-      // her kan du legge til PDF- eller JSON-generering
-      console.log("Prosjektdata:", data);
-      setStatus("Eksport fullført.");
+      return;
     }
+
+    const doc = new jsPDF();
+    doc.text("Prosjektlogg", 14, 20);
+
+    let y = 30;
+    data.forEach((logg, i) => {
+      doc.text(`- ${logg.tidspunkt}: ${logg.beskrivelse}`, 14, y);
+      y += 10;
+    });
+
+    doc.save(`prosjektlogg_${prosjektId}.pdf`);
+    setStatus("Eksport fullført.");
   };
 
   return (
@@ -28,7 +37,7 @@ export default function EksporterProsjekt({ prosjektId }: { prosjektId: string }
         onClick={eksporter}
         className="bg-black text-white px-4 py-2 rounded"
       >
-        Eksporter prosjekt
+        Eksporter prosjektlogg
       </button>
       <p className="mt-2 text-sm text-gray-700">{status}</p>
     </div>
