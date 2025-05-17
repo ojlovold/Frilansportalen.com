@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Fakturainnstillinger({ brukerId }: { brukerId: string }) {
   const [konto, setKonto] = useState("");
@@ -14,6 +14,7 @@ export default function Fakturainnstillinger({ brukerId }: { brukerId: string })
         .select("*")
         .eq("bruker_id", brukerId)
         .single();
+
       if (data) {
         setKonto(data.kontonummer || "");
         setKontaktinfo(data.kontaktinfo || "");
@@ -30,6 +31,7 @@ export default function Fakturainnstillinger({ brukerId }: { brukerId: string })
       kontaktinfo,
       mal,
     });
+
     setStatus(error ? "Feil ved lagring" : "Innstillinger lagret");
   };
 
@@ -71,6 +73,7 @@ export default function Fakturainnstillinger({ brukerId }: { brukerId: string })
       <button onClick={lagre} className="bg-black text-white px-4 py-2 rounded">
         Lagre
       </button>
+
       <p>{status}</p>
     </div>
   );
