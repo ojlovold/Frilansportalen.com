@@ -5,25 +5,26 @@ import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 
 export default function FirmaProfil({ firma }: { firma: any }) {
-  const [bruker, setBruker] = useState<any>(null);
   const [eier, setEier] = useState(false);
 
   useEffect(() => {
-    const hent = async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user?.user?.id) return;
+    const sjekkEierskap = async () => {
+      const { data: session } = await supabase.auth.getUser();
+      const brukerId = session?.user?.id;
+      if (!brukerId || !firma?.id) return;
 
-      const { data: profil } = await supabase
+      const { data } = await supabase
         .from("brukere")
         .select("firma_id")
-        .eq("id", user.user.id)
+        .eq("id", brukerId)
         .single();
 
-      if (profil?.firma_id === firma?.id) {
+      if (data?.firma_id === firma.id) {
         setEier(true);
       }
     };
-    hent();
+
+    sjekkEierskap();
   }, [firma?.id]);
 
   if (!firma) {
@@ -85,7 +86,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return { props: { firma: null } };
   }
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("firmaer")
     .select("*")
     .eq("organisasjonsnummer", orgnr)
