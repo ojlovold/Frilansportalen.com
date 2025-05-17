@@ -1,59 +1,79 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useUser } from "@supabase/auth-helpers-react";
-import supabase from "../lib/supabaseClient";
-import AutoPDFKnapp from "../components/AutoPDFKnapp";
+import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/utils/supabase";
+import { brukerHarPremium } from "@/utils/brukerHarPremium";
+import AutoPDFKnapp from "@/components/AutoPDFKnapp";
+import PremiumBox from "@/components/PremiumBox";
+import Link from "next/link";
 
 export default function Dashboard() {
-  const user = useUser();
-  const [rapporter, setRapporter] = useState<any[]>([]);
+  const router = useRouter();
+  const { user } = useUser();
+
+  const [harPremium, setHarPremium] = useState(false);
   const [fakturaer, setFakturaer] = useState<any[]>([]);
+  const [rapporter, setRapporter] = useState<any[]>([]);
   const [kjorebok, setKjorebok] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!user) return;
+
     const hentData = async () => {
-      if (!user?.id) return;
+      const har = await brukerHarPremium(user.id);
+      setHarPremium(har);
 
-      const brukerId = user.id;
+      const { data: fakturaData } = await supabase
+        .from("faktura")
+        .select("*")
+        .eq("bruker_id", user.id);
+      setFakturaer(fakturaData || []);
 
-      const [r1, r2, r3] = await Promise.all([
-        supabase.from("rapporter").select("*").eq("user_id", brukerId),
-        supabase.from("faktura").select("*").eq("user_id", brukerId),
-        supabase.from("kjorebok").select("*").eq("user_id", brukerId)
-      ]);
+      const { data: rapportData } = await supabase
+        .from("rapporter")
+        .select("*")
+        .eq("bruker_id", user.id);
+      setRapporter(rapportData || []);
 
-      if (!r1.error) setRapporter(r1.data || []);
-      if (!r2.error) setFakturaer(r2.data || []);
-      if (!r3.error) setKjorebok(r3.data || []);
+      const { data: kjoreData } = await supabase
+        .from("kjorebok")
+        .select("*")
+        .eq("bruker_id", user.id);
+      setKjorebok(kjoreData || []);
     };
 
     hentData();
   }, [user]);
 
+  if (!user) return <div className="p-8">Laster brukerdata...</div>;
+
   return (
     <>
       <Head>
         <title>Dashboard | Frilansportalen</title>
-        <meta name="description" content="Oversikt over rapporter, fakturaer og kjørebok" />
       </Head>
-
-      <main className="min-h-screen bg-portalGul text-black p-6">
+      <main className="min-h-screen bg-portalGul text-black p-8">
         <h1 className="text-3xl font-bold mb-6">Mitt dashboard</h1>
 
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-2">Rapporter</h2>
-          <AutoPDFKnapp data={rapporter} />
-        </section>
+        {!harPremium && <PremiumBox />}
 
-        <section className="mb-10">
-          <h2 className="text-xl font-semibold mb-2">Fakturaer</h2>
-          <AutoPDFKnapp data={fakturaer} />
-        </section>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold">Fakturaer ({fakturaer.length})</h2>
+          <Link href="/faktura" className="underline">
+            Send ny faktura
+          </Link>
+        </div>
 
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Kjørebok</h2>
-          <AutoPDFKnapp data={kjorebok} />
-        </section>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold">Rapporter ({rapporter.length})</h2>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold">Kjørebok ({kjorebok.length})</h2>
+        </div>
+
+        {harPremium && <AutoPDFKnapp data={{ fakturaer, rapporter, kjorebok }} />}
       </main>
     </>
   );
