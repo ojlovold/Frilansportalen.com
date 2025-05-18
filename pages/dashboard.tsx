@@ -73,7 +73,30 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold">Kjørebok ({kjorebok.length})</h2>
         </div>
 
-        {harPremium && <AutoPDFKnapp />}
+        {harPremium && (
+          <>
+            <AutoPDFKnapp
+              tittel="Fakturaoversikt"
+              filnavn="fakturaer"
+              kolonner={["Dato", "Beskrivelse", "Beløp"]}
+              rader={fakturaer.map((f) => [f.dato, f.beskrivelse, `${f.belop} kr`])}
+            />
+
+            <AutoPDFKnapp
+              tittel="Rapportoversikt"
+              filnavn="rapporter"
+              kolonner={["Dato", "Innhold"]}
+              rader={rapporter.map((r) => [r.dato, r.innhold])}
+            />
+
+            <AutoPDFKnapp
+              tittel="Kjørebok"
+              filnavn="kjorebok"
+              kolonner={["Dato", "Fra", "Til", "Kilometer"]}
+              rader={kjorebok.map((k) => [k.dato, k.fra, k.til, `${k.kilometer} km`])}
+            />
+          </>
+        )}
       </main>
     </>
   );
