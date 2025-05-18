@@ -1,46 +1,44 @@
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+// pages/admin/favorittanalyse.tsx
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 type FavorittStat = {
-  objekt_id: string
-  antall: number
-  type: string
-  tittel?: string
-  navn?: string
-}
+  objekt_id: string;
+  antall: number;
+  type: string;
+  tittel?: string;
+  navn?: string;
+};
 
 export default function FavorittAnalyse() {
-  const [data, setData] = useState<FavorittStat[]>([])
+  const [data, setData] = useState<FavorittStat[]>([]);
 
   useEffect(() => {
     const hent = async () => {
       const { data: favoritter, error } = await supabase
         .from('favoritter')
-        .select('objekt_id, type')
+        .select('objekt_id, type');
 
       if (error || !favoritter) {
-        console.error('Feil ved henting av favoritter:', error?.message)
-        return
+        console.error('Feil ved henting av favoritter:', error?.message);
+        return;
       }
 
-      // Manuell gruppering og telling
-      const grupper: Record<string, { objekt_id: string; type: string; antall: number }> = {}
+      const grupper: Record<string, { objekt_id: string; type: string; antall: number }> = {};
 
       for (const f of favoritter) {
-        const key = `${f.objekt_id}:${f.type}`
+        const key = `${f.objekt_id}:${f.type}`;
         if (!grupper[key]) {
-          grupper[key] = { objekt_id: f.objekt_id, type: f.type, antall: 0 }
+          grupper[key] = { objekt_id: f.objekt_id, type: f.type, antall: 0 };
         }
-        grupper[key].antall++
+        grupper[key].antall++;
       }
 
-      // Sorter og ta de 50 mest populære
       const topp = Object.values(grupper)
         .sort((a, b) => b.antall - a.antall)
-        .slice(0, 50)
+        .slice(0, 50);
 
-      // Hent tittel/navn fra tilhørende tabell
       const detaljer = await Promise.all(
         topp.map(async (item) => {
           const tabell =
@@ -50,26 +48,26 @@ export default function FavorittAnalyse() {
               ? 'tjenester'
               : item.type === 'gjenbruk'
               ? 'gjenbruk'
-              : 'brukerprofiler'
+              : 'brukerprofiler';
 
           const { data: d } = await supabase
             .from(tabell)
             .select('tittel, navn')
             .eq('id', item.objekt_id)
-            .maybeSingle()
+            .maybeSingle();
 
           return {
             ...item,
             tittel: d?.tittel || d?.navn || 'Ukjent',
-          }
+          };
         })
-      )
+      );
 
-      setData(detaljer)
-    }
+      setData(detaljer);
+    };
 
-    hent()
-  }, [])
+    hent();
+  }, []);
 
   return (
     <>
@@ -93,5 +91,5 @@ export default function FavorittAnalyse() {
         </div>
       </main>
     </>
-  )
+  );
 }
