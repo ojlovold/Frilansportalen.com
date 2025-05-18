@@ -1,7 +1,7 @@
 // pages/admin/stillinger.tsx
-import Head from 'next/head'
-import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function AdminStillinger() {
   const [stilling, setStilling] = useState({
@@ -11,22 +11,21 @@ export default function AdminStillinger() {
     frist: '',
     bransje: '',
     beskrivelse: '',
-  })
-  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
+  });
+  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar');
 
   const publiser = async () => {
-    setStatus('lagrer')
-    const { error } = await supabase.from('stillinger').insert([stilling])
+    setStatus('lagrer');
+    const { error } = await supabase.from('stillinger').insert([stilling]);
 
     if (error) {
-      setStatus('feil')
+      setStatus('feil');
     } else {
-      // Send stilling til match og varsling
       await fetch('/api/stillingsmatch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stilling }),
-      })
+      });
 
       setStilling({
         tittel: '',
@@ -35,10 +34,10 @@ export default function AdminStillinger() {
         frist: '',
         bransje: '',
         beskrivelse: '',
-      })
-      setStatus('lagret')
+      });
+      setStatus('lagret');
     }
-  }
+  };
 
   return (
     <>
@@ -88,5 +87,5 @@ export default function AdminStillinger() {
         </div>
       </main>
     </>
-  )
+  );
 }
