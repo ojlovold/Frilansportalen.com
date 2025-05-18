@@ -1,6 +1,6 @@
 // pages/api/gjenbrukmatch.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { oppforing } = req.body
@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .select('id, sted, synlighet')
 
   const kandidater = (brukere || []).filter((b) =>
-    (b.sted && b.sted === oppforing.sted) &&
+    b.sted === oppforing.sted &&
     (b.synlighet === 'alle' || b.synlighet === 'privat')
   )
 
