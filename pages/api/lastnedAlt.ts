@@ -2,7 +2,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import archiver from 'archiver'
 import { Readable } from 'stream'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 export const config = {
   api: {
