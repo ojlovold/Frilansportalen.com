@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Dashboard from "@/components/Dashboard";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import MeldDegTilDugnad from "@/components/dugnad/MeldDegTilDugnad";
 import DugnadSvarListe from "@/components/dugnad/DugnadSvarListe";
 
