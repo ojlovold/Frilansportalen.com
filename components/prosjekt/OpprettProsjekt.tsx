@@ -15,7 +15,10 @@ export default function OpprettProsjekt() {
 
   const opprett = async () => {
     const brukerId = user && "id" in user ? (user.id as string) : null;
-    if (!navn || !brukerId) return;
+    if (!navn || !brukerId) {
+      setStatus("Du må fylle inn prosjektnavn og være innlogget.");
+      return;
+    }
 
     setStatus("Oppretter prosjekt...");
 
