@@ -1,7 +1,7 @@
 // pages/admin/kurs.tsx
-import Head from 'next/head'
-import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function AdminKurs() {
   const [kurs, setKurs] = useState({
@@ -12,12 +12,12 @@ export default function AdminKurs() {
     tidspunkt: '',
     pris: 0,
     beskrivelse: '',
-  })
-  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar')
+  });
+  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar');
 
   const publiser = async () => {
-    const { error } = await supabase.from('kurs').insert([kurs])
-    if (error) setStatus('feil')
+    const { error } = await supabase.from('kurs').insert([kurs]);
+    if (error) setStatus('feil');
     else {
       setKurs({
         tittel: '',
@@ -27,10 +27,10 @@ export default function AdminKurs() {
         tidspunkt: '',
         pris: 0,
         beskrivelse: '',
-      })
-      setStatus('lagret')
+      });
+      setStatus('lagret');
     }
-  }
+  };
 
   return (
     <>
@@ -84,5 +84,5 @@ export default function AdminKurs() {
         </div>
       </main>
     </>
-  )
+  );
 }
