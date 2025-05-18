@@ -1,5 +1,5 @@
 // lib/utkast.ts
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function lagreUtkast(
   bruker_id: string,
@@ -7,7 +7,7 @@ export async function lagreUtkast(
   modul: string,
   innhold: string
 ) {
-  if (!bruker_id || !modul) return
+  if (!bruker_id || !modul) return;
 
   const { data } = await supabase
     .from('svarutkast')
@@ -15,13 +15,13 @@ export async function lagreUtkast(
     .eq('bruker_id', bruker_id)
     .eq('mottaker_id', mottaker_id)
     .eq('modul', modul)
-    .maybeSingle()
+    .maybeSingle();
 
   if (data) {
     await supabase
       .from('svarutkast')
       .update({ innhold, sist_lagret: new Date().toISOString() })
-      .eq('id', data.id)
+      .eq('id', data.id);
   } else {
     await supabase.from('svarutkast').insert([
       {
@@ -30,7 +30,7 @@ export async function lagreUtkast(
         modul,
         innhold,
       },
-    ])
+    ]);
   }
 }
 
@@ -45,9 +45,9 @@ export async function hentUtkast(
     .eq('bruker_id', bruker_id)
     .eq('mottaker_id', mottaker_id)
     .eq('modul', modul)
-    .maybeSingle()
+    .maybeSingle();
 
-  return data?.innhold || ''
+  return data?.innhold || '';
 }
 
 export async function slettUtkast(
@@ -60,5 +60,5 @@ export async function slettUtkast(
     .delete()
     .eq('bruker_id', bruker_id)
     .eq('mottaker_id', mottaker_id)
-    .eq('modul', modul)
+    .eq('modul', modul);
 }
