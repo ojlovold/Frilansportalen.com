@@ -1,5 +1,5 @@
 // lib/notifications.ts
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function sendNotification(
   userId: string,
@@ -13,8 +13,8 @@ export async function sendNotification(
       type,
       lest: false,
     },
-  ])
-  if (error) throw error
+  ]);
+  if (error) throw error;
 }
 
 export async function getNotifications(userId: string) {
@@ -22,8 +22,8 @@ export async function getNotifications(userId: string) {
     .from('varsler')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
