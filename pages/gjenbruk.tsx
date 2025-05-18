@@ -1,6 +1,7 @@
+// pages/gjenbruk.tsx
 import Head from "next/head";
 import { useEffect, useState } from "react";
-import supabase from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient"; // <-- korrekt named import
 
 type Gjenbruksobjekt = {
   id: string;
