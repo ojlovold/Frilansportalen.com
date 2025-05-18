@@ -1,8 +1,8 @@
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function lagreRapport(rapport: any) {
-  const { error } = await supabase.from('rapporter').insert([rapport])
-  if (error) throw error
+  const { error } = await supabase.from('rapporter').insert([rapport]);
+  if (error) throw error;
 }
 
 export async function hentRapporter(userId: string) {
@@ -10,8 +10,8 @@ export async function hentRapporter(userId: string) {
     .from('rapporter')
     .select('*')
     .eq('bruker_id', userId)
-    .order('opprettet', { ascending: false })
+    .order('opprettet', { ascending: false });
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
