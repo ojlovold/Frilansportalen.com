@@ -1,18 +1,18 @@
 // pages/admin/gjenbruk.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 type Gjenbruksobjekt = {
-  id: string
-  tittel: string
-  sted: string
-  kategori: string
-  beskrivelse: string
-  pris: number
-  aktiv: boolean
-  opprettet: string
-}
+  id: string;
+  tittel: string;
+  sted: string;
+  kategori: string;
+  beskrivelse: string;
+  pris: number;
+  aktiv: boolean;
+  opprettet: string;
+};
 
 export default function AdminGjenbruk() {
   const [ny, setNy] = useState({
@@ -21,22 +21,22 @@ export default function AdminGjenbruk() {
     kategori: '',
     beskrivelse: '',
     pris: 0,
-  })
-  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar')
-  const [oppføringer, setOppføringer] = useState<Gjenbruksobjekt[]>([])
+  });
+  const [status, setStatus] = useState<'klar' | 'lagret' | 'feil'>('klar');
+  const [oppføringer, setOppføringer] = useState<Gjenbruksobjekt[]>([]);
 
   useEffect(() => {
     const hent = async () => {
       const { data, error } = await supabase
         .from('gjenbruk')
         .select('*')
-        .order('opprettet', { ascending: false })
+        .order('opprettet', { ascending: false });
 
-      if (!error && data) setOppføringer(data)
-    }
+      if (!error && data) setOppføringer(data);
+    };
 
-    hent()
-  }, [status])
+    hent();
+  }, [status]);
 
   const publiser = async () => {
     const { error } = await supabase.from('gjenbruk').insert([
@@ -45,32 +45,31 @@ export default function AdminGjenbruk() {
         aktiv: true,
         opprettet: new Date().toISOString(),
       },
-    ])
+    ]);
 
     if (error) {
-      setStatus('feil')
+      setStatus('feil');
     } else {
-      // Send til automatisk match
       await fetch('/api/gjenbrukmatch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oppforing: ny }),
-      })
+      });
 
-      setNy({ tittel: '', sted: '', kategori: '', beskrivelse: '', pris: 0 })
-      setStatus('lagret')
+      setNy({ tittel: '', sted: '', kategori: '', beskrivelse: '', pris: 0 });
+      setStatus('lagret');
     }
-  }
+  };
 
   const toggleAktiv = async (id: string, aktiv: boolean) => {
-    await supabase.from('gjenbruk').update({ aktiv: !aktiv }).eq('id', id)
-    setStatus('klar')
-  }
+    await supabase.from('gjenbruk').update({ aktiv: !aktiv }).eq('id', id);
+    setStatus('klar');
+  };
 
   const slett = async (id: string) => {
-    await supabase.from('gjenbruk').delete().eq('id', id)
-    setStatus('klar')
-  }
+    await supabase.from('gjenbruk').delete().eq('id', id);
+    setStatus('klar');
+  };
 
   return (
     <>
@@ -115,7 +114,10 @@ export default function AdminGjenbruk() {
         {/* Eksisterende oppføringer */}
         <div className="grid gap-4">
           {oppføringer.map((obj) => (
-            <div key={obj.id} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div
+              key={obj.id}
+              className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center"
+            >
               <div>
                 <h3 className="font-semibold text-lg">{obj.tittel}</h3>
                 <p className="text-sm text-gray-600">
@@ -143,5 +145,5 @@ export default function AdminGjenbruk() {
         </div>
       </main>
     </>
-  )
+  );
 }
