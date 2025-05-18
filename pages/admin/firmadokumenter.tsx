@@ -1,28 +1,28 @@
 // pages/admin/firmadokumenter.tsx
-import Head from 'next/head'
-import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function AdminFirmadok() {
-  const [firmaId, setFirmaId] = useState('') // f.eks. orgnr
-  const [tittel, setTittel] = useState('')
-  const [kategori, setKategori] = useState('')
-  const [brukere, setBrukere] = useState('') // kommaseparerte bruker-id-er
-  const [fil, setFil] = useState<File | null>(null)
-  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
+  const [firmaId, setFirmaId] = useState('');
+  const [tittel, setTittel] = useState('');
+  const [kategori, setKategori] = useState('');
+  const [brukere, setBrukere] = useState('');
+  const [fil, setFil] = useState<File | null>(null);
+  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar');
 
   const lastOpp = async () => {
-    if (!fil || !firmaId) return setStatus('feil')
-    setStatus('lagrer')
+    if (!fil || !firmaId) return setStatus('feil');
+    setStatus('lagrer');
 
-    const filnavn = `firmadokumenter/${firmaId}/${Date.now()}-${fil.name}`
+    const filnavn = `firmadokumenter/${firmaId}/${Date.now()}-${fil.name}`;
     const { error: uploadError } = await supabase.storage
       .from('dokumenter')
-      .upload(filnavn, fil, { upsert: true })
+      .upload(filnavn, fil, { upsert: true });
 
-    if (uploadError) return setStatus('feil')
+    if (uploadError) return setStatus('feil');
 
-    const { data: urlData } = supabase.storage.from('dokumenter').getPublicUrl(filnavn)
+    const { data: urlData } = supabase.storage.from('dokumenter').getPublicUrl(filnavn);
 
     const { error: dbError } = await supabase.from('firmadokumenter').insert([
       {
@@ -34,17 +34,17 @@ export default function AdminFirmadok() {
           ? brukere.split(',').map((id) => id.trim())
           : null,
       },
-    ])
+    ]);
 
-    if (dbError) setStatus('feil')
+    if (dbError) setStatus('feil');
     else {
-      setTittel('')
-      setKategori('')
-      setFil(null)
-      setBrukere('')
-      setStatus('lagret')
+      setTittel('');
+      setKategori('');
+      setFil(null);
+      setBrukere('');
+      setStatus('lagret');
     }
-  }
+  };
 
   return (
     <>
@@ -111,5 +111,5 @@ export default function AdminFirmadok() {
         </div>
       </main>
     </>
-  )
+  );
 }
