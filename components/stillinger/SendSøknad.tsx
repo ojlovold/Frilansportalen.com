@@ -1,5 +1,5 @@
 import { useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 
 export default function SendSøknad({ stillingId }: { stillingId: string }) {
