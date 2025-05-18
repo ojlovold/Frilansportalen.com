@@ -1,18 +1,18 @@
 // pages/admin/signaturer.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 type Rad = {
-  id: string
-  dokument_id: string
-  bruker_id: string
-  signatur: string
-  tidspunkt: string
-}
+  id: string;
+  dokument_id: string;
+  bruker_id: string;
+  signatur: string;
+  tidspunkt: string;
+};
 
 export default function AdminSignaturer() {
-  const [signaturer, setSignaturer] = useState<Rad[]>([])
+  const [signaturer, setSignaturer] = useState<Rad[]>([]);
 
   useEffect(() => {
     const hent = async () => {
@@ -20,13 +20,13 @@ export default function AdminSignaturer() {
         .from('signaturer')
         .select('*')
         .order('tidspunkt', { ascending: false })
-        .limit(100)
+        .limit(100);
 
-      if (!error && data) setSignaturer(data)
-    }
+      if (!error && data) setSignaturer(data);
+    };
 
-    hent()
-  }, [])
+    hent();
+  }, []);
 
   return (
     <>
@@ -55,5 +55,5 @@ export default function AdminSignaturer() {
         )}
       </main>
     </>
-  )
+  );
 }
