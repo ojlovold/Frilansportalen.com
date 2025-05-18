@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import supabase from "./supabaseClient";
+import { supabase } from "./supabaseClient";
 
 type Logg = {
   id: string;
