@@ -1,7 +1,7 @@
 import { buffer } from "micro";
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient"; // ← FIKSET
 
 export const config = {
   api: {
@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let event;
   try {
     const buf = await buffer(req);
-    event = stripe.webhooks.constructEvent(buf, sig, stripeWebhookSecret as string); // ← her er fiksen
+    event = stripe.webhooks.constructEvent(buf, sig, stripeWebhookSecret as string);
   } catch (err) {
     console.error("Webhook error:", err);
     return res.status(400).send(`Webhook Error: ${(err as Error).message}`);
