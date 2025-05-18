@@ -1,7 +1,7 @@
 // pages/admin/visningsanalyse.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 type VisningStat = {
   innhold_id: string
