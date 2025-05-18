@@ -1,3 +1,4 @@
+// SommerjobbSide uten filterType
 import Head from "next/head";
 import Dashboard from "@/components/Dashboard";
 import VisDugnader from "@/components/dugnad/VisDugnader";
@@ -11,7 +12,7 @@ export default function SommerjobbSide() {
 
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Sommerjobber</h1>
-        <VisDugnader filterType="sommerjobb" />
+        <VisDugnader />
       </div>
     </Dashboard>
   );
