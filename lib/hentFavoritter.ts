@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Henter favorittobjekter for en bruker.
