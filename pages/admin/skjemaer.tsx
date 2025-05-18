@@ -1,26 +1,26 @@
 // pages/admin/skjemaer.tsx
-import Head from 'next/head'
-import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function AdminSkjemaer() {
-  const [tittel, setTittel] = useState('')
-  const [kategori, setKategori] = useState('')
-  const [fil, setFil] = useState<File | null>(null)
-  const [status, setStatus] = useState<'klar' | 'opplaster' | 'lagret' | 'feil'>('klar')
+  const [tittel, setTittel] = useState('');
+  const [kategori, setKategori] = useState('');
+  const [fil, setFil] = useState<File | null>(null);
+  const [status, setStatus] = useState<'klar' | 'opplaster' | 'lagret' | 'feil'>('klar');
 
   const lastOppSkjema = async () => {
-    if (!fil || !tittel || !kategori) return setStatus('feil')
-    setStatus('opplaster')
+    if (!fil || !tittel || !kategori) return setStatus('feil');
+    setStatus('opplaster');
 
-    const filnavn = `skjemaer/${Date.now()}-${fil.name}`
+    const filnavn = `skjemaer/${Date.now()}-${fil.name}`;
     const { error: uploadError } = await supabase.storage
       .from('dokumenter')
-      .upload(filnavn, fil, { upsert: true })
+      .upload(filnavn, fil, { upsert: true });
 
-    if (uploadError) return setStatus('feil')
+    if (uploadError) return setStatus('feil');
 
-    const { data: urlData } = supabase.storage.from('dokumenter').getPublicUrl(filnavn)
+    const { data: urlData } = supabase.storage.from('dokumenter').getPublicUrl(filnavn);
 
     const { error: dbError } = await supabase.from('skjemaer').insert([
       {
@@ -28,16 +28,16 @@ export default function AdminSkjemaer() {
         kategori,
         fil_url: urlData.publicUrl,
       },
-    ])
+    ]);
 
-    if (dbError) setStatus('feil')
+    if (dbError) setStatus('feil');
     else {
-      setTittel('')
-      setKategori('')
-      setFil(null)
-      setStatus('lagret')
+      setTittel('');
+      setKategori('');
+      setFil(null);
+      setStatus('lagret');
     }
-  }
+  };
 
   return (
     <>
@@ -88,5 +88,5 @@ export default function AdminSkjemaer() {
         </div>
       </main>
     </>
-  )
+  );
 }
