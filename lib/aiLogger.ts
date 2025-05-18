@@ -1,5 +1,5 @@
 // lib/aiLogger.ts
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function loggAIForslag(
   bruker_id: string,
@@ -7,7 +7,7 @@ export async function loggAIForslag(
   forslag: string,
   akseptert: boolean
 ) {
-  if (!bruker_id || !modul || !forslag) return
+  if (!bruker_id || !modul || !forslag) return;
 
   await supabase.from('ai_logger').insert([
     {
@@ -16,5 +16,5 @@ export async function loggAIForslag(
       forslag,
       akseptert,
     },
-  ])
+  ]);
 }
