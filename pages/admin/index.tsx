@@ -1,39 +1,56 @@
+// pages/admin/index.tsx
 import Head from "next/head";
 import Link from "next/link";
-import { Settings, FileText, Paintbrush, Users, ShieldCheck, ServerCog } from "lucide-react";
+import Dashboard from "@/components/Dashboard";
 
 export default function AdminDashboard() {
   return (
-    <main className="min-h-screen bg-yellow-300 text-black p-8">
+    <Dashboard>
       <Head>
-        <title>Admin | Frilansportalen</title>
+        <title>Adminpanel | Frilansportalen</title>
       </Head>
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="space-y-6 p-6">
         <h1 className="text-3xl font-bold">Adminpanel</h1>
-        <span className="text-sm text-gray-700">Full tilgang – superbruker</span>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/admin/integrasjoner" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <Settings className="text-2xl" /> Administrer integrasjoner
-        </Link>
-        <Link href="/admin/utseende" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <Paintbrush className="text-2xl" /> Farger og logo
-        </Link>
-        <Link href="/admin/brukere" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <Users className="text-2xl" /> Brukeroversikt
-        </Link>
-        <Link href="/admin/systemstatus" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <ShieldCheck className="text-2xl" /> Systemstatus
-        </Link>
-        <Link href="/admin/faktura" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <FileText className="text-2xl" /> Fakturainnstillinger
-        </Link>
-        <Link href="/admin/moduler" className="bg-white rounded-2xl shadow p-6 flex items-center gap-4">
-          <ServerCog className="text-2xl" /> Modultilgang
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
+          <Link href="/admin/integrasjoner">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Integrasjoner
+            </a>
+          </Link>
+
+          <Link href="/admin/systemstatus">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Systemstatus
+            </a>
+          </Link>
+
+          <Link href="/admin/innstillinger">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Fargevalg og logo
+            </a>
+          </Link>
+
+          <Link href="/admin/brukere">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Brukeroversikt
+            </a>
+          </Link>
+
+          <Link href="/admin/skjemaer">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Skjemabank
+            </a>
+          </Link>
+
+          <Link href="/admin/firmadokumenter">
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
+              Firmadokumenter
+            </a>
+          </Link>
+        </div>
       </div>
-    </main>
+    </Dashboard>
   );
 }
