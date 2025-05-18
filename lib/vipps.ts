@@ -1,4 +1,4 @@
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export type VippsConfig = {
   aktiv: boolean;
@@ -43,7 +43,7 @@ export async function opprettVippsBetaling(belop: number, referanse: string) {
     },
     body: JSON.stringify({
       merchantInfo: {
-        merchantSerialNumber: config.orgnr, // ← nå støttet av typen
+        merchantSerialNumber: config.orgnr,
         callbackPrefix: config.callback_url || '',
         fallBack: 'https://frilansportalen.com/',
       },
