@@ -1,5 +1,5 @@
 // lib/loggVisning.ts
-import supabase from "./supabaseClient";
+import { supabase } from "./supabaseClient";
 
 export default async function loggVisning(
   bruker_id: string,
