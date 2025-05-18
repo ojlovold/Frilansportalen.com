@@ -1,7 +1,7 @@
 // pages/admin/prosjekter.tsx
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 type Deltaker = {
   bruker_id: string
