@@ -1,19 +1,19 @@
 // pages/admin/dokumentlogg.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 type Loggpost = {
-  id: string
-  bruker_id: string
-  filnavn: string
-  bucket: string
-  tidspunkt: string
-  handling: string
-}
+  id: string;
+  bruker_id: string;
+  filnavn: string;
+  bucket: string;
+  tidspunkt: string;
+  handling: string;
+};
 
 export default function AdminDokumentlogg() {
-  const [logg, setLogg] = useState<Loggpost[]>([])
+  const [logg, setLogg] = useState<Loggpost[]>([]);
 
   useEffect(() => {
     const hent = async () => {
@@ -21,13 +21,13 @@ export default function AdminDokumentlogg() {
         .from('dokumentlogg')
         .select('*')
         .order('tidspunkt', { ascending: false })
-        .limit(100)
+        .limit(100);
 
-      if (!error && data) setLogg(data)
-    }
+      if (!error && data) setLogg(data);
+    };
 
-    hent()
-  }, [])
+    hent();
+  }, []);
 
   return (
     <>
@@ -57,5 +57,5 @@ export default function AdminDokumentlogg() {
         </div>
       </main>
     </>
-  )
+  );
 }
