@@ -1,8 +1,9 @@
+// pages/admin/stilling/[id].tsx
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import Dashboard from "components/Dashboard";
-import supabase from "lib/supabaseClient";
+import { supabase } from "lib/supabaseClient";
 import VisSøknader from "components/stillinger/VisSøknader";
 
 export default function AdminStilling() {
