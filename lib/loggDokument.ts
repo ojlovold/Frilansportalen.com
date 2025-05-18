@@ -1,5 +1,5 @@
 // lib/loggDokument.ts
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function loggDokumentHendelse(
   bruker_id: string,
@@ -7,7 +7,7 @@ export async function loggDokumentHendelse(
   bucket: string,
   handling: 'opplasting' | 'nedlasting' | 'sletting'
 ) {
-  if (!bruker_id || !filnavn || !bucket || !handling) return
+  if (!bruker_id || !filnavn || !bucket || !handling) return;
 
   await supabase.from('dokumentlogg').insert([
     {
@@ -16,5 +16,5 @@ export async function loggDokumentHendelse(
       bucket,
       handling,
     },
-  ])
+  ]);
 }
