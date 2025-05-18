@@ -1,3 +1,5 @@
+// Fil: /components/prosjekt/LastOppProsjektfil.tsx
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
