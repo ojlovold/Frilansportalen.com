@@ -1,24 +1,24 @@
 // pages/bruker/[id].tsx
-import { GetServerSideProps } from 'next'
-import Head from 'next/head'
-import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import { GetServerSideProps } from 'next';
+import Head from 'next/head';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 type Props = {
   profil: {
-    id: string
-    navn: string
-    rolle: string
-    sted?: string
-    pris?: number
-    beskrivelse?: string
-  } | null
-  tilgang: boolean
-  bildeUrl: string | null
-}
+    id: string;
+    navn: string;
+    rolle: string;
+    sted?: string;
+    pris?: number;
+    beskrivelse?: string;
+  } | null;
+  tilgang: boolean;
+  bildeUrl: string | null;
+};
 
 export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
-  const [forespurt, setForespurt] = useState(false)
+  const [forespurt, setForespurt] = useState(false);
 
   if (!profil || (!tilgang && forespurt)) {
     return (
@@ -26,16 +26,16 @@ export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
         <h1 className="text-3xl font-bold mb-6">Profil utilgjengelig</h1>
         <p>Brukeren har skjult profilen sin, eller du har ikke tilgang.</p>
       </main>
-    )
+    );
   }
 
   const sendForespørsel = async () => {
     const fraId = document.cookie
       .split('; ')
       .find((row) => row.startsWith('sb-user-id='))
-      ?.split('=')[1]
+      ?.split('=')[1];
 
-    if (!fraId || !profil?.id) return
+    if (!fraId || !profil?.id) return;
 
     await supabase.from('profiltilgang').insert([
       {
@@ -43,9 +43,9 @@ export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
         til: profil.id,
         status: 'venter',
       },
-    ])
-    setForespurt(true)
-  }
+    ]);
+    setForespurt(true);
+  };
 
   return (
     <>
@@ -88,25 +88,26 @@ export default function BrukerProfil({ profil, tilgang, bildeUrl }: Props) {
         </div>
       </main>
     </>
-  )
+  );
 }
+
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const id = ctx.params?.id as string
-  const currentUserId = ctx.req.cookies['sb-user-id'] || null
+  const id = ctx.params?.id as string;
+  const currentUserId = ctx.req.cookies['sb-user-id'] || null;
 
   const { data: profil } = await supabase
     .from('brukerprofiler')
     .select('*')
     .eq('id', id)
-    .single()
+    .single();
 
-  let tilgang = false
-  let bildeUrl: string | null = null
+  let tilgang = false;
+  let bildeUrl: string | null = null;
 
-  if (!profil) return { props: { profil: null, tilgang: false, bildeUrl: null } }
+  if (!profil) return { props: { profil: null, tilgang: false, bildeUrl: null } };
 
   if (profil.rolle === 'frilanser' || profil.synlighet === 'alle') {
-    tilgang = true
+    tilgang = true;
   } else if (currentUserId) {
     const { data: tilgangsdata } = await supabase
       .from('profiltilgang')
@@ -114,16 +115,15 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       .eq('fra', currentUserId)
       .eq('til', id)
       .eq('status', 'godkjent')
-      .maybeSingle()
+      .maybeSingle();
 
-    if (tilgangsdata) tilgang = true
+    if (tilgangsdata) tilgang = true;
   }
 
-  // Prøv å hente bilde
   const { data: bildeinfo } = supabase.storage
     .from('profilbilder')
-    .getPublicUrl(`${id}.jpg`)
-  if (bildeinfo?.publicUrl) bildeUrl = bildeinfo.publicUrl
+    .getPublicUrl(`${id}.jpg`);
+  if (bildeinfo?.publicUrl) bildeUrl = bildeinfo.publicUrl;
 
   return {
     props: {
@@ -131,5 +131,5 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       tilgang,
       bildeUrl,
     },
-  }
-}
+  };
+};
