@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 interface Invitasjon {
@@ -11,7 +11,7 @@ interface Invitasjon {
     beskrivelse: string;
     frist: string;
     status: string;
-  }[]; // ← Supabase returnerer dette som en array
+  }[];
 }
 
 export default function MineInvitasjoner({ brukerId }: { brukerId: string }) {
