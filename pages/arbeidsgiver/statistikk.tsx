@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/components/Dashboard";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ArbeidsgiverStatistikk() {
   const user = useUser() as unknown as User;
