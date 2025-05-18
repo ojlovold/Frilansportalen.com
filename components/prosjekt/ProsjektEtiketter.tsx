@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ProsjektEtiketter({ prosjektId }: { prosjektId: string }) {
   const [etiketter, setEtiketter] = useState<string[]>([]);
