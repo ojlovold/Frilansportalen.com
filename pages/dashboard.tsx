@@ -73,7 +73,7 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold">Kjørebok ({kjorebok.length})</h2>
         </div>
 
-        {harPremium && <AutoPDFKnapp data={{ fakturaer, rapporter, kjorebok }} />}
+        {harPremium && <AutoPDFKnapp />}
       </main>
     </>
   );
