@@ -1,6 +1,6 @@
 // components/prosjekt/ProsjektNotat.tsx
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 type Props = {
   prosjektId: string;
