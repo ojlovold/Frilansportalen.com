@@ -1,15 +1,15 @@
 // pages/admin/integrasjoner.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
-const typer = ['vipps', 'altinn', 'stripe'] as const
-type Integrasjonstype = typeof typer[number]
+const typer = ['vipps', 'altinn', 'stripe'] as const;
+type Integrasjonstype = typeof typer[number];
 
 export default function AdminIntegrasjoner() {
-  const [valg, setValg] = useState<Integrasjonstype>('vipps')
-  const [data, setData] = useState<any>({})
-  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
+  const [valg, setValg] = useState<Integrasjonstype>('vipps');
+  const [data, setData] = useState<any>({});
+  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar');
 
   useEffect(() => {
     const hent = async () => {
@@ -17,25 +17,25 @@ export default function AdminIntegrasjoner() {
         .from('integrasjoner')
         .select('*')
         .eq('id', valg)
-        .maybeSingle()
+        .maybeSingle();
 
-      setData(data || { id: valg })
-    }
+      setData(data || { id: valg });
+    };
 
-    hent()
-  }, [valg])
+    hent();
+  }, [valg]);
 
   const lagre = async () => {
-    setStatus('lagrer')
+    setStatus('lagrer');
     const { error } = await supabase
       .from('integrasjoner')
-      .upsert([{ ...data, id: valg, sist_oppdatert: new Date().toISOString() }])
-    setStatus(error ? 'feil' : 'lagret')
-  }
+      .upsert([{ ...data, id: valg, sist_oppdatert: new Date().toISOString() }]);
+    setStatus(error ? 'feil' : 'lagret');
+  };
 
   const endre = (felt: string, verdi: any) => {
-    setData((prev: any) => ({ ...prev, [felt]: verdi }))
-  }
+    setData((prev: any) => ({ ...prev, [felt]: verdi }));
+  };
 
   return (
     <>
@@ -51,9 +51,7 @@ export default function AdminIntegrasjoner() {
             <button
               key={t}
               onClick={() => setValg(t)}
-              className={`px-4 py-2 rounded ${
-                valg === t ? 'bg-black text-white' : 'bg-white border'
-              }`}
+              className={`px-4 py-2 rounded ${valg === t ? 'bg-black text-white' : 'bg-white border'}`}
             >
               {t.toUpperCase()}
             </button>
@@ -142,5 +140,5 @@ export default function AdminIntegrasjoner() {
         </div>
       </main>
     </>
-  )
+  );
 }
