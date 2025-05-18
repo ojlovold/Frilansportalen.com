@@ -1,5 +1,5 @@
 // lib/favoritt.ts
-import supabase from './supabaseClient'
+import { supabase } from './supabaseClient';
 
 export async function lagreFavoritt(
   bruker_id: string,
@@ -8,8 +8,8 @@ export async function lagreFavoritt(
 ) {
   const { error } = await supabase.from('favoritter').insert([
     { bruker_id, type, objekt_id },
-  ])
-  return error ? false : true
+  ]);
+  return error ? false : true;
 }
 
 export async function fjernFavoritt(
@@ -22,9 +22,9 @@ export async function fjernFavoritt(
     .delete()
     .eq('bruker_id', bruker_id)
     .eq('type', type)
-    .eq('objekt_id', objekt_id)
+    .eq('objekt_id', objekt_id);
 
-  return error ? false : true
+  return error ? false : true;
 }
 
 export async function erFavoritt(
@@ -38,9 +38,9 @@ export async function erFavoritt(
     .eq('bruker_id', bruker_id)
     .eq('type', type)
     .eq('objekt_id', objekt_id)
-    .maybeSingle()
+    .maybeSingle();
 
-  return !!data && !error
+  return !!data && !error;
 }
 
 export async function hentFavoritter(
@@ -51,7 +51,7 @@ export async function hentFavoritter(
     .from('favoritter')
     .select('*')
     .eq('bruker_id', bruker_id)
-    .eq('type', type)
+    .eq('type', type);
 
-  return error ? [] : data
+  return error ? [] : data;
 }
