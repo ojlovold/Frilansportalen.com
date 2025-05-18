@@ -1,7 +1,7 @@
 // pages/admin/tjenester.tsx
 import Head from 'next/head'
 import { useState } from 'react'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function AdminTjenester() {
   const [tjeneste, setTjeneste] = useState({
@@ -20,7 +20,6 @@ export default function AdminTjenester() {
     if (error) {
       setStatus('feil')
     } else {
-      // Send tjeneste til match og varsling
       await fetch('/api/tjenestematch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
