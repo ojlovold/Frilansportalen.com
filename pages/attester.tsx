@@ -2,7 +2,7 @@ import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import type { User } from '@supabase/supabase-js'
-import supabase from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 type Attest = {
   id: string
