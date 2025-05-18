@@ -1,7 +1,7 @@
 // pages/brukere.tsx
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
-import supabase from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient' // ← fikset importen
 
 type Brukerprofil = {
   id: string
@@ -26,7 +26,6 @@ export default function Brukersøk() {
     const hent = async () => {
       const { data, error } = await supabase.from('brukerprofiler').select('*')
       if (!error && data) {
-        // Filtrer: frilansere = alltid synlig, andre må ha synlighet = 'alle'
         const synlige = data.filter((b: Brukerprofil) =>
           b.rolle === 'frilanser' || b.synlighet === 'alle'
         )
