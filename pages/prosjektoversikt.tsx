@@ -27,7 +27,7 @@ export default function ProsjektOversikt() {
 
       <div className="space-y-6">
         <MineInvitasjoner brukerId={brukerId} />
-        <OpprettProsjekt eierId={brukerId} />
+        <OpprettProsjekt />
         <MineProsjekter brukerId={brukerId} />
       </div>
     </Dashboard>
