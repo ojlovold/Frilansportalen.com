@@ -1,6 +1,6 @@
 // pages/api/tjenesteagent.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import supabase from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { tjeneste } = req.body
