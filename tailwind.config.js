@@ -5,7 +5,16 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        portalGul: "#FFEF77", // eller din eksakte gultone
+      },
+    },
   },
+  safelist: [
+    {
+      pattern: /(bg|text)-(portalGul|black|white|gray-(100|200|300)|yellow-(100|200|300))/,
+    },
+  ],
   plugins: [],
 };
