@@ -1,9 +1,8 @@
-// components/ProfilRadar.tsx
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@/lib/useUser";
+import { useUser } from "@/hooks/useUser";
 import { getProfileReachData } from "@/lib/ai/getProfileReachData";
 
 export default function ProfilRadar() {
@@ -45,7 +44,9 @@ export default function ProfilRadar() {
         ) : profilData ? (
           <>
             <Progress value={prosent} />
-            <p className="text-sm">{`Din profil er ${prosent}% så synlig som den kunne vært.`}</p>
+            <p className="text-sm">
+              {`Din profil er ${prosent}% så synlig som den kunne vært.`}
+            </p>
             <ul className="list-disc list-inside text-sm">
               {profilData.tips.map((t, i) => (
                 <li key={i}>{t}</li>
