@@ -1,4 +1,3 @@
-// pages/admin/regnskap.tsx
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AdminWrapper from "@/components/AdminWrapper";
@@ -39,8 +38,8 @@ export default function AdminRegnskap() {
   const lastOppUtgift = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("klar");
-    let nokBelop = utgift.belop;
 
+    let nokBelop = utgift.belop;
     if (utgift.valuta !== "NOK") {
       const kurs = await hentValutakurs(utgift.valuta, utgift.dato);
       nokBelop = utgift.belop * kurs;
@@ -48,7 +47,8 @@ export default function AdminRegnskap() {
 
     let fil_url = null;
     if (utgift.fil) {
-      const filnavn = `utgifter/${Date.now()}-${utgift.fil.name}`;
+      const safeFilename = utgift.fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "");
+      const filnavn = `utgifter/${Date.now()}-${safeFilename}`;
       const { error: uploadError } = await supabase.storage
         .from("dokumenter")
         .upload(filnavn, utgift.fil, { upsert: true });
@@ -163,10 +163,10 @@ export default function AdminRegnskap() {
                     <td className="p-2">{u.tittel}</td>
                     <td className="p-2">{u.belop}</td>
                     <td className="p-2">{u.valuta}</td>
-                    <td className="p-2">{u.nok.toFixed(2)}</td>
+                    <td className="p-2">{u.nok?.toFixed(2)}</td>
                     <td className="p-2">
                       {u.fil_url ? (
-                        <a href={u.fil_url} target="_blank" className="text-blue-600 underline">Vis</a>
+                        <a href={u.fil_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Vis</a>
                       ) : (
                         "—"
                       )}
