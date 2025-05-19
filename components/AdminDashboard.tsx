@@ -1,4 +1,3 @@
-// components/AdminDashboard.tsx
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +29,7 @@ export default function AdminDashboard() {
 
   const handleSave = async () => {
     let uploadedLogoUrl = logoUrl;
+
     if (selectedLogo) {
       const { data, error } = await supabase.storage
         .from("logos")
@@ -37,10 +37,15 @@ export default function AdminDashboard() {
           cacheControl: "3600",
           upsert: true,
         });
+
       if (data) {
-        const { publicUrl } = supabase.storage.from("logos").getPublicUrl(data.path);
-        uploadedLogoUrl = publicUrl;
-        setLogoUrl(publicUrl);
+        const { data: urlData } = supabase.storage
+          .from("logos")
+          .getPublicUrl(data.path);
+        if (urlData?.publicUrl) {
+          uploadedLogoUrl = urlData.publicUrl;
+          setLogoUrl(urlData.publicUrl);
+        }
       } else {
         console.error("Logo-opplasting feilet", error);
       }
@@ -66,30 +71,53 @@ export default function AdminDashboard() {
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Vipps-konfigurasjon</h2>
             <Label htmlFor="vipps">API-nøkkel</Label>
-            <Input id="vipps" value={vippsKey} onChange={(e) => setVippsKey(e.target.value)} />
+            <Input
+              id="vipps"
+              value={vippsKey}
+              onChange={(e) => setVippsKey(e.target.value)}
+            />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Altinn-konfigurasjon</h2>
             <Label htmlFor="altinn">API-nøkkel</Label>
-            <Input id="altinn" value={altinnKey} onChange={(e) => setAltinnKey(e.target.value)} />
+            <Input
+              id="altinn"
+              value={altinnKey}
+              onChange={(e) => setAltinnKey(e.target.value)}
+            />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Endre logo</h2>
-            {logoUrl && <img src={logoUrl} alt="Nåværende logo" className="h-16" />}
-            <Input type="file" onChange={(e) => setSelectedLogo(e.target.files?.[0] || null)} />
+            {logoUrl && (
+              <img src={logoUrl} alt="Nåværende logo" className="h-16" />
+            )}
+            <Input
+              type="file"
+              onChange={(e) => setSelectedLogo(e.target.files?.[0] || null)}
+            />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Designfarger</h2>
             <Label htmlFor="primaryColor">Primærfarge</Label>
-            <Input id="primaryColor" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
+            <Input
+              id="primaryColor"
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+            />
             <Label htmlFor="secondaryColor">Sekundærfarge</Label>
-            <Input id="secondaryColor" type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
+            <Input
+              id="secondaryColor"
+              type="color"
+              value={secondaryColor}
+              onChange={(e) => setSecondaryColor(e.target.value)}
+            />
           </CardContent>
         </Card>
       </div>
