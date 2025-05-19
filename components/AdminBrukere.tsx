@@ -1,11 +1,16 @@
+// components/AdminBrukere.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Bruker {
   id: string;
   email: string;
   created_at: string;
+  rolle?: string;
+  status?: string;
 }
 
 export default function AdminBrukere() {
@@ -16,17 +21,31 @@ export default function AdminBrukere() {
     const hentBrukere = async () => {
       const { data, error } = await supabase.auth.admin.listUsers();
       if (data?.users) {
-        const transformert = data.users.map((user) => ({
-          id: user.id,
-          email: user.email ?? "(ukjent)",
-          created_at: user.created_at ?? "",
-        }));
+        const userIds = data.users.map((u) => u.id);
+        const { data: profiler } = await supabase
+          .from("brukerprofiler")
+          .select("user_id, rolle, status")
+          .in("user_id", userIds);
+
+        const transformert = data.users.map((user) => {
+          const profil = profiler?.find((p) => p.user_id === user.id);
+          return {
+            id: user.id,
+            email: user.email ?? "(ukjent)",
+            created_at: user.created_at ?? "",
+            rolle: profil?.rolle ?? "ukjent",
+            status: profil?.status ?? "ukjent",
+          };
+        });
         setBrukere(transformert);
       }
       setLoading(false);
     };
     hentBrukere();
   }, []);
+
+  const roller = ["frilanser", "arbeidsgiver", "privatperson"];
+  const statuser = ["aktiv", "skjult", "ufullstendig"];
 
   return (
     <div className="space-y-4">
@@ -35,14 +54,38 @@ export default function AdminBrukere() {
         <p>Laster brukere...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {brukere.map((b) => (
+          {brukere.map((b, index) => (
             <Card key={b.id}>
-              <CardContent className="p-4 space-y-1">
+              <CardContent className="p-4 space-y-2">
                 <p className="text-sm font-medium">{b.email}</p>
                 <p className="text-xs text-gray-600">ID: {b.id}</p>
                 <p className="text-xs text-gray-600">
                   Opprettet: {new Date(b.created_at).toLocaleString()}
                 </p>
+                <div>
+                  <Label htmlFor={`rolle-${index}`}>Rolle</Label>
+                  <select
+                    id={`rolle-${index}`}
+                    defaultValue={b.rolle}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                  >
+                    {roller.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor={`status-${index}`}>Status</Label>
+                  <select
+                    id={`status-${index}`}
+                    defaultValue={b.status}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                  >
+                    {statuser.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
               </CardContent>
             </Card>
           ))}
