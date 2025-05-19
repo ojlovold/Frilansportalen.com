@@ -2,14 +2,16 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import TilbakeKnapp from "./TilbakeKnapp";
+import useDesignFarger from "@/hooks/useDesignFarger";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { bakgrunnsfarge, tekstfarge } = useDesignFarger();
 
   const visTilbake = !["/", "/dashboard"].includes(router.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-black">
+    <div className={`min-h-screen ${bakgrunnsfarge} ${tekstfarge}`}>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
