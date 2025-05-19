@@ -1,7 +1,7 @@
 // pages/admin/brukere.tsx
 import dynamic from "next/dynamic";
 import Head from "next/head";
-import TilbakeKnapp from "@/components/ui/TilbakeKnapp";
+import TilbakeKnapp from "@/components/TilbakeKnapp";
 
 const AdminBrukere = dynamic(() => import("@/components/AdminBrukere"), {
   ssr: false,
