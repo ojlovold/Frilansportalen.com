@@ -28,10 +28,9 @@ export default function AutoUtfyllKvittering() {
     setTekst(tekst);
     setStatus("Forsøker å tolke data...");
 
-    // Enkel tolkning av beløp, dato og tittel
     const belopMatch = tekst.match(/([0-9]+[,.][0-9]{2})\s*(kr|NOK|EUR|USD)?/i);
     const datoMatch = tekst.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
-    const tittelMatch = tekst.split("\n").find((l) => l.length > 4);
+    const tittelMatch = tekst.split("\n").find((l: string) => l.length > 4);
 
     setBelop(belopMatch?.[1]?.replace(",", ".") || "");
     setValuta(belopMatch?.[2]?.toUpperCase() || "NOK");
