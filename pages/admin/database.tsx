@@ -1,7 +1,7 @@
 // pages/admin/database.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import AdminWrapper from "@/components/layout/AdminLayout";
+import AdminWrapper from "@/components/AdminWrapper";
 
 interface TabellInfo {
   name: string;
