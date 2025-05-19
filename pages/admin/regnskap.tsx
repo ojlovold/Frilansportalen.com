@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AdminLayout from "@/components/layout/AdminLayout";
-import AutoUtfyllKvittering from "@/components/AutoUtfyllKvittering";
+import AutoUtfyllKvitteringSmart from "@/components/AutoUtfyllKvitteringSmart";
 
 export default function AdminRegnskap() {
   const [inntekter, setInntekter] = useState<any[]>([]);
@@ -42,8 +42,8 @@ export default function AdminRegnskap() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-2">Last opp kvittering (automatisk utfylling)</h2>
-          <AutoUtfyllKvittering />
+          <h2 className="text-xl font-semibold mb-2">Last opp kvittering (PDF/bilde)</h2>
+          <AutoUtfyllKvitteringSmart rolle="admin" />
         </section>
 
         <section>
