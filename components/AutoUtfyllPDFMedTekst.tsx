@@ -24,7 +24,6 @@ export default function AutoUtfyllPDFMedTekst() {
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     const side = await pdf.getPage(1);
     const tekstinnhold = await side.getTextContent();
-
     const linjer = tekstinnhold.items.map((item: any) => item.str);
     return linjer.join("\n");
   };
@@ -87,4 +86,21 @@ export default function AutoUtfyllPDFMedTekst() {
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
       <h2 className="text-xl font-semibold">Last opp PDF-kvittering (tekstlesing)</h2>
 
-      <input type="file" accept=".pdf" onChange={(e) => setFil(e.target.files?.[0
+      <input type="file" accept=".pdf" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+      <button onClick={les} className="bg-black text-white px-3 py-2 rounded">Les og utfyll</button>
+
+      <div className="space-y-2">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+      </div>
+
+      <button onClick={lagre} className="bg-green-600 text-white px-3 py-2 rounded">
+        Lagre i regnskap
+      </button>
+
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+    </div>
+  );
+}
