@@ -1,16 +1,12 @@
 // components/layout/AdminLayout.tsx
 import Head from "next/head";
-import { useRouter } from "next/router";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
+import { useRouter } from "next/router";
 import { ReactNode } from "react";
 
-interface Props {
-  title: string;
-  children: ReactNode;
-}
-
-export default function AdminLayout({ title, children }: Props) {
-  const router = useRouter();
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  const { pathname } = useRouter();
+  const title = pathname.split("/").pop()?.replace(/-/g, " ") ?? "Admin";
 
   return (
     <>
@@ -18,8 +14,8 @@ export default function AdminLayout({ title, children }: Props) {
         <title>{title} | Frilansportalen Admin</title>
       </Head>
       <main className="min-h-screen bg-portalGul text-black p-6 max-w-6xl mx-auto">
-        {router.pathname !== "/admin" && <TilbakeKnapp />}
-        <h1 className="text-3xl font-bold mb-6">{title}</h1>
+        {pathname !== "/admin" && <TilbakeKnapp />}
+        <h1 className="text-3xl font-bold mb-6 capitalize">{title}</h1>
         {children}
       </main>
     </>
