@@ -20,17 +20,17 @@ export default function AutoUtfyllKvittering() {
     if (!fil) return;
 
     setStatus("Leser tekst på kvitteringen...");
-    const { data: result } = await Tesseract.recognize(fil, "nor", {
+    const result = await Tesseract.recognize(fil, "nor", {
       logger: (m) => console.log(m),
     });
 
-    const tekst = result?.data?.text || "";
+    const tekst = result?.text || "";
     setTekst(tekst);
     setStatus("Forsøker å tolke data...");
 
-    // Enkel AI-tolkning av tekst (kan forbedres)
+    // Enkel AI-tolkning av tekst
     const belopMatch = tekst.match(/([0-9]+[,.][0-9]{2})\s*(kr|NOK|EUR|USD)?/i);
-    const datoMatch = tekst.match(/(\d{2}\.\d{2}\.\d{4})/);
+    const datoMatch = tekst.match(/(\\d{2}[\\.\\/-]\\d{2}[\\.\\/-]\\d{4})/);
     const tittelMatch = tekst.split("\n").find((l) => l.length > 4);
 
     setBelop(belopMatch?.[1]?.replace(",", ".") || "");
@@ -43,7 +43,7 @@ export default function AutoUtfyllKvittering() {
   const lagreKvittering = async () => {
     if (!fil) return;
 
-    const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
+    const safeFilename = `${Date.now()}-${fil.name.replace(/\\s+/g, "-").replace(/[^\\w.-]/g, "")}`;
     const { error: uploadError } = await supabase.storage
       .from("dokumenter")
       .upload(`kvitteringer/${safeFilename}`, fil, { upsert: true });
