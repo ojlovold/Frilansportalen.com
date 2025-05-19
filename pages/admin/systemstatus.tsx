@@ -1,9 +1,11 @@
 // pages/admin/systemstatus.tsx
-import Head from 'next/head';
-import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import Head from "next/head";
+import TilbakeKnapp from "@/components/TilbakeKnapp";
+import AdminSystemstatus from "@/components/AdminSystemstatus";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
-type Integrasjon = {
+interface Integrasjon {
   id: string;
   aktiv: boolean;
   api_key?: string;
@@ -11,60 +13,44 @@ type Integrasjon = {
   client_secret?: string;
   orgnr?: string;
   sist_oppdatert?: string;
-};
+}
 
-export default function Systemstatus() {
+export default function SystemstatusSide() {
   const [data, setData] = useState<Integrasjon[]>([]);
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase.from('integrasjoner').select('*');
+      const { data } = await supabase.from("integrasjoner").select("*");
       if (data) setData(data);
     };
-
     hent();
   }, []);
 
   const erGyldig = (item: Integrasjon) =>
     item.api_key &&
-    (item.id !== 'altinn' || item.orgnr) &&
-    (item.id !== 'vipps' || (item.client_id && item.client_secret)) &&
+    (item.id !== "altinn" || item.orgnr) &&
+    (item.id !== "vipps" || (item.client_id && item.client_secret)) &&
     item.aktiv;
 
   return (
     <>
       <Head>
         <title>Systemstatus | Frilansportalen Admin</title>
-        <meta name="description" content="Se status på eksterne integrasjoner" />
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Systemstatus – Integrasjoner</h1>
+      <main className="min-h-screen bg-portalGul text-black p-6 max-w-6xl mx-auto">
+        <TilbakeKnapp />
+        <h1 className="text-3xl font-bold mb-6">Systemstatus</h1>
 
-        <div className="grid gap-4">
-          {data.map((item) => (
-            <div
-              key={item.id}
-              className={`p-4 rounded shadow ${
-                erGyldig(item) ? 'bg-green-100' : 'bg-red-100'
-              }`}
-            >
-              <p className="text-lg font-semibold capitalize">{item.id}</p>
-              <p>Status: {item.aktiv ? 'Aktiv' : 'Inaktiv'}</p>
-              <p>
-                Sist oppdatert:{' '}
-                {item.sist_oppdatert
-                  ? new Date(item.sist_oppdatert).toLocaleString('no-NO')
-                  : '–'}
-              </p>
-              <p className="text-sm text-gray-700">
-                {erGyldig(item)
-                  ? 'Integrasjon er klar til bruk.'
-                  : 'Manglende data – sjekk admin/innstillinger.'}
-              </p>
-            </div>
-          ))}
-        </div>
-      </main>
-    </>
-  );
-}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2">Modulstatus</h2>
+          <AdminSystemstatus />
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Integrasjoner</h2>
+          <div className="grid gap-4">
+            {data.map((item) => (
+              <div
+                key={item.id}
+                className={`p-4 rounded shadow ${
+                  erGyldig(item) ? 
