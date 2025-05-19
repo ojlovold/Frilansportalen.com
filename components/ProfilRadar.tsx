@@ -17,9 +17,15 @@ export default function ProfilRadar() {
 
   const hentRadar = async () => {
     setLoading(true);
-    const response = await getProfileReachData(user);
-    setProfilData(response);
-    setLoading(false);
+    try {
+      const response = await getProfileReachData(user);
+      setProfilData(response);
+    } catch (error) {
+      console.error("Feil ved henting av rekkeviddedata:", error);
+      setProfilData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
