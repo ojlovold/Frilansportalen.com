@@ -1,8 +1,7 @@
 // pages/admin/skjemaer.tsx
-import Head from 'next/head';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import AdminWrapper from '@/components/layout/AdminLayout';
+import AdminWrapper from '@/components/AdminWrapper';
 
 export default function AdminSkjemaer() {
   const [tittel, setTittel] = useState('');
