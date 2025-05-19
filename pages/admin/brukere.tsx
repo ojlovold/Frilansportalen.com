@@ -13,8 +13,9 @@ export default function AdminBrukerSide() {
       <Head>
         <title>Brukere og profiler | Frilansportalen</title>
       </Head>
-      <main className="min-h-screen bg-gray-100 p-6">
+      <main className="min-h-screen bg-portalGul text-black p-6">
         <TilbakeKnapp />
+        <h2 className="text-2xl font-bold mb-4">Brukere og profiler</h2>
         <AdminBrukere />
       </main>
     </>
