@@ -5,7 +5,6 @@ import {
   Settings,
   Users,
   ShieldCheck,
-  FileCog,
   Palette,
   Database,
 } from "lucide-react";
@@ -16,10 +15,15 @@ export default function AdminPanel() {
       <Head>
         <title>Adminpanel | Frilansportalen</title>
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8">
+      <main className="min-h-screen bg-yellow-300 text-black p-8">
         <h1 className="text-3xl font-bold mb-8">Adminpanel</h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        $1
+          <Link href="/admin/arv" legacyBehavior>
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
+              <ShieldCheck /> Arverett og eierskap
+            </a>
+          </Link>
           <Link href="/admin/brukere" legacyBehavior>
             <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
               <Users /> Brukere og profiler
@@ -33,11 +37,6 @@ export default function AdminPanel() {
           <Link href="/admin/systemstatus" legacyBehavior>
             <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
               <ShieldCheck /> Systemstatus
-            </a>
-          </Link>
-          <Link href="/admin/firmadokumenter" legacyBehavior>
-            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
-              <FileCog /> Firmadokumenter
             </a>
           </Link>
           <Link href="/admin/design" legacyBehavior>
