@@ -4,13 +4,14 @@ import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface Bruker {
   id: string;
   email: string;
   created_at: string;
-  rolle?: string;
-  status?: string;
+  rolle: string;
+  status: string;
 }
 
 export default function AdminBrukere() {
@@ -44,8 +45,24 @@ export default function AdminBrukere() {
     hentBrukere();
   }, []);
 
+  const oppdaterBruker = async (id: string, rolle: string, status: string) => {
+    const { error } = await supabase.from("brukerprofiler").upsert({
+      user_id: id,
+      rolle,
+      status,
+    });
+    if (!error) alert("Bruker oppdatert");
+    else alert("Feil ved oppdatering: " + error.message);
+  };
+
   const roller = ["frilanser", "arbeidsgiver", "privatperson"];
   const statuser = ["aktiv", "skjult", "ufullstendig"];
+
+  const handleChange = (index: number, key: "rolle" | "status", value: string) => {
+    const kopi = [...brukere];
+    (kopi[index] as any)[key] = value;
+    setBrukere(kopi);
+  };
 
   return (
     <div className="space-y-4">
@@ -66,7 +83,8 @@ export default function AdminBrukere() {
                   <Label htmlFor={`rolle-${index}`}>Rolle</Label>
                   <select
                     id={`rolle-${index}`}
-                    defaultValue={b.rolle}
+                    value={b.rolle}
+                    onChange={(e) => handleChange(index, "rolle", e.target.value)}
                     className="w-full border rounded px-2 py-1 text-sm"
                   >
                     {roller.map((r) => (
@@ -78,7 +96,8 @@ export default function AdminBrukere() {
                   <Label htmlFor={`status-${index}`}>Status</Label>
                   <select
                     id={`status-${index}`}
-                    defaultValue={b.status}
+                    value={b.status}
+                    onChange={(e) => handleChange(index, "status", e.target.value)}
                     className="w-full border rounded px-2 py-1 text-sm"
                   >
                     {statuser.map((s) => (
@@ -86,6 +105,9 @@ export default function AdminBrukere() {
                     ))}
                   </select>
                 </div>
+                <Button onClick={() => oppdaterBruker(b.id, b.rolle, b.status)}>
+                  Lagre endringer
+                </Button>
               </CardContent>
             </Card>
           ))}
