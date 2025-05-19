@@ -25,7 +25,7 @@ export default function AutoUtfyllBrukerKvittering() {
     const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
     const side = await pdf.getPage(1);
 
-    const scale = 2;
+    const scale = 3;
     const viewport = side.getViewport({ scale });
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d")!;
@@ -36,23 +36,31 @@ export default function AutoUtfyllBrukerKvittering() {
     return canvas;
   };
 
+  const kjørOCR = async (input: any, språk: string): Promise<string> => {
+    const result = await Tesseract.recognize(input, språk, {
+      logger: (m) => console.log(`[${språk}]`, m),
+    });
+    return (result as any)?.data?.text || "";
+  };
+
   const lesKvittering = async () => {
     if (!fil) return;
 
-    setStatus("Leser tekst på kvitteringen...");
-
+    setStatus("Leser kvittering...");
     let kilde: any = fil;
+
     if (fil.type === "application/pdf") {
-      const canvas = await pdfTilBilde(fil);
-      kilde = canvas;
+      kilde = await pdfTilBilde(fil);
     }
 
-    const result = await Tesseract.recognize(kilde, "nor", {
-      logger: (m) => console.log(m),
-    });
+    let tekst = await kjørOCR(kilde, "nor");
+    if (tekst.trim().length < 20) {
+      setStatus("Prøver engelsk gjenkjenning...");
+      tekst = await kjørOCR(kilde, "eng");
+    }
 
-    const tekst = (result as any)?.data?.text || "";
     setTekst(tekst);
+    console.log("Tekst fra kvittering:", tekst);
     setStatus("Tolker tekst...");
 
     const belopMatch = tekst.match(/([0-9]+[,.][0-9]{2})\s*(kr|NOK|EUR|USD)?/i);
