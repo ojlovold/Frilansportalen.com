@@ -67,24 +67,39 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   };
 
   const tolkTekstSmart = (tekst: string) => {
-    const linjer = tekst.toLowerCase().split("\n").map((l) => l.trim());
+    const linjer = tekst.toLowerCase().split("\n").map((l) => l.trim()).filter(Boolean);
+
     const tittel =
-      linjer.find((l) => l.includes("faktura") || l.includes("frilansportalen") || l.includes("domene")) ||
-      linjer.find((l) => l.length > 10) ||
-      "Kvittering";
-    const beløpslinje = linjer.find((l) =>
-      /(sum|total|beløp|inkl|betaling)/.test(l) && /[0-9]+[,.][0-9]{2}/.test(l)
+      linjer.find(
+        (l) =>
+          (l.includes("faktura") || l.includes("domene") || l.includes("frilansportalen")) &&
+          !l.includes("status") &&
+          !l.includes("last ned") &&
+          !l.includes("kopi")
+      ) || "Kvittering";
+
+    const beløpslinje = linjer.find(
+      (l) =>
+        /(total|sum|beløp|inkl|å betale|faktura)/.test(l) &&
+        /[0-9]+[,.][0-9]{2}/.test(l) &&
+        !l.includes("konto") &&
+        !l.includes("kid")
     );
     const beløpMatch = beløpslinje?.match(/([0-9\s]+[,.][0-9]{2})/);
     const beløp = beløpMatch?.[1]?.replace(/\s/g, "").replace(",", ".") || "";
-    const datolinje = linjer.find((l) =>
-      /(fakturadato|forfallsdato|dato)/.test(l) && /\d{2}[./-]\d{2}[./-]\d{4}/.test(l)
+
+    const datolinje = linjer.find(
+      (l) =>
+        /(fakturadato|forfallsdato|dato)/.test(l) &&
+        /\d{2}[./-]\d{2}[./-]\d{4}/.test(l)
     );
     const datoMatch = datolinje?.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
     const dato = datoMatch?.[1] || "";
+
     const valutalinje = linjer.find((l) => /(nok|eur|usd)/.test(l));
     const valutaMatch = valutalinje?.match(/(nok|eur|usd)/i);
     const valuta = valutaMatch?.[1]?.toUpperCase() || "NOK";
+
     return { tittel, beløp, dato, valuta };
   };
 
