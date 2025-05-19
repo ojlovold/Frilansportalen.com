@@ -1,7 +1,8 @@
 // pages/admin/firmadokumenter.tsx
 import Head from 'next/head';
 import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import TilbakeKnapp from '@/components/TilbakeKnapp';
 
 export default function AdminFirmadok() {
   const [firmaId, setFirmaId] = useState('');
@@ -30,9 +31,7 @@ export default function AdminFirmadok() {
         tittel,
         kategori,
         fil_url: urlData.publicUrl,
-        kun_for: brukere
-          ? brukere.split(',').map((id) => id.trim())
-          : null,
+        kun_for: brukere ? brukere.split(',').map((id) => id.trim()) : null,
       },
     ]);
 
@@ -52,10 +51,11 @@ export default function AdminFirmadok() {
         <title>Admin – Firmabibliotek | Frilansportalen</title>
         <meta name="description" content="Last opp interne firmadokumenter" />
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8">
+      <main className="min-h-screen bg-portalGul text-black p-8 max-w-3xl mx-auto">
+        <TilbakeKnapp />
         <h1 className="text-3xl font-bold mb-6">Last opp firmadokument</h1>
 
-        <div className="bg-white p-6 rounded-xl shadow max-w-xl">
+        <div className="bg-white p-6 rounded-xl shadow">
           <input
             type="text"
             placeholder="Firma-ID (f.eks. orgnr)"
