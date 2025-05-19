@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Palette,
   Database,
+  FileText,
 } from "lucide-react";
 
 export default function AdminPanel() {
@@ -15,15 +16,10 @@ export default function AdminPanel() {
       <Head>
         <title>Adminpanel | Frilansportalen</title>
       </Head>
-      <main className="min-h-screen bg-yellow-300 text-black p-8">
+      <main className="min-h-screen bg-portalGul text-black p-8">
         <h1 className="text-3xl font-bold mb-8">Adminpanel</h1>
 
-        $1
-          <Link href="/admin/arv" legacyBehavior>
-            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
-              <ShieldCheck /> Arverett og eierskap
-            </a>
-          </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <Link href="/admin/brukere" legacyBehavior>
             <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
               <Users /> Brukere og profiler
@@ -47,6 +43,16 @@ export default function AdminPanel() {
           <Link href="/admin/database" legacyBehavior>
             <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
               <Database /> Data og backup
+            </a>
+          </Link>
+          <Link href="/admin/arv" legacyBehavior>
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
+              <ShieldCheck /> Arverett og eierskap
+            </a>
+          </Link>
+          <Link href="/admin/regnskap" legacyBehavior>
+            <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4">
+              <FileText /> Regnskap og rapport
             </a>
           </Link>
         </div>
