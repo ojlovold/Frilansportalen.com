@@ -6,6 +6,7 @@ import AdminWrapper from "@/components/AdminWrapper";
 export default function AdminRegnskap() {
   const [inntekter, setInntekter] = useState<any[]>([]);
   const [sumInntekt, setSumInntekt] = useState<number>(0);
+  const [utgifter, setUtgifter] = useState<any[]>([]);
   const [utgift, setUtgift] = useState({
     tittel: "",
     belop: 0,
@@ -18,9 +19,11 @@ export default function AdminRegnskap() {
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase.from("transaksjoner").select("*");
-      setInntekter(data || []);
-      const sum = data?.reduce((acc, curr) => acc + (curr.belop || 0), 0) || 0;
+      const { data: inntekter } = await supabase.from("transaksjoner").select("*");
+      const { data: utgifter } = await supabase.from("admin_utgifter").select("*");
+      setInntekter(inntekter || []);
+      setUtgifter(utgifter || []);
+      const sum = inntekter?.reduce((acc, curr) => acc + (curr.belop || 0), 0) || 0;
       setSumInntekt(sum);
     };
     hent();
@@ -74,14 +77,36 @@ export default function AdminRegnskap() {
     }
   };
 
+  const slettUtgift = async (id: string) => {
+    await supabase.from("admin_utgifter").delete().eq("id", id);
+    setUtgifter((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  const lastNedUtgifterCSV = () => {
+    if (utgifter.length === 0) return;
+    const header = Object.keys(utgifter[0]).join(",");
+    const rows = utgifter.map((u) =>
+      Object.values(u).map((v) => `"${(v ?? "").toString().replaceAll("\"", '""')}"`).join(",")
+    );
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "utgifter.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const totalUtgiftNOK = utgifter.reduce((acc, u) => acc + (u.nok || 0), 0);
+  const netto = sumInntekt - totalUtgiftNOK;
+
   return (
     <AdminWrapper title="Regnskap og rapportering">
       <div className="space-y-8">
         <section>
           <h2 className="text-xl font-semibold mb-2">Inntekter</h2>
-          <p className="text-sm text-gray-700 mb-4">
-            Her vises dine inntekter fra portalen, inkludert betalinger via Stripe og Vipps.
-          </p>
+          <p className="text-sm text-gray-700 mb-4">Inntekter fra portalen (Stripe, Vipps)</p>
           <div className="bg-white p-4 rounded-xl shadow max-w-3xl">
             <p className="text-sm">Totalt: {sumInntekt.toFixed(2)} kr</p>
             <p className="text-sm">MVA (25%): {(sumInntekt * 0.25).toFixed(2)} kr</p>
@@ -95,58 +120,64 @@ export default function AdminRegnskap() {
 
         <section>
           <h2 className="text-xl font-semibold mb-2">Utgifter og kvitteringer</h2>
-          <p className="text-sm text-gray-700 mb-4">
-            Du kan laste opp kjøp i alle valutaer. Systemet vil automatisk hente valutakurs og regne ut NOK-verdi.
-          </p>
-          <div className="bg-white p-4 rounded-xl shadow max-w-3xl">
-            <form className="space-y-4" onSubmit={lastOppUtgift}>
-              <input
-                type="text"
-                placeholder="Tittel / beskrivelse"
-                value={utgift.tittel}
-                onChange={(e) => setUtgift({ ...utgift, tittel: e.target.value })}
-                className="w-full border rounded p-2"
-              />
-              <input
-                type="number"
-                step="any"
-                placeholder="Beløp"
-                value={utgift.belop}
-                onChange={(e) => setUtgift({ ...utgift, belop: parseFloat(e.target.value) })}
-                className="w-full border rounded p-2"
-              />
-              <input
-                type="text"
-                placeholder="Valuta (f.eks. EUR, USD, GBP)"
-                value={utgift.valuta}
-                onChange={(e) => setUtgift({ ...utgift, valuta: e.target.value })}
-                className="w-full border rounded p-2"
-              />
-              <input
-                type="date"
-                value={utgift.dato}
-                onChange={(e) => setUtgift({ ...utgift, dato: e.target.value })}
-                className="w-full border rounded p-2"
-              />
-              <input
-                type="file"
-                accept=".jpg,.png,.pdf"
-                onChange={(e) => setUtgift({ ...utgift, fil: e.target.files?.[0] || null })}
-                className="w-full"
-              />
-              <button
-                type="submit"
-                className="bg-black text-white px-4 py-2 rounded"
-              >
-                Last opp utgift
-              </button>
-              {status === "lagret" && (
-                <p className="text-green-600">Utgift lagret.</p>
-              )}
-              {status === "feil" && (
-                <p className="text-red-600">Feil ved lagring.</p>
-              )}
-            </form>
+          <form className="space-y-4 bg-white p-4 rounded-xl shadow max-w-3xl" onSubmit={lastOppUtgift}>
+            <input type="text" placeholder="Tittel" value={utgift.tittel} onChange={(e) => setUtgift({ ...utgift, tittel: e.target.value })} className="w-full border rounded p-2" />
+            <input type="number" step="any" placeholder="Beløp" value={utgift.belop} onChange={(e) => setUtgift({ ...utgift, belop: parseFloat(e.target.value) })} className="w-full border rounded p-2" />
+            <input type="text" placeholder="Valuta" value={utgift.valuta} onChange={(e) => setUtgift({ ...utgift, valuta: e.target.value })} className="w-full border rounded p-2" />
+            <input type="date" value={utgift.dato} onChange={(e) => setUtgift({ ...utgift, dato: e.target.value })} className="w-full border rounded p-2" />
+            <input type="file" accept=".jpg,.png,.pdf" onChange={(e) => setUtgift({ ...utgift, fil: e.target.files?.[0] || null })} className="w-full" />
+            <button type="submit" className="bg-black text-white px-4 py-2 rounded">Last opp utgift</button>
+            {status === "lagret" && <p className="text-green-600">Utgift lagret.</p>}
+            {status === "feil" && <p className="text-red-600">Feil ved lagring.</p>}
+          </form>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Oversikt</h2>
+          <div className="bg-white p-4 rounded-xl shadow max-w-3xl space-y-2">
+            <p className="text-sm">Totale utgifter: {totalUtgiftNOK.toFixed(2)} kr</p>
+            <p className="text-sm">Netto resultat: {netto.toFixed(2)} kr</p>
+            <button onClick={lastNedUtgifterCSV} className="text-sm bg-black text-white px-3 py-1 rounded mt-2">Last ned CSV</button>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Utgiftshistorikk</h2>
+          <div className="overflow-auto max-w-6xl">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Dato</th>
+                  <th className="text-left p-2">Tittel</th>
+                  <th className="text-left p-2">Beløp</th>
+                  <th className="text-left p-2">Valuta</th>
+                  <th className="text-left p-2">NOK</th>
+                  <th className="text-left p-2">Kvittering</th>
+                  <th className="text-left p-2">Handling</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utgifter.map((u) => (
+                  <tr key={u.id} className="border-b">
+                    <td className="p-2">{u.dato}</td>
+                    <td className="p-2">{u.tittel}</td>
+                    <td className="p-2">{u.belop}</td>
+                    <td className="p-2">{u.valuta}</td>
+                    <td className="p-2">{u.nok.toFixed(2)}</td>
+                    <td className="p-2">
+                      {u.fil_url ? (
+                        <a href={u.fil_url} target="_blank" className="text-blue-600 underline">Vis</a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="p-2">
+                      <button onClick={() => slettUtgift(u.id)} className="text-red-600 hover:underline">Slett</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
