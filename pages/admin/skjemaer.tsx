@@ -1,7 +1,7 @@
-// pages/admin/skjemaer.tsx
 import Head from 'next/head';
 import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import TilbakeKnapp from '@/components/TilbakeKnapp';
 
 export default function AdminSkjemaer() {
   const [tittel, setTittel] = useState('');
@@ -45,10 +45,11 @@ export default function AdminSkjemaer() {
         <title>Admin – Skjemaer | Frilansportalen</title>
         <meta name="description" content="Last opp nye skjemaer til skjemabanken" />
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8">
+      <main className="min-h-screen bg-portalGul text-black p-8 max-w-3xl mx-auto">
+        <TilbakeKnapp />
         <h1 className="text-3xl font-bold mb-6">Last opp nytt skjema</h1>
 
-        <div className="bg-white p-6 rounded-xl shadow max-w-xl">
+        <div className="bg-white p-6 rounded-xl shadow">
           <input
             type="text"
             placeholder="Tittel på skjema"
