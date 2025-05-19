@@ -53,4 +53,27 @@ export default function SystemstatusSide() {
               <div
                 key={item.id}
                 className={`p-4 rounded shadow ${
-                  erGyldig(item) ? 
+                  erGyldig(item) ? "bg-green-100" : "bg-red-100"
+                }`}
+              >
+                <p className="text-lg font-semibold capitalize">{item.id}</p>
+                <p>Status: {item.aktiv ? "Aktiv" : "Inaktiv"}</p>
+                <p>
+                  Sist oppdatert:{" "}
+                  {item.sist_oppdatert
+                    ? new Date(item.sist_oppdatert).toLocaleString("no-NO")
+                    : "–"}
+                </p>
+                <p className="text-sm text-gray-700">
+                  {erGyldig(item)
+                    ? "Integrasjon er klar til bruk."
+                    : "Manglende data – sjekk admin/innstillinger."}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
