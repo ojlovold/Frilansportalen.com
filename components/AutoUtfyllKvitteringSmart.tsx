@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function AutoUtfyllKvitteringSmart() {
+export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
@@ -20,13 +20,18 @@ export default function AutoUtfyllKvitteringSmart() {
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
 
-  const hentTekstFraPDF = async (pdfFile: File): Promise<string> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    const side = await pdf.getPage(1);
-    const tekstinnhold = await side.getTextContent();
-    const linjer = tekstinnhold.items.map((item: any) => item.str);
-    return linjer.join("\n");
+  const forbedreKontrast = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext("2d")!;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const r = imgData.data[i];
+      const g = imgData.data[i + 1];
+      const b = imgData.data[i + 2];
+      const brightness = 0.34 * r + 0.5 * g + 0.16 * b;
+      const high = brightness > 128 ? 255 : 0;
+      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = high;
+    }
+    ctx.putImageData(imgData, 0, 0);
   };
 
   const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
@@ -40,41 +45,46 @@ export default function AutoUtfyllKvitteringSmart() {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await side.render({ canvasContext: context, viewport }).promise;
+    forbedreKontrast(canvas);
     return canvas;
   };
 
-  const kjørOCR = async (input: any): Promise<string> => {
-    const result = await Tesseract.recognize(input, "nor", {
-      logger: (m) => console.log("[OCR]", m),
+  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
+    return await new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(fil);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
     });
-    return (result as any)?.data?.text || "";
   };
 
   const lesKvittering = async () => {
     if (!fil) return;
+    setStatus("Leser kvittering...");
 
-    setStatus("Analyserer kvittering...");
-    let tekst = "";
+    let canvas: HTMLCanvasElement;
 
     if (fil.type === "application/pdf") {
-      // Først: Prøv tekstuttrekk
-      tekst = await hentTekstFraPDF(fil);
-      if (tekst.trim().length < 20) {
-        setStatus("Fant lite tekst – prøver bildebasert OCR...");
-        const bilde = await pdfTilBilde(fil);
-        tekst = await kjørOCR(bilde);
-      } else {
-        setStatus("PDF-tekst hentet.");
-      }
+      canvas = await pdfTilBilde(fil);
     } else {
-      // Vanlig bilde → OCR
-      tekst = await kjørOCR(fil);
-      setStatus("Tekst hentet fra bilde.");
+      canvas = await bildeTilCanvas(fil);
     }
 
+    const result = await Tesseract.recognize(canvas, "nor", {
+      logger: (m) => console.log("[OCR]", m),
+    });
+
+    const tekst = (result as any)?.data?.text || "";
     setTekst(tekst);
-    console.log("Tekst fra kvittering:", tekst);
-    setStatus("Tolker innhold...");
+    console.log("OCR-tekst:", tekst);
+    setStatus("Tolker tekst...");
 
     const belopMatch = tekst.match(/([0-9\s]+[,.][0-9]{2})\s*(kr|NOK|EUR|USD)?/i);
     const datoMatch = tekst.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
@@ -84,16 +94,18 @@ export default function AutoUtfyllKvitteringSmart() {
     setValuta(belopMatch?.[2]?.toUpperCase() || "NOK");
     setDato(datoMatch?.[1] || "");
     setTittel(tittelMatch?.trim() || "");
-    setStatus("Utfylt. Klar til innsending.");
+    setStatus("Utfylt. Klar til lagring.");
   };
 
   const lagreKvittering = async () => {
     if (!fil) return;
-
     const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
+    const folder = rolle === "admin" ? "admin" : "bruker";
+    const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
+
     const { error: uploadError } = await supabase.storage
       .from("dokumenter")
-      .upload(`kvitteringer/${safeFilename}`, fil, { upsert: true });
+      .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
 
     if (uploadError) {
       setStatus("Feil ved opplasting.");
@@ -102,9 +114,9 @@ export default function AutoUtfyllKvitteringSmart() {
 
     const { data: urlData } = supabase.storage
       .from("dokumenter")
-      .getPublicUrl(`kvitteringer/${safeFilename}`);
+      .getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
 
-    const { error } = await supabase.from("admin_utgifter").insert([
+    const { error } = await supabase.from(tabell).insert([
       {
         tittel,
         belop: parseFloat(belop),
@@ -120,7 +132,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Smart kvitteringsopplasting (PDF og bilde)</h2>
+      <h2 className="text-xl font-semibold">Smart kvitteringsopplasting</h2>
 
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les og utfyll</button>
@@ -133,7 +145,7 @@ export default function AutoUtfyllKvitteringSmart() {
       </div>
 
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
-        Lagre i regnskap
+        Lagre kvittering
       </button>
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
