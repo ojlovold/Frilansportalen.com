@@ -13,7 +13,7 @@ export default function AdminDesign() {
       <Head>
         <title>Design og konfigurasjon | Frilansportalen</title>
       </Head>
-      <main className="min-h-screen bg-gray-100 p-6">
+      <main className="min-h-screen bg-portalGul text-black p-6">
         <TilbakeKnapp />
         <h2 className="text-2xl font-bold mb-4">Design, farger og logo</h2>
         <AdminDashboard />
