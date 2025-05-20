@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -78,7 +77,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    for (const linje av linjer) {
+    for (const linje of linjer) {
       if (linje.includes("total") && linje.includes("kr")) {
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
@@ -111,7 +110,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (nøyaktig)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (presisjon)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
