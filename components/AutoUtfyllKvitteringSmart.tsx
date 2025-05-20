@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -76,24 +75,65 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return text;
   };
 
-  const tolkTekstSmart = (tekst: string) => {
-    const linjer = tekst.toLowerCase().split("\n").map((l) => l.trim()).filter(Boolean);
+  const parseBelop = (tekst: string) => {
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    const kandidater: number[] = [];
 
-    const tittelKandidater = linjer.filter(
-      (l) =>
-        (l.includes("frilansportalen") || l.includes("domene") || l.includes("as") || l.includes("faktura")) &&
-        !l.includes("status") &&
-        !l.includes("kopi") &&
-        !l.includes("last ned")
-    );
-
-    const belopKandidater = linjer
-      .filter((l) =>
-        /(kr|beløp|sum|total|faktura|å betale|inkl)/.test(l) &&
+    for (const l of linjer) {
+      if (
+        /(kr|total|sum|beløp|faktura|å betale|inkl)/.test(l) &&
         !/(konto|kid|iban)/.test(l)
-      )
-      .map((l) => {
-        const match = l.match(/kr\s*([\d\s.,]+)/i);
-        if (!match) return null;
-        return match[1]
-          .replace(/[^
+      ) {
+        const krIndex = l.indexOf("kr");
+        if (krIndex === -1) continue;
+        const etterKr = l.slice(krIndex + 2).trim();
+        const renset = etterKr.replace(/[^0-9,.-]/g, "").replace(/\./g, "").replace(",", ".");
+        const tall = parseFloat(renset);
+        if (!isNaN(tall)) kandidater.push(tall);
+      }
+    }
+
+    return kandidater.sort((a, b) => b - a)[0]?.toFixed(2) || "";
+  };
+
+  const lesKvittering = async () => {
+    if (!fil) return;
+    setStatus("Leser kvittering...");
+    let canvas;
+    if (fil.type === "application/pdf") {
+      canvas = await pdfTilBilde(fil);
+    } else {
+      canvas = await bildeTilCanvas(fil);
+    }
+
+    const text = await kjørOCR(canvas);
+    setTekst(text);
+    setBelop(parseBelop(text));
+    setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
+  };
+
+  return (
+    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (tanks)</h2>
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
+
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
+        {tekst || "Ingen tekst funnet."}
+      </pre>
+
+      <div className="space-y-2">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+      </div>
+
+      <button className="bg-green-600 text-white px-3 py-2 rounded">
+        Lagre kvittering
+      </button>
+
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+    </div>
+  );
+}
