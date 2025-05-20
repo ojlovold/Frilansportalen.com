@@ -81,25 +81,27 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const hentBelop = (tekst: string): string[] => {
     const linjer = tekst.toLowerCase().split("\n");
-    const belopRegex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9\s.,-]+)/gi;
+    const belopRegex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9\s.,\-–]+)/gi;
 
     const prioriterte = linjer.filter(linje =>
-      /(total|å betale|beløp|sum).*(kr|nok|\d)/.test(linje) &&
+      /(total|sum|beløp|å betale).*(kr|nok|\d)/.test(linje) &&
       !/(mva|avgift)/.test(linje)
     );
 
     const funn = prioriterte.flatMap((linje) =>
       Array.from(linje.matchAll(belopRegex)).map((m) => {
-        let raw = m[1].replace(/[^\d.,]/g, "").trim();
-        raw = raw.replace(/\.(?=\d{3})/g, ""); // fjerner tusenskillepunktum
-        raw = raw.replace(",", "."); // gjør komma om til punktum
+        let raw = m[1]
+          .replace(/[^0-9.,]/g, "")        // fjerner bindestrek og rom
+          .replace(/\.(?=\d{3})/g, "")     // fjerner tusenskillepunktum
+          .replace(",", ".")              // gjør komma til punktum
+          .replace(/\.{2,}/g, ".");       // fjerner doble punktum
         return raw;
       })
     );
 
     const tall = funn
-      .map((b) => parseFloat(b))
-      .filter((n) => n >= 20 && n < 1000000)
+      .map((s) => parseFloat(s))
+      .filter((n) => !isNaN(n) && n >= 20 && n < 1000000)
       .sort((a, b) => b - a);
 
     return Array.from(new Set(tall.map((n) => n.toFixed(2)))).slice(0, 5);
