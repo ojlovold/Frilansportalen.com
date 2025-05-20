@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
+import { v4 as uuidv4 } from "uuid";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -23,14 +24,18 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const r = imgData.data[i];
-      const g = imgData.data[i + 1];
-      const b = imgData.data[i + 2];
+    const data = imgData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
       const brightness = 0.34 * r + 0.5 * g + 0.16 * b;
-      const high = brightness > 128 ? 255 : 0;
-      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = high;
+      const inverted = 255 - brightness;
+      const high = inverted > 128 ? 255 : 0;
+      data[i] = data[i + 1] = data[i + 2] = high;
     }
+
     ctx.putImageData(imgData, 0, 0);
   };
 
@@ -38,7 +43,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const buffer = await pdfFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     const page = await pdf.getPage(1);
-    const scale = 3;
+    const scale = 4;
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d")!;
@@ -65,13 +70,17 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     });
   };
 
-  const kjørOCR = async (input: any): Promise<string> => {
-    let result = await Tesseract.recognize(input, "nor", { logger: () => {} });
-    let text = (result as any)?.data?.text || "";
+  const kjørOCR = async (input: HTMLCanvasElement): Promise<string> => {
+    const forsøk = async (lang: string) => {
+      const result = await Tesseract.recognize(input, lang, { logger: () => {} });
+      return (result as any)?.data?.text || "";
+    };
+
+    let text = await forsøk("nor+eng");
     if (text.trim().length < 10) {
-      result = await Tesseract.recognize(input, "eng", { logger: () => {} });
-      text = (result as any)?.data?.text || "";
+      text = await forsøk("osd+eng+nor");
     }
+
     return text;
   };
 
@@ -122,17 +131,71 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (!fil) return;
     setStatus("Leser kvittering...");
     let canvas;
-    if (fil.type === "application/pdf") {
-      canvas = await pdfTilBilde(fil);
-    } else {
-      canvas = await bildeTilCanvas(fil);
+    try {
+      if (fil.type === "application/pdf") {
+        canvas = await pdfTilBilde(fil);
+      } else {
+        canvas = await bildeTilCanvas(fil);
+      }
+      const text = await kjørOCR(canvas);
+      setTekst(text);
+      setBelop(finnTotalbelop(text));
+      setDato(finnDato(text));
+      setTittel(finnTittel(text));
+      setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
+    } catch (err) {
+      setStatus("Kunne ikke lese kvittering. Sjekk filtype eller kontrast.");
+      console.error(err);
     }
-    const text = await kjørOCR(canvas);
-    setTekst(text);
-    setBelop(finnTotalbelop(text));
-    setDato(finnDato(text));
-    setTittel(finnTittel(text));
-    setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
+  };
+
+  const lagreKvittering = async () => {
+    if (!fil || !tittel || !belop || !valuta || !dato) {
+      setStatus("Fyll ut alle feltene og velg fil.");
+      return;
+    }
+
+    setStatus("Lagrer kvittering...");
+
+    const filnavn = `${uuidv4()}_${fil.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("kvitteringer")
+      .upload(filnavn, fil);
+
+    if (uploadError) {
+      console.error(uploadError);
+      setStatus("Kunne ikke laste opp filen.");
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("kvitteringer")
+      .getPublicUrl(filnavn);
+    const fil_url = urlData?.publicUrl || "";
+
+    const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
+    const { error } = await supabase.from(tabell).insert([
+      {
+        tittel,
+        belop: parseFloat(belop),
+        valuta,
+        dato,
+        tekst,
+        fil_url,
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      setStatus("Feil ved lagring: " + error.message);
+    } else {
+      setStatus("Kvittering lagret.");
+      setTittel("");
+      setBelop("");
+      setDato("");
+      setTekst("");
+      setFil(null);
+    }
   };
 
   return (
@@ -152,7 +215,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
-      <button className="bg-green-600 text-white px-3 py-2 rounded">
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
         Lagre kvittering
       </button>
 
