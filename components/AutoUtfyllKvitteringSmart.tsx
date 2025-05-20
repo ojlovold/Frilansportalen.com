@@ -82,19 +82,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     );
 
     const belopKandidater = linjer
-      .filter(
-        (l) =>
-          /(sum|total|beløp|inkl|å betale|faktura)/.test(l) &&
-          /[0-9]+[,.][0-9]{2}/.test(l) &&
-          !l.includes("konto") &&
-          !l.includes("kid") &&
-          !l.includes("iban")
+      .filter((l) =>
+        /(kr|beløp|sum|total|å betale|faktura|inkl)/.test(l) &&
+        /[0-9]+[.,\s][0-9]{2}/.test(l) &&
+        !/(konto|kid|iban)/.test(l)
       )
-      .map((l) => {
-        const match = l.match(/([0-9\s]+[,.][0-9]{2})/);
-        return match?.[1]?.replace(/\s/g, "").replace(",", ".") || null;
+      .flatMap((l) => {
+        const matches = [...l.matchAll(/([0-9\s]+[.,][0-9]{2})/g)];
+        return matches.map((m) => m[1]
+          .replace(/\s/g, "")
+          .replace(",", ".")
+          .replace("-,", "")
+        );
       })
-      .filter((b): b is string => b !== null);
+      .map((v) => parseFloat(v))
+      .filter((v) => !isNaN(v) && v > 0)
+      .sort((a, b) => b - a)
+      .map((v) => v.toFixed(2));
 
     const datoKandidater = linjer
       .filter((l) => /(fakturadato|forfallsdato|dato)/.test(l) && /\d{2}[./-]\d{2}[./-]\d{4}/.test(l))
