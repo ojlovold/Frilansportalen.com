@@ -11,15 +11,71 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+type KvitteringsTolkning = {
+  belop: string;
+  valuta: string;
+  dato: string;
+  originalLinje: string;
+};
+
+function tolkKvitteringsdataFraTekst(tekst: string): KvitteringsTolkning | null {
+  const linjer = tekst.toLowerCase().split("\n");
+
+  const valutaRegex = /(kr|nok|\$|usd|eur|€)/i;
+  const belopRegex = /([0-9\s.,\-–]+)/;
+  const datoRegex = /\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/;
+  const ignorert = /(faktura|kid|org\.?|kundenummer|iban|swift|konto|referanse|nummer)/;
+
+  let valgt: { belop: string; valuta: string; linje: string } | null = null;
+
+  for (const linje of linjer) {
+    if (!valutaRegex.test(linje)) continue;
+    if (ignorert.test(linje)) continue;
+    if (!/(total|sum|amount|beløp|subtotal|å betale|paid)/.test(linje)) continue;
+
+    const valutaMatch = linje.match(valutaRegex);
+    const belopMatch = linje.match(belopRegex);
+
+    if (valutaMatch && belopMatch) {
+      let raw = belopMatch[1]
+        .replace(/[^\d.,]/g, "")
+        .replace(/\.(?=\d{3})/g, "")
+        .replace(",", ".")
+        .replace(/\.{2,}/g, ".")
+        .trim();
+      const parsed = parseFloat(raw);
+      if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
+        valgt = {
+          belop: parsed.toFixed(2),
+          valuta: valutaMatch[1].toUpperCase().replace("KR", "NOK").replace("€", "EUR"),
+          linje,
+        };
+      }
+    }
+  }
+
+  const datoMatch = tekst.match(datoRegex);
+  const dato = datoMatch
+    ? `${datoMatch[3].length === 2 ? "20" + datoMatch[3] : datoMatch[3]}-${datoMatch[2].padStart(2, "0")}-${datoMatch[1].padStart(2, "0")}`
+    : new Date().toISOString().slice(0, 10);
+
+  if (!valgt) return null;
+
+  return {
+    belop: valgt.belop,
+    valuta: valgt.valuta,
+    dato,
+    originalLinje: valgt.linje,
+  };
+}
+
 export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
   const [belop, setBelop] = useState("");
-  const [belopListe, setBelopListe] = useState<string[]>([]);
   const [valuta, setValuta] = useState("NOK");
   const [dato, setDato] = useState("");
-  const [datoListe, setDatoListe] = useState<string[]>([]);
   const [status, setStatus] = useState("");
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
@@ -68,72 +124,24 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return tekst;
   };
 
-  const hentDatoer = (tekst: string): string[] => {
-    const regex = /\b(\d{2}[./-]\d{2}[./-]\d{2,4})\b/g;
-    const kandidater = Array.from(tekst.matchAll(regex)).map((m) => m[1].replace(/[/-]/g, "."));
-    return Array.from(new Set(kandidater.filter((dato) => {
-      const deler = dato.split(".").map(Number);
-      if (deler.length !== 3) return false;
-      const [dd, mm, yyyy] = deler;
-      return dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900;
-    })));
-  };
-
-  const hentBelop = (tekst: string): string[] => {
-    const linjer = tekst.toLowerCase().split("\n");
-    const belopRegex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9\s.,\-–]+)/gi;
-
-    const prioriterte = linjer.filter(linje =>
-      /(total|sum|beløp|å betale|faktura).*(kr|nok|\d)/.test(linje) &&
-      !/(mva|avgift)/.test(linje)
-    );
-
-    const funn = prioriterte.flatMap((linje) =>
-      Array.from(linje.matchAll(belopRegex)).map((m) => {
-        let raw = m[1]
-          .replace(/[^\d.,]/g, "")        // Fjern ALT unntatt tall og desimal
-          .replace(/\.(?=\d{3})/g, "")    // Fjern punktum tusenskille
-          .replace(",", ".")             // Gjør komma til punktum
-          .replace(/\.{2,}/g, ".");      // Rydd doble punktum
-        return raw;
-      })
-    );
-
-    const tall = funn
-      .map((b) => parseFloat(b))
-      .filter((n) => !isNaN(n) && n >= 20 && n < 1000000)
-      .sort((a, b) => b - a);
-
-    return Array.from(new Set(tall.map((n) => n.toFixed(2)))).slice(0, 5);
-  };
-
-  const parseDato = (datoStr: string) => {
-    const parts = datoStr.split(".");
-    if (parts.length === 3) {
-      const [dd, mm, yyyy] = parts;
-      return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-    }
-    return datoStr;
-  };
-
   const lesKvittering = async () => {
-    if (!fil) return setStatus("Ingen fil valgt.");
+    if (!fil) return;
     setStatus("Leser kvittering …");
     const canvas = fil.type === "application/pdf"
       ? await pdfTilCanvas(fil)
       : await bildeTilCanvas(fil);
-    if (!canvas) return setStatus("Kunne ikke generere bilde fra fil.");
     const tekst = await kjørOCR(canvas);
-    if (!tekst || tekst.length < 5) return setStatus("Ingen lesbar tekst funnet.");
     setTekst(tekst);
     setTittel(tekst.split("\n")[0]?.trim() || "");
-    const datoer = hentDatoer(tekst);
-    setDatoListe(datoer);
-    if (datoer.length === 1) setDato(datoer[0]);
-    const belop = hentBelop(tekst);
-    setBelopListe(belop);
-    if (belop.length === 1) setBelop(belop[0]);
-    setStatus("Tekst hentet. Velg riktige verdier eller rediger.");
+
+    const tolkning = tolkKvitteringsdataFraTekst(tekst);
+    if (tolkning) {
+      setBelop(tolkning.belop);
+      setValuta(tolkning.valuta);
+      setDato(tolkning.dato);
+    }
+
+    setStatus("Tekst hentet. Verdier er automatisk fylt ut.");
   };
 
   const lagreKvittering = async () => {
@@ -147,28 +155,31 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const bruker_id = userData?.user?.id;
     if (userError || !bruker_id) return setStatus("Klarte ikke hente bruker-ID.");
 
-    const payload: any = {
-      tittel,
-      belop: parseFloat(belop),
-      valuta,
-      dato: parseDato(dato),
-      tekst,
-      fil_url,
-    };
-    if (rolle === "bruker") payload.bruker_id = bruker_id;
+    let konvertertBelop = parseFloat(belop);
+    let endeligValuta = valuta;
 
     if (valuta !== "NOK") {
       try {
-        const res = await fetch(`https://api.exchangerate.host/latest?base=${valuta}&symbols=NOK`);
+        const res = await fetch(`https://api.exchangerate.host/${dato}?base=${valuta}&symbols=NOK`);
         const data = await res.json();
         if (data?.rates?.NOK) {
-          payload.belop = (payload.belop * data.rates.NOK).toFixed(2);
-          payload.valuta = "NOK";
+          konvertertBelop = parseFloat((konvertertBelop * data.rates.NOK).toFixed(2));
+          endeligValuta = "NOK";
         }
       } catch {
         console.warn("Valutaomregning feilet");
       }
     }
+
+    const payload: any = {
+      tittel,
+      belop: konvertertBelop,
+      valuta: endeligValuta,
+      dato,
+      tekst,
+      fil_url,
+    };
+    if (rolle === "bruker") payload.bruker_id = bruker_id;
 
     const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
     const { error } = await supabase.from(tabell).insert([payload]);
@@ -184,23 +195,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
       <div className="space-y-2">
         <input value={tittel} onChange={(e) => setTittel(e.target.value)} placeholder="Tittel" className="w-full p-2 border rounded" />
-        {belopListe.length > 1 ? (
-          <select value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded">
-            <option value="">Velg beløp</option>
-            {belopListe.map((b, i) => <option key={i} value={b}>{b}</option>)}
-          </select>
-        ) : (
-          <input value={belop} onChange={(e) => setBelop(e.target.value)} placeholder="Beløp" className="w-full p-2 border rounded" />
-        )}
+        <input value={belop} onChange={(e) => setBelop(e.target.value)} placeholder="Beløp" className="w-full p-2 border rounded" />
         <input value={valuta} onChange={(e) => setValuta(e.target.value.toUpperCase())} placeholder="Valuta" className="w-full p-2 border rounded" />
-        {datoListe.length > 1 ? (
-          <select value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded">
-            <option value="">Velg dato</option>
-            {datoListe.map((d, i) => <option key={i} value={d}>{d}</option>)}
-          </select>
-        ) : (
-          <input value={dato} onChange={(e) => setDato(e.target.value)} placeholder="Dato (dd.mm.yyyy)" className="w-full p-2 border rounded" />
-        )}
+        <input value={dato} onChange={(e) => setDato(e.target.value)} placeholder="Dato (yyyy-mm-dd)" className="w-full p-2 border rounded" />
       </div>
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">Lagre kvittering</button>
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
