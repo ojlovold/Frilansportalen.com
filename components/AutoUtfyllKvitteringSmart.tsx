@@ -72,21 +72,29 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const tittel =
       linjer.find(
         (l) =>
-          (l.includes("faktura") || l.includes("domene") || l.includes("frilansportalen")) &&
+          (l.includes("frilansportalen") || l.includes("domene") || l.includes("as") || l.includes("faktura")) &&
           !l.includes("status") &&
-          !l.includes("last ned") &&
-          !l.includes("kopi")
+          !l.includes("kopi") &&
+          !l.includes("last ned")
       ) || "Kvittering";
 
-    const beløpslinje = linjer.find(
-      (l) =>
-        /(total|sum|beløp|inkl|å betale|faktura)/.test(l) &&
-        /[0-9]+[,.][0-9]{2}/.test(l) &&
-        !l.includes("konto") &&
-        !l.includes("kid")
-    );
-    const beløpMatch = beløpslinje?.match(/([0-9\s]+[,.][0-9]{2})/);
-    const beløp = beløpMatch?.[1]?.replace(/\s/g, "").replace(",", ".") || "";
+    const beløpKandidater = linjer
+      .filter(
+        (l) =>
+          /(sum|total|beløp|inkl|å betale|faktura)/.test(l) &&
+          /[0-9]+[,.][0-9]{2}/.test(l) &&
+          !l.includes("konto") &&
+          !l.includes("kid") &&
+          !l.includes("iban")
+      )
+      .map((l) => {
+        const match = l.match(/([0-9\s]+[,.][0-9]{2})/);
+        const beløp = match?.[1]?.replace(/\s/g, "").replace(",", ".");
+        return beløp ? parseFloat(beløp) : null;
+      })
+      .filter((b): b is number => b !== null);
+
+    const beløp = beløpKandidater.length > 0 ? Math.max(...beløpKandidater).toFixed(2) : "";
 
     const datolinje = linjer.find(
       (l) =>
