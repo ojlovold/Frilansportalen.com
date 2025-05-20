@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+import * as pdfjsLib from "pdfjs-dist/webpack";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
@@ -27,17 +26,16 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
     for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      const brightness = 0.34 * r + 0.5 * g + 0.16 * b;
-      const inverted = 255 - brightness;
-      const high = inverted > 128 ? 255 : 0;
+      const brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+      const high = brightness > 128 ? 255 : 0;
       data[i] = data[i + 1] = data[i + 2] = high;
     }
     ctx.putImageData(imgData, 0, 0);
   };
 
   const pdfTilCanvas = async (file: File) => {
-    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 4 });
     const canvas = document.createElement("canvas");
@@ -48,18 +46,19 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return canvas;
   };
 
-  const bildeTilCanvas = async (file: File) => new Promise<HTMLCanvasElement>((resolve) => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0);
-      forbedreKontrast(canvas);
-      resolve(canvas);
-    };
-  });
+  const bildeTilCanvas = async (file: File) =>
+    new Promise<HTMLCanvasElement>((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
+    });
 
   const kjørOCR = async (canvas: HTMLCanvasElement) => {
     const forsøk = async (lang: string) => (await Tesseract.recognize(canvas, lang)).data.text || "";
@@ -71,30 +70,24 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const hentDatoer = (tekst: string): string[] => {
     const regex = /\b(\d{2}[./-]\d{2}[./-]\d{2,4})\b/g;
     const kandidater = Array.from(tekst.matchAll(regex)).map((m) => m[1].replace(/[/-]/g, "."));
-    return Array.from(new Set(
-      kandidater.filter((dato) => {
-        const deler = dato.split(".").map(Number);
-        if (deler.length !== 3) return false;
-        const [dd, mm, yyyy] = deler;
-        if (!dd || !mm || !yyyy) return false;
-        if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return false;
-        if (yyyy < 1900) return false;
-        return true;
-      })
-    ));
+    return Array.from(new Set(kandidater.filter((dato) => {
+      const deler = dato.split(".").map(Number);
+      if (deler.length !== 3) return false;
+      const [dd, mm, yyyy] = deler;
+      return dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900;
+    })));
   };
 
   const hentBelop = (tekst: string): string[] => {
     const linjer = tekst.toLowerCase().split("\n");
     const belopRegex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/gi;
-
-    const funn = linjer.flatMap((linje) => {
-      if (!/(kr|bel\u00f8p|total|sum|mva)/.test(linje)) return [];
-      return Array.from(linje.matchAll(belopRegex)).map((m) =>
-        m[1].replace(/[^0-9,\.]/g, "").replace(/\./g, "").replace(",", ".").trim()
-      );
-    });
-
+    const funn = linjer.flatMap((linje) =>
+      /(kr|beløp|total|sum|mva)/.test(linje)
+        ? Array.from(linje.matchAll(belopRegex)).map((m) =>
+            m[1].replace(/[^0-9,\.]/g, "").replace(/\./g, "").replace(",", ".").trim()
+          )
+        : []
+    );
     return Array.from(
       new Set(
         funn
@@ -105,11 +98,24 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     );
   };
 
+  const parseDato = (datoStr: string) => {
+    const parts = datoStr.split(".");
+    if (parts.length === 3) {
+      const [dd, mm, yyyy] = parts;
+      return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    }
+    return datoStr;
+  };
+
   const lesKvittering = async () => {
-    if (!fil) return;
+    if (!fil) return setStatus("Ingen fil valgt.");
     setStatus("Leser kvittering …");
-    const canvas = fil.type === "application/pdf" ? await pdfTilCanvas(fil) : await bildeTilCanvas(fil);
+    const canvas = fil.type === "application/pdf"
+      ? await pdfTilCanvas(fil)
+      : await bildeTilCanvas(fil);
+    if (!canvas) return setStatus("Kunne ikke generere bilde fra fil.");
     const tekst = await kjørOCR(canvas);
+    if (!tekst || tekst.length < 5) return setStatus("Ingen lesbar tekst funnet.");
     setTekst(tekst);
     setTittel(tekst.split("\n")[0]?.trim() || "");
     const datoer = hentDatoer(tekst);
@@ -128,17 +134,34 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (uploadError) return setStatus("Feil ved opplasting av fil.");
     const { data: urlData } = supabase.storage.from("kvitteringer").getPublicUrl(filnavn);
     const fil_url = urlData?.publicUrl || "";
-    const { data: userData } = await supabase.auth.getUser();
-    const bruker_id = userData?.user?.id || null;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const bruker_id = userData?.user?.id;
+    if (userError || !bruker_id) return setStatus("Klarte ikke hente bruker-ID.");
+
     const payload: any = {
       tittel,
       belop: parseFloat(belop),
       valuta,
-      dato,
+      dato: parseDato(dato),
       tekst,
       fil_url,
     };
     if (rolle === "bruker") payload.bruker_id = bruker_id;
+
+    // Valutaomregning til NOK
+    if (valuta !== "NOK") {
+      try {
+        const res = await fetch(`https://api.exchangerate.host/latest?base=${valuta}&symbols=NOK`);
+        const data = await res.json();
+        if (data?.rates?.NOK) {
+          payload.belop = (payload.belop * data.rates.NOK).toFixed(2);
+          payload.valuta = "NOK";
+        }
+      } catch {
+        console.warn("Valutaomregning feilet");
+      }
+    }
+
     const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
     const { error } = await supabase.from(tabell).insert([payload]);
     if (error) return setStatus("Feil ved lagring: " + error.message);
