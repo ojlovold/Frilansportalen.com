@@ -3,7 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { v4 as uuidv4 } from "uuid";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -157,7 +156,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     setStatus("Lagrer kvittering...");
 
-    const filnavn = `${uuidv4()}_${fil.name}`;
+    const filnavn = `${Date.now()}_${fil.name}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("kvitteringer")
       .upload(filnavn, fil);
@@ -174,16 +173,18 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const fil_url = urlData?.publicUrl || "";
 
     const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
-    const { error } = await supabase.from(tabell).insert([
-      {
-        tittel,
-        belop: parseFloat(belop),
-        valuta,
-        dato,
-        tekst,
-        fil_url,
-      },
-    ]);
+    const { data: authData } = await supabase.auth.getUser();
+    const payload: any = {
+      tittel,
+      belop: parseFloat(belop),
+      valuta,
+      dato,
+      tekst,
+      fil_url,
+    };
+    if (rolle === "bruker") payload.bruker_id = authData?.user?.id;
+
+    const { error } = await supabase.from(tabell).insert([payload]);
 
     if (error) {
       console.error(error);
