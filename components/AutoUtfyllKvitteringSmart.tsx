@@ -1,3 +1,4 @@
+// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -75,25 +76,22 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return text;
   };
 
-  const parseBelop = (tekst: string) => {
+  const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    const kandidater: number[] = [];
-
-    for (const l of linjer) {
-      if (
-        /(kr|total|sum|beløp|faktura|å betale|inkl)/.test(l) &&
-        !/(konto|kid|iban)/.test(l)
-      ) {
-        const krIndex = l.indexOf("kr");
-        if (krIndex === -1) continue;
-        const etterKr = l.slice(krIndex + 2).trim();
-        const renset = etterKr.replace(/[^0-9,.-]/g, "").replace(/\./g, "").replace(",", ".");
-        const tall = parseFloat(renset);
-        if (!isNaN(tall)) kandidater.push(tall);
+    for (const linje av linjer) {
+      if (linje.includes("total") && linje.includes("kr")) {
+        const match = linje.match(/kr\s*([0-9\s.,]+)/);
+        if (match) {
+          return match[1]
+            .replace(/[^0-9,]/g, "")
+            .replace(/\./g, "")
+            .replace(/\s/g, "")
+            .replace(",", ".")
+            .trim();
+        }
       }
     }
-
-    return kandidater.sort((a, b) => b - a)[0]?.toFixed(2) || "";
+    return "";
   };
 
   const lesKvittering = async () => {
@@ -105,16 +103,15 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     } else {
       canvas = await bildeTilCanvas(fil);
     }
-
     const text = await kjørOCR(canvas);
     setTekst(text);
-    setBelop(parseBelop(text));
+    setBelop(finnTotalbelop(text));
     setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (tanks)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (nøyaktig)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
