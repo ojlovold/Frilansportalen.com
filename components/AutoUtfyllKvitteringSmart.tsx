@@ -2,10 +2,6 @@
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +27,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     const tekst = (result as any)?.data?.text || "";
     setTekst(tekst);
-    setStatus("Tolket. Nå kan du velge riktig verdi.");
+    setStatus("Tolket. Fyll ut feltene eller velg verdier manuelt.");
   };
 
   return (
