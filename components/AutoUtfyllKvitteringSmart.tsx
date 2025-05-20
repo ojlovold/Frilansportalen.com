@@ -88,7 +88,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         !/(konto|kid|iban)/.test(l)
       )
       .flatMap((l) => {
-        const matches = [...l.matchAll(/(?:kr\s*)?([0-9\s.,]+)(?=\s*[,\-–]?$)/gi)];
+        const matches = [...l.matchAll(/(?:kr\s*)?([0-9\s.,]+)(?=\s*[,–-]?$)/gi)];
         return matches.map((m) =>
           m[1]
             .replace(/[^
