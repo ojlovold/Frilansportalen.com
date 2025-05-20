@@ -77,7 +77,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    for (const linje of linjer) {
+    for (let i = linjer.length - 1; i >= 0; i--) {
+      const linje = linjer[i];
       if (linje.includes("total") && linje.includes("kr")) {
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
@@ -93,6 +94,30 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return "";
   };
 
+  const finnDato = (tekst: string): string => {
+    const regexDato = /(\d{2}\.\d{2}\.\d{4})/g;
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    for (const linje of linjer) {
+      if (linje.includes("forfallsdato") || linje.includes("dato") || linje.includes("faktura")) {
+        const datoMatch = linje.match(regexDato);
+        if (datoMatch && datoMatch.length > 0) {
+          return datoMatch[0];
+        }
+      }
+    }
+    return "";
+  };
+
+  const finnTittel = (tekst: string): string => {
+    const linjer = tekst.split("\n");
+    for (const linje of linjer) {
+      if (linje.toLowerCase().includes("beskrivelse") || linje.toLowerCase().includes("referanse")) {
+        return linje.trim();
+      }
+    }
+    return linjer[0]?.trim() || "";
+  };
+
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
@@ -105,6 +130,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const text = await kjørOCR(canvas);
     setTekst(text);
     setBelop(finnTotalbelop(text));
+    setDato(finnDato(text));
+    setTittel(finnTittel(text));
     setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
   };
 
