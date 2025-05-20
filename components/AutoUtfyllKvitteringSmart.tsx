@@ -29,9 +29,10 @@ function tolkKvitteringsdataFraTekst(tekst: string): KvitteringsTolkning | null 
   let valgt: { belop: string; valuta: string; linje: string } | null = null;
 
   for (const linje of linjer) {
+    console.log("VURDERER:", linje);
     if (!valutaRegex.test(linje)) continue;
     if (ignorert.test(linje)) continue;
-    if (!/(total|sum|amount|beløp|subtotal|å betale|paid)/.test(linje)) continue;
+    if (!/(total|sum|amount|beløp|subtotal|å betale|paid)/.test(linje) && !valutaRegex.test(linje)) continue;
 
     const valutaMatch = linje.match(valutaRegex);
     const belopMatch = linje.match(belopRegex);
@@ -50,6 +51,7 @@ function tolkKvitteringsdataFraTekst(tekst: string): KvitteringsTolkning | null 
           valuta: valutaMatch[1].toUpperCase().replace("KR", "NOK").replace("€", "EUR"),
           linje,
         };
+        console.log("VALGT LINJE:", valgt);
       }
     }
   }
