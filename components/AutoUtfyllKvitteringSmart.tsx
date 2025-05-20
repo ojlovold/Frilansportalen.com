@@ -91,4 +91,33 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         const matches = [...l.matchAll(/(?:kr\s*)?([0-9\s.,]+)(?=\s*[,–-]?$)/gi)];
         return matches.map((m) =>
           m[1]
-            .replace(/[^
+            .replace(/[^\d,.-]/g, "")
+            .replace(/\s/g, "")
+            .replace(",", ".")
+        );
+      })
+      .map((v) => parseFloat(v))
+      .filter((v) => !isNaN(v) && v > 0)
+      .sort((a, b) => b - a)
+      .map((v) => v.toFixed(2));
+
+    const datoKandidater = linjer
+      .filter((l) => /(fakturadato|forfallsdato|dato)/.test(l) && /\d{2}[./-]\d{2}[./-]\d{4}/.test(l))
+      .map((l) => l.match(/(\d{2}[./-]\d{2}[./-]\d{4})/)?.[1] || "")
+      .filter(Boolean);
+
+    const valutaKandidater = linjer
+      .filter((l) => /(nok|eur|usd)/.test(l))
+      .map((l) => l.match(/(nok|eur|usd)/i)?.[1]?.toUpperCase() || "")
+      .filter(Boolean);
+
+    return {
+      tittelKandidater,
+      belopKandidater,
+      datoKandidater,
+      valutaKandidater,
+    };
+  };
+
+  // resten av komponenten beholdes uendret
+}
