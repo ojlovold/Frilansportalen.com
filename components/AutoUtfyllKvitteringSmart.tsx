@@ -20,6 +20,10 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
+  const [tittelKandidater, setTittelKandidater] = useState<string[]>([]);
+  const [belopKandidater, setBelopKandidater] = useState<string[]>([]);
+  const [datoKandidater, setDatoKandidater] = useState<string[]>([]);
+  const [valutaKandidater, setValutaKandidater] = useState<string[]>([]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -69,16 +73,15 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const tolkTekstSmart = (tekst: string) => {
     const linjer = tekst.toLowerCase().split("\n").map((l) => l.trim()).filter(Boolean);
 
-    const tittel =
-      linjer.find(
-        (l) =>
-          (l.includes("frilansportalen") || l.includes("domene") || l.includes("as") || l.includes("faktura")) &&
-          !l.includes("status") &&
-          !l.includes("kopi") &&
-          !l.includes("last ned")
-      ) || "Kvittering";
+    const tittelKandidater = linjer.filter(
+      (l) =>
+        (l.includes("frilansportalen") || l.includes("domene") || l.includes("as") || l.includes("faktura")) &&
+        !l.includes("status") &&
+        !l.includes("kopi") &&
+        !l.includes("last ned")
+    );
 
-    const beløpKandidater = linjer
+    const belopKandidater = linjer
       .filter(
         (l) =>
           /(sum|total|beløp|inkl|å betale|faktura)/.test(l) &&
@@ -89,26 +92,26 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       )
       .map((l) => {
         const match = l.match(/([0-9\s]+[,.][0-9]{2})/);
-        const beløp = match?.[1]?.replace(/\s/g, "").replace(",", ".");
-        return beløp ? parseFloat(beløp) : null;
+        return match?.[1]?.replace(/\s/g, "").replace(",", ".") || null;
       })
-      .filter((b): b is number => b !== null);
+      .filter((b): b is string => b !== null);
 
-    const beløp = beløpKandidater.length > 0 ? Math.max(...beløpKandidater).toFixed(2) : "";
+    const datoKandidater = linjer
+      .filter((l) => /(fakturadato|forfallsdato|dato)/.test(l) && /\d{2}[./-]\d{2}[./-]\d{4}/.test(l))
+      .map((l) => l.match(/(\d{2}[./-]\d{2}[./-]\d{4})/)?.[1] || "")
+      .filter(Boolean);
 
-    const datolinje = linjer.find(
-      (l) =>
-        /(fakturadato|forfallsdato|dato)/.test(l) &&
-        /\d{2}[./-]\d{2}[./-]\d{4}/.test(l)
-    );
-    const datoMatch = datolinje?.match(/(\d{2}[./-]\d{2}[./-]\d{4})/);
-    const dato = datoMatch?.[1] || "";
+    const valutaKandidater = linjer
+      .filter((l) => /(nok|eur|usd)/.test(l))
+      .map((l) => l.match(/(nok|eur|usd)/i)?.[1]?.toUpperCase() || "")
+      .filter(Boolean);
 
-    const valutalinje = linjer.find((l) => /(nok|eur|usd)/.test(l));
-    const valutaMatch = valutalinje?.match(/(nok|eur|usd)/i);
-    const valuta = valutaMatch?.[1]?.toUpperCase() || "NOK";
-
-    return { tittel, beløp, dato, valuta };
+    return {
+      tittelKandidater,
+      belopKandidater,
+      datoKandidater,
+      valutaKandidater,
+    };
   };
 
   const lesKvittering = async () => {
@@ -126,11 +129,19 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const tekst = (result as any)?.data?.text || "";
     setTekst(tekst);
     console.log("OCR-tekst:", tekst);
-    const { tittel, beløp, dato, valuta } = tolkTekstSmart(tekst);
-    setTittel(tittel);
-    setBelop(beløp);
-    setDato(dato);
-    setValuta(valuta);
+
+    const { tittelKandidater, belopKandidater, datoKandidater, valutaKandidater } = tolkTekstSmart(tekst);
+
+    setTittelKandidater(tittelKandidater);
+    setBelopKandidater(belopKandidater);
+    setDatoKandidater(datoKandidater);
+    setValutaKandidater(valutaKandidater);
+
+    setTittel(tittelKandidater[0] || "");
+    setBelop(belopKandidater[0] || "");
+    setDato(datoKandidater[0] || "");
+    setValuta(valutaKandidater[0] || "NOK");
+
     setStatus("Utfylt. Klar til lagring.");
   };
 
@@ -168,10 +179,45 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les og utfyll</button>
       <div className="space-y-2">
-        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+        {tittelKandidater.length > 1 ? (
+          <select value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded">
+            {tittelKandidater.map((v, i) => (
+              <option key={i} value={v}>{v}</option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        )}
+
+        {belopKandidater.length > 1 ? (
+          <select value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded">
+            {belopKandidater.map((v, i) => (
+              <option key={i} value={v}>{v}</option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        )}
+
+        {valutaKandidater.length > 1 ? (
+          <select value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded">
+            {valutaKandidater.map((v, i) => (
+              <option key={i} value={v}>{v}</option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        )}
+
+        {datoKandidater.length > 1 ? (
+          <select value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded">
+            {datoKandidater.map((v, i) => (
+              <option key={i} value={v}>{v}</option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+        )}
       </div>
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
         Lagre kvittering
