@@ -16,15 +16,16 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
   const [belop, setBelop] = useState("");
-  const [dato, setDato] = useState("");
+  const [belopListe, setBelopListe] = useState<string[]>([]);
   const [valuta, setValuta] = useState("NOK");
+  const [dato, setDato] = useState("");
+  const [datoListe, setDatoListe] = useState<string[]>([]);
   const [status, setStatus] = useState("");
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
-
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
@@ -34,186 +35,142 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const high = inverted > 128 ? 255 : 0;
       data[i] = data[i + 1] = data[i + 2] = high;
     }
-
     ctx.putImageData(imgData, 0, 0);
   };
 
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pdfTilCanvas = async (file: File) => {
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
     const page = await pdf.getPage(1);
-    const scale = 4;
-    const viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({ scale: 4 });
     const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
     forbedreKontrast(canvas);
     return canvas;
   };
 
-  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
-    return await new Promise((resolve) => {
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(fil);
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        forbedreKontrast(canvas);
-        resolve(canvas);
-      };
-    });
-  };
-
-  const kjørOCR = async (input: HTMLCanvasElement): Promise<string> => {
-    const forsøk = async (lang: string) => {
-      const result = await Tesseract.recognize(input, lang, { logger: () => {} });
-      return (result as any)?.data?.text || "";
+  const bildeTilCanvas = async (file: File) => new Promise<HTMLCanvasElement>((resolve) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0);
+      forbedreKontrast(canvas);
+      resolve(canvas);
     };
+  });
 
-    let text = await forsøk("nor+eng");
-    if (text.trim().length < 10) {
-      text = await forsøk("osd+eng+nor");
-    }
-
-    return text;
+  const kjørOCR = async (canvas: HTMLCanvasElement) => {
+    const forsøk = async (lang: string) => (await Tesseract.recognize(canvas, lang)).data.text || "";
+    let tekst = await forsøk("nor+eng");
+    if (tekst.trim().length < 10) tekst = await forsøk("osd+eng+nor");
+    return tekst;
   };
 
-  const finnTotalbelop = (tekst: string): string => {
-    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    for (let i = linjer.length - 1; i >= 0; i--) {
-      const linje = linjer[i];
-      if (linje.includes("total") && linje.includes("kr")) {
-        const match = linje.match(/kr\s*([0-9\s.,]+)/);
-        if (match) {
-          return match[1]
-            .replace(/[^0-9,]/g, "")
-            .replace(/\./g, "")
-            .replace(/\s/g, "")
-            .replace(",", ".")
-            .trim();
-        }
-      }
-    }
-    return "";
+  const hentBelop = (tekst: string): string[] => {
+    const regex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9]+[\.,]?[0-9]{0,2})/gi;
+    const funn = [...tekst.matchAll(regex)].map(m => m[1].replace(/\s/g, "").replace(",", "."));
+    return Array.from(new Set(funn));
   };
 
-  const finnDato = (tekst: string): string => {
-    const regexDato = /(\d{2}\.\d{2}\.\d{4})/g;
-    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    for (const linje of linjer) {
-      if (linje.includes("forfallsdato") || linje.includes("dato") || linje.includes("faktura")) {
-        const datoMatch = linje.match(regexDato);
-        if (datoMatch && datoMatch.length > 0) {
-          return datoMatch[0];
-        }
-      }
-    }
-    return "";
+  const hentDatoer = (tekst: string): string[] => {
+    const regex = /(\d{2}[./-]\d{2}[./-]\d{4})/g;
+    const funn = [...tekst.matchAll(regex)].map(m => m[1].replace(/[/-]/g, "."));
+    return Array.from(new Set(funn));
   };
 
-  const finnTittel = (tekst: string): string => {
-    const linjer = tekst.split("\n");
-    for (const linje of linjer) {
-      if (linje.toLowerCase().includes("beskrivelse") || linje.toLowerCase().includes("referanse")) {
-        return linje.trim();
-      }
+  const konverterTilNOK = async (verdi: string, valuta: string) => {
+    if (valuta.toUpperCase() === "NOK") return verdi;
+    try {
+      const res = await fetch(`https://api.exchangerate.host/convert?from=${valuta}&to=NOK&amount=${verdi}`);
+      const data = await res.json();
+      return data.result?.toFixed(2) || verdi;
+    } catch {
+      return verdi;
     }
-    return linjer[0]?.trim() || "";
   };
 
   const lesKvittering = async () => {
     if (!fil) return;
-    setStatus("Leser kvittering...");
-    let canvas;
-    try {
-      if (fil.type === "application/pdf") {
-        canvas = await pdfTilBilde(fil);
-      } else {
-        canvas = await bildeTilCanvas(fil);
-      }
-      const text = await kjørOCR(canvas);
-      setTekst(text);
-      setBelop(finnTotalbelop(text));
-      setDato(finnDato(text));
-      setTittel(finnTittel(text));
-      setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
-    } catch (err) {
-      setStatus("Kunne ikke lese kvittering. Sjekk filtype eller kontrast.");
-      console.error(err);
-    }
+    setStatus("Leser kvittering …");
+    let canvas = fil.type === "application/pdf" ? await pdfTilCanvas(fil) : await bildeTilCanvas(fil);
+    const tekst = await kjørOCR(canvas);
+    setTekst(tekst);
+    const belopene = hentBelop(tekst);
+    const datoene = hentDatoer(tekst);
+    setBelopListe(belopene);
+    setDatoListe(datoene);
+    if (belopene.length === 1) setBelop(belopene[0]);
+    if (datoene.length === 1) setDato(datoene[0]);
+    setTittel(tekst.split("\n")[0]?.trim() || "");
+    setStatus("Tekst hentet. Velg riktige verdier eller rediger.");
   };
 
   const lagreKvittering = async () => {
-    if (!fil || !tittel || !belop || !valuta || !dato) {
+    if (!fil || !belop || !dato) {
       setStatus("Fyll ut alle feltene og velg fil.");
       return;
     }
-
-    setStatus("Lagrer kvittering...");
-
+    setStatus("Lagrer …");
     const filnavn = `${Date.now()}_${fil.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("kvitteringer")
-      .upload(filnavn, fil);
+    const { error: upErr } = await supabase.storage.from("kvitteringer").upload(filnavn, fil);
+    if (upErr) return setStatus("Feil ved opplasting");
 
-    if (uploadError) {
-      console.error(uploadError);
-      setStatus("Kunne ikke laste opp filen.");
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("kvitteringer")
-      .getPublicUrl(filnavn);
+    const { data: urlData } = supabase.storage.from("kvitteringer").getPublicUrl(filnavn);
     const fil_url = urlData?.publicUrl || "";
-
+    const belopNOK = await konverterTilNOK(belop, valuta);
     const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
-    const { data: authData } = await supabase.auth.getUser();
     const payload: any = {
       tittel,
-      belop: parseFloat(belop),
+      belop: parseFloat(belopNOK),
       valuta,
       dato,
       tekst,
       fil_url,
     };
-    if (rolle === "bruker") payload.bruker_id = authData?.user?.id;
-
-    const { error } = await supabase.from(tabell).insert([payload]);
-
-    if (error) {
-      console.error(error);
-      setStatus("Feil ved lagring: " + error.message);
-    } else {
-      setStatus("Kvittering lagret.");
-      setTittel("");
-      setBelop("");
-      setDato("");
-      setTekst("");
-      setFil(null);
+    if (rolle === "bruker") {
+      const { data: auth } = await supabase.auth.getUser();
+      payload.bruker_id = auth?.user?.id;
     }
+    const { error } = await supabase.from(tabell).insert([payload]);
+    setStatus(error ? "Feil ved lagring." : "Kvittering lagret.");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (presisjon)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (intelligent)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
-      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
-        {tekst || "Ingen tekst funnet."}
-      </pre>
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
 
       <div className="space-y-2">
-        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+        <input value={tittel} onChange={(e) => setTittel(e.target.value)} placeholder="Tittel" className="w-full p-2 border rounded" />
+
+        {belopListe.length > 1 && (
+          <select onChange={(e) => setBelop(e.target.value)} value={belop} className="w-full p-2 border rounded">
+            <option value="">Velg beløp</option>
+            {belopListe.map((b, i) => <option key={i} value={b}>{b}</option>)}
+          </select>
+        )}
+        {belopListe.length <= 1 && (
+          <input value={belop} onChange={(e) => setBelop(e.target.value)} placeholder="Beløp" className="w-full p-2 border rounded" />
+        )}
+
+        <input value={valuta} onChange={(e) => setValuta(e.target.value.toUpperCase())} placeholder="Valuta" className="w-full p-2 border rounded" />
+
+        {datoListe.length > 1 && (
+          <select onChange={(e) => setDato(e.target.value)} value={dato} className="w-full p-2 border rounded">
+            <option value="">Velg dato</option>
+            {datoListe.map((d, i) => <option key={i} value={d}>{d}</option>)}
+          </select>
+        )}
+        {datoListe.length <= 1 && (
+          <input value={dato} onChange={(e) => setDato(e.target.value)} placeholder="Dato (dd.mm.yyyy)" className="w-full p-2 border rounded" />
+        )}
       </div>
 
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
