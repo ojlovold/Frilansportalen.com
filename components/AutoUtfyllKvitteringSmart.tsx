@@ -84,23 +84,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const belopRegex = /(?:kr|nok|usd|eur|\$|\u20ac)?\s*([0-9\s.,\-–]+)/gi;
 
     const prioriterte = linjer.filter(linje =>
-      /(total|sum|beløp|å betale).*(kr|nok|\d)/.test(linje) &&
+      /(total|sum|beløp|å betale|faktura).*(kr|nok|\d)/.test(linje) &&
       !/(mva|avgift)/.test(linje)
     );
 
     const funn = prioriterte.flatMap((linje) =>
       Array.from(linje.matchAll(belopRegex)).map((m) => {
         let raw = m[1]
-          .replace(/[^0-9.,]/g, "")        // fjerner bindestrek og rom
-          .replace(/\.(?=\d{3})/g, "")     // fjerner tusenskillepunktum
-          .replace(",", ".")              // gjør komma til punktum
-          .replace(/\.{2,}/g, ".");       // fjerner doble punktum
+          .replace(/[^\d.,]/g, "")        // Fjern ALT unntatt tall og desimal
+          .replace(/\.(?=\d{3})/g, "")    // Fjern punktum tusenskille
+          .replace(",", ".")             // Gjør komma til punktum
+          .replace(/\.{2,}/g, ".");      // Rydd doble punktum
         return raw;
       })
     );
 
     const tall = funn
-      .map((s) => parseFloat(s))
+      .map((b) => parseFloat(b))
       .filter((n) => !isNaN(n) && n >= 20 && n < 1000000)
       .sort((a, b) => b - a);
 
