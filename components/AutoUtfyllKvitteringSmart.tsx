@@ -20,104 +20,42 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
-  const [tittelKandidater, setTittelKandidater] = useState<string[]>([]);
-  const [belopKandidater, setBelopKandidater] = useState<string[]>([]);
-  const [datoKandidater, setDatoKandidater] = useState<string[]>([]);
-  const [valutaKandidater, setValutaKandidater] = useState<string[]>([]);
 
-  const forbedreKontrast = (canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext("2d")!;
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const r = imgData.data[i];
-      const g = imgData.data[i + 1];
-      const b = imgData.data[i + 2];
-      const brightness = 0.34 * r + 0.5 * g + 0.16 * b;
-      const high = brightness > 128 ? 255 : 0;
-      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = high;
-    }
-    ctx.putImageData(imgData, 0, 0);
-  };
+  const lesKvittering = async () => {
+    if (!fil) return;
+    setStatus("Leser kvittering...");
 
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const typedarray = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-    const side = await pdf.getPage(1);
-    const scale = 3;
-    const viewport = side.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await side.render({ canvasContext: context, viewport }).promise;
-    forbedreKontrast(canvas);
-    return canvas;
-  };
-
-  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
-    return await new Promise((resolve) => {
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(fil);
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        forbedreKontrast(canvas);
-        resolve(canvas);
-      };
+    const result = await Tesseract.recognize(fil, "nor", {
+      logger: (m) => console.log("[OCR]", m),
     });
+
+    const tekst = (result as any)?.data?.text || "";
+    setTekst(tekst);
+    setStatus("Tolket. Nå kan du velge riktig verdi.");
   };
 
-  const tolkTekstSmart = (tekst: string) => {
-    const linjer = tekst.toLowerCase().split("\n").map((l) => l.trim()).filter(Boolean);
+  return (
+    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
+      <h2 className="text-xl font-semibold">Smart kvitteringsopplasting</h2>
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les og utfyll</button>
 
-    const tittelKandidater = linjer.filter(
-      (l) =>
-        (l.includes("frilansportalen") || l.includes("domene") || l.includes("as") || l.includes("faktura")) &&
-        !l.includes("status") &&
-        !l.includes("kopi") &&
-        !l.includes("last ned")
-    );
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
+        {tekst || "Ingen tekst hentet fra kvittering ennå."}
+      </pre>
 
-    const belopKandidater = linjer
-      .filter((l) =>
-        /(kr|beløp|sum|total|å betale|faktura|inkl)/.test(l) &&
-        /[0-9\s.,]+/.test(l) &&
-        !/(konto|kid|iban)/.test(l)
-      )
-      .flatMap((l) => {
-        const matches = [...l.matchAll(/(?:kr\s*)?([0-9\s.,]+)(?=\s*[,–-]?$)/gi)];
-        return matches.map((m) =>
-          m[1]
-            .replace(/[^\d,.-]/g, "")
-            .replace(/\s/g, "")
-            .replace(",", ".")
-        );
-      })
-      .map((v) => parseFloat(v))
-      .filter((v) => !isNaN(v) && v > 0)
-      .sort((a, b) => b - a)
-      .map((v) => v.toFixed(2));
+      <div className="space-y-2">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+      </div>
 
-    const datoKandidater = linjer
-      .filter((l) => /(fakturadato|forfallsdato|dato)/.test(l) && /\d{2}[./-]\d{2}[./-]\d{4}/.test(l))
-      .map((l) => l.match(/(\d{2}[./-]\d{2}[./-]\d{4})/)?.[1] || "")
-      .filter(Boolean);
+      <button className="bg-green-600 text-white px-3 py-2 rounded">
+        Lagre kvittering
+      </button>
 
-    const valutaKandidater = linjer
-      .filter((l) => /(nok|eur|usd)/.test(l))
-      .map((l) => l.match(/(nok|eur|usd)/i)?.[1]?.toUpperCase() || "")
-      .filter(Boolean);
-
-    return {
-      tittelKandidater,
-      belopKandidater,
-      datoKandidater,
-      valutaKandidater,
-    };
-  };
-
-  // resten av komponenten beholdes uendret
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+    </div>
+  );
 }
