@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -78,7 +77,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const lesKvittering = async () => {
     if (!fil) return;
-    setStatus("Konverterer og leser fil...");
+    setStatus("Leser kvittering...");
     let canvas;
     if (fil.type === "application/pdf") {
       canvas = await pdfTilBilde(fil);
@@ -87,12 +86,11 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     }
     const text = await kjørOCR(canvas);
     setTekst(text);
-    setStatus("Tekst hentet. Fyll inn eller kopier fra feltet under.");
+    setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
   };
-
-  return (
+    return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (forsterket AI)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (tanks)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
