@@ -1,3 +1,4 @@
+// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -83,9 +84,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
           const tall = match[1]
-            .replace(/[^0-9,]/g, "")
-            .replace(/\./g, "")
+            .replace(/[-–]/g, "")
             .replace(/\s/g, "")
+            .replace(/\.(?=\d{3})/g, "")
             .replace(",", ".")
             .trim();
           const verdi = parseFloat(tall);
