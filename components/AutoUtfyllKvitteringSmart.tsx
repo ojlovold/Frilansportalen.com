@@ -77,17 +77,37 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    let høyeste = 0;
     for (const linje of linjer) {
-      if (linje.includes("total") && linje.includes("kr")) {
+      if (linje.includes("total") && linje.includes("kr") && !linje.includes("mva")) {
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
-          return match[1]
+          const tall = match[1]
             .replace(/[^0-9,]/g, "")
             .replace(/\./g, "")
             .replace(/\s/g, "")
             .replace(",", ".")
             .trim();
+          const verdi = parseFloat(tall);
+          if (!isNaN(verdi) && verdi > høyeste) høyeste = verdi;
         }
+      }
+    }
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
+  };
+
+  const finnDato = (tekst: string): string => {
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    for (const linje of linjer) {
+      if (linje.includes("forfallsdato")) {
+        const match = linje.match(/\d{2}[./-]\d{2}[./-]\d{4}/);
+        if (match) return match[0];
+      }
+    }
+    for (const linje of linjer) {
+      if (linje.includes("fakturadato")) {
+        const match = linje.match(/\d{2}[./-]\d{2}[./-]\d{4}/);
+        if (match) return match[0];
       }
     }
     return "";
@@ -105,12 +125,13 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const text = await kjørOCR(canvas);
     setTekst(text);
     setBelop(finnTotalbelop(text));
+    setDato(finnDato(text));
     setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (presisjon)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (nøyaktig)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
