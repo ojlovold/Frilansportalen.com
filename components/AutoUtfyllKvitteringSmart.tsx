@@ -80,7 +80,10 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const match = linje.match(/[$kr\s]*([0-9\s.,]+)/);
         if (match) {
-          const tall = match[1].replace(/[^0-9]/g, "");
+          const tall = match[1]
+            .replace(/[^0-9.,]/g, "")
+            .replace(/,/g, ".")
+            .replace(/\s/g, "");
           const verdi = parseFloat(tall);
           if (!isNaN(verdi) && verdi > høyeste) høyeste = verdi;
         }
