@@ -18,15 +18,16 @@ export default function AdminPanel() {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const sjekkAuth = async () => {
+    const timer = setTimeout(async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
         window.location.href = "/admin/logginn";
       } else {
         setAuthReady(true);
       }
-    };
-    sjekkAuth();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const loggUt = async () => {
