@@ -1,13 +1,16 @@
+// pages/admin/logginn.tsx
 import Head from "next/head";
 import Layout from "../../components/Layout";
 import { useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
+import { useRouter } from "next/router";
 
 export default function Logginn() {
   const [epost, setEpost] = useState("");
   const [passord, setPassord] = useState("");
   const [feil, setFeil] = useState("");
   const [ok, setOk] = useState(false);
+  const router = useRouter();
 
   const login = async () => {
     setFeil("");
@@ -21,6 +24,9 @@ export default function Logginn() {
       setFeil("Feil e-post eller passord");
     } else {
       setOk(true);
+      setTimeout(() => {
+        router.replace("/admin");
+      }, 300);
     }
   };
 
@@ -55,7 +61,7 @@ export default function Logginn() {
         </button>
 
         {feil && <p className="text-sm text-red-600">{feil}</p>}
-        {ok && <p className="text-sm text-green-600">Innlogging vellykket.</p>}
+        {ok && <p className="text-sm text-green-600">Innlogging vellykket. Sender deg videre ...</p>}
       </div>
     </Layout>
   );
