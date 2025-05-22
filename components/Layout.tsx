@@ -1,17 +1,17 @@
+import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import TilbakeKnapp from "./TilbakeKnapp";
-import useDesignFarger from "@/hooks/useDesignFarger";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { bakgrunnsfarge, tekstfarge } = useDesignFarger();
+
+  // Skjul hele layout for admin login-siden
+  if (router.pathname === "/admin/logginn") return <>{children}</>;
 
   const visTilbake = !["/", "/dashboard"].includes(router.pathname);
 
   return (
-    <div className={`min-h-screen ${bakgrunnsfarge} ${tekstfarge}`}>
+    <div className="min-h-screen bg-gray-50 text-black">
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="p-4 max-w-5xl mx-auto">
         {visTilbake && (
           <div className="mb-4">
-            <TilbakeKnapp />
+            <Link href="/" className="text-sm text-blue-600 hover:underline">← Tilbake</Link>
           </div>
         )}
         {children}
