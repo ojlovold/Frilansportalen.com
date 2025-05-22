@@ -37,32 +37,34 @@ export default function LoggInn() {
         <title>Logg inn | Admin | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Logg inn</h1>
+      <div className="min-h-screen bg-portalGul flex flex-col justify-center items-center px-4">
+        <div className="w-full max-w-sm space-y-6">
+          <h1 className="text-3xl font-bold">Admin</h1>
 
-      <div className="max-w-sm space-y-4">
-        <input
-          placeholder="E-post"
-          value={epost}
-          onChange={(e) => setEpost(e.target.value)}
-          className="p-2 border rounded w-full"
-          type="email"
-        />
-        <input
-          placeholder="Passord"
-          value={passord}
-          onChange={(e) => setPassord(e.target.value)}
-          className="p-2 border rounded w-full"
-          type="password"
-        />
-        <button
-          onClick={login}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
-        >
-          Logg inn
-        </button>
+          <input
+            placeholder="E-post"
+            value={epost}
+            onChange={(e) => setEpost(e.target.value)}
+            className="p-2 border rounded w-full"
+            type="email"
+          />
+          <input
+            placeholder="Passord"
+            value={passord}
+            onChange={(e) => setPassord(e.target.value)}
+            className="p-2 border rounded w-full"
+            type="password"
+          />
+          <button
+            onClick={login}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm w-full"
+          >
+            Logg inn
+          </button>
 
-        {feil && <p className="text-sm text-red-600">{feil}</p>}
-        {ok && <p className="text-sm text-green-600">Innlogging vellykket. Sender deg videre ...</p>}
+          {feil && <p className="text-sm text-red-600">{feil}</p>}
+          {ok && <p className="text-sm text-green-600">Innlogging vellykket. Sender deg videre ...</p>}
+        </div>
       </div>
     </Layout>
   );
