@@ -73,20 +73,21 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return data.rates?.[til] || 0;
   };
 
+  const finnAlleTall = (linje: string): number[] => {
+    const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+    return matches
+      .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+      .map((str) => parseFloat(str))
+      .filter((val) => !isNaN(val) && val > 0);
+  };
+
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
       if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
-        const match = linje.match(/[$kr\s]*([0-9\s.,]+)/);
-        if (match) {
-          const tall = match[1]
-            .replace(/[^0-9.,]/g, "")
-            .replace(/,/g, ".")
-            .replace(/\s/g, "");
-          const verdi = parseFloat(tall);
-          if (!isNaN(verdi) && verdi > 100) kandidater.push(verdi);
-        }
+        const tall = finnAlleTall(linje);
+        kandidater.push(...tall);
       }
     }
     const høyeste = Math.max(...kandidater, 0);
@@ -112,37 +113,41 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   };
 
   const lesKvittering = async () => {
-    if (!fil) return;
-    setStatus("Leser kvittering...");
-    let canvas;
-    if (fil.type === "application/pdf") {
-      canvas = await pdfTilBilde(fil);
-    } else {
-      canvas = await bildeTilCanvas(fil);
+    try {
+      if (!fil) return;
+      setStatus("Leser kvittering...");
+      let canvas;
+      if (fil.type === "application/pdf") {
+        canvas = await pdfTilBilde(fil);
+      } else {
+        canvas = await bildeTilCanvas(fil);
+      }
+      const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
+      setTekst(text);
+
+      const valuta = finnValuta(text);
+      const datoen = finnDato(text);
+      const belopBase = finnTotalbelop(text);
+      setDato(datoen);
+      setValuta(valuta);
+
+      if (valuta === "NOK" || valuta === "") {
+        setBelop(belopBase);
+      } else {
+        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
+        const omregnet = parseFloat(belopBase) * kurs;
+        setBelop(omregnet.toFixed(2));
+      }
+
+      setStatus("Tekst hentet og beløp omregnet til NOK.");
+    } catch (error) {
+      setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
-    const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
-    setTekst(text);
-
-    const valuta = finnValuta(text);
-    const datoen = finnDato(text);
-    const belopBase = finnTotalbelop(text);
-    setDato(datoen);
-    setValuta(valuta);
-
-    if (valuta === "NOK" || valuta === "") {
-      setBelop(belopBase);
-    } else {
-      const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
-      const omregnet = parseFloat(belopBase) * kurs;
-      setBelop(omregnet.toFixed(2));
-    }
-
-    setStatus("Tekst hentet og beløp omregnet til NOK.");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (valuta og alt)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (perfekt parser)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
