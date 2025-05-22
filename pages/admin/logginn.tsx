@@ -41,7 +41,7 @@ export default function LoggInn() {
       <div className="min-h-screen bg-portalGul flex flex-col justify-center items-center px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
           <Image
-            src="/logo-svart.png"
+            src="/D29995E0-1CE3-4567-B24E-16F33F7F5FD1.jpeg"
             alt="Frilansportalen logo"
             width={120}
             height={120}
