@@ -83,13 +83,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (linje.includes("total") && linje.includes("kr") && !linje.includes("mva")) {
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
-          const tall = match[1]
-            .replace(/[^0-9.,]/g, "")
-            .replace(/\s/g, "")
-            .replace(/\.(?=\d{3})/g, "")
-            .replace(",", ".")
-            .trim();
-          const verdi = parseFloat(tall);
+          const tall = match[1].replace(/[^0-9]/g, "");
+          const verdi = parseFloat(tall) / 100;
           if (!isNaN(verdi) && verdi > høyeste) høyeste = verdi;
         }
       }
