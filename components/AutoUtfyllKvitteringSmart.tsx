@@ -66,26 +66,21 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     });
   };
 
-  const kjørOCR = async (input: any): Promise<string> => {
-    let result = await Tesseract.recognize(input, "nor", { logger: () => {} });
-    let text = (result as any)?.data?.text || "";
-    if (text.trim().length < 10) {
-      result = await Tesseract.recognize(input, "eng", { logger: () => {} });
-      text = (result as any)?.data?.text || "";
-    }
-    return text;
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const rensetDato = dato.split(".").reverse().join("-");
+    const res = await fetch(`https://api.frankfurter.app/${rensetDato}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return data.rates?.[til] || 0;
   };
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     let høyeste = 0;
     for (const linje of linjer) {
-      if (linje.includes("total") && linje.includes("kr") && !linje.includes("mva")) {
-        const match = linje.match(/kr\s*([0-9\s.,]+)/);
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+        const match = linje.match(/[$kr\s]*([0-9\s.,]+)/);
         if (match) {
-          const tall = match[1]
-            .replace(/[^0-9]/g, "")
-            .trim();
+          const tall = match[1].replace(/[^0-9]/g, "");
           const verdi = parseFloat(tall);
           if (!isNaN(verdi) && verdi > høyeste) høyeste = verdi;
         }
@@ -94,18 +89,19 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
   const finnDato = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     for (const linje of linjer) {
-      if (linje.includes("forfallsdato")) {
-        const match = linje.match(/\d{2}[./-]\d{2}[./-]\d{4}/);
-        if (match) return match[0];
-      }
-    }
-    for (const linje of linjer) {
-      if (linje.includes("fakturadato")) {
-        const match = linje.match(/\d{2}[./-]\d{2}[./-]\d{4}/);
-        if (match) return match[0];
+      if (linje.includes("forfallsdato") || linje.includes("paid on") || linje.includes("invoice date")) {
+        const match = linje.match(/\d{1,2}[./-]\d{1,2}[./-]\d{4}/);
+        if (match) return match[0].replace(/-/g, ".");
       }
     }
     return "";
@@ -120,16 +116,29 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     } else {
       canvas = await bildeTilCanvas(fil);
     }
-    const text = await kjørOCR(canvas);
+    const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
     setTekst(text);
-    setBelop(finnTotalbelop(text));
-    setDato(finnDato(text));
-    setStatus("Tekst hentet. Fyll inn eller rediger manuelt.");
+
+    const valuta = finnValuta(text);
+    const datoen = finnDato(text);
+    const belopBase = finnTotalbelop(text);
+    setDato(datoen);
+    setValuta(valuta);
+
+    if (valuta === "NOK" || valuta === "") {
+      setBelop(belopBase);
+    } else {
+      const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
+      const omregnet = parseFloat(belopBase) * kurs;
+      setBelop(omregnet.toFixed(2));
+    }
+
+    setStatus("Tekst hentet og beløp omregnet til NOK.");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (nøyaktig)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (valuta og alt)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
@@ -139,7 +148,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Beløp" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Beløp (NOK)" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
