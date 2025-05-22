@@ -162,6 +162,45 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     }
   };
 
+  const lagreKvittering = async () => {
+    try {
+      if (!fil || !belop || !dato) {
+        setStatus("Manglende data. Fyll inn beløp og dato.");
+        return;
+      }
+
+      const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\\w.-]/g, "")}`;
+      const folder = rolle === "admin" ? "admin" : "bruker";
+      const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
+
+      const { error: uploadError } = await supabase.storage
+        .from("dokumenter")
+        .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
+
+      if (uploadError) {
+        setStatus("Feil ved opplasting av fil.");
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("dokumenter").getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
+
+      const { error } = await supabase.from(tabell).insert([
+        {
+          tittel,
+          belop: parseFloat(belop),
+          valuta,
+          dato,
+          fil_url: urlData?.publicUrl || null,
+        },
+      ]);
+
+      if (error) setStatus("Feil ved lagring til database.");
+      else setStatus("Kvittering lagret!");
+    } catch (err) {
+      setStatus("Uventet feil ved lagring.");
+    }
+  };
+
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
       <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
@@ -180,7 +219,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
-      <button className="bg-green-600 text-white px-3 py-2 rounded">
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
         Lagre kvittering
       </button>
 
