@@ -41,10 +41,10 @@ export default function LoggInn() {
       <div className="min-h-screen bg-portalGul flex flex-col justify-center items-center px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
           <Image
-            src="/D29995E0-1CE3-4567-B24E-16F33F7F5FD1.jpeg"
+            src="/logo.jpeg"
             alt="Frilansportalen logo"
-            width={120}
-            height={120}
+            width={160}
+            height={80}
             className="mx-auto"
           />
           <h1 className="text-3xl font-bold">Admin</h1>
