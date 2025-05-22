@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -17,6 +16,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
   const [belop, setBelop] = useState("");
+  const [belopOriginal, setBelopOriginal] = useState("");
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
@@ -73,43 +73,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return data.rates?.[til] || 0;
   };
 
-  const parseDato = (tekst: string): string => {
-    const regexer = [
-      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/, // 11.05.2025
-      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/, // 05-2025-11
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,   // 2025-05-11
-      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,   // 11/05/2025
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
-    ];
-
-    for (const r of regexer) {
-      const match = tekst.match(r);
-      if (match) {
-        if (match.length === 4) {
-          let [_, d1, d2, d3] = match;
-          if (r.source.includes("jan")) {
-            const månedMap: { [key: string]: string } = {
-              jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-              jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-            };
-            const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
-            return `${d2.padStart(2, "0")}.${måned}.${d3}`;
-          }
-          if (d3.length === 2) d3 = "20" + d3;
-          return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
-        }
-      }
-    }
-    return "";
-  };
-
-  const finnValuta = (tekst: string): string => {
-    const lower = tekst.toLowerCase();
-    if (lower.includes("usd") || lower.includes("$")) return "USD";
-    if (lower.includes("eur")) return "EUR";
-    return "NOK";
-  };
-
   const finnAlleTall = (linje: string): number[] => {
     const matches = [...linje.matchAll(/\d[\d.,]+/g)];
     return matches
@@ -131,6 +94,40 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
+  const parseDato = (tekst: string): string => {
+    const regexer = [
+      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
+      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    ];
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (match && match.length === 4) {
+        let [_, d1, d2, d3] = match;
+        if (r.source.includes("jan")) {
+          const månedMap: { [key: string]: string } = {
+            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+          };
+          const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
+          return `${d2.padStart(2, "0")}.${måned}.${d3}`;
+        }
+        if (d3.length === 2) d3 = "20" + d3;
+        return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
+      }
+    }
+    return "";
+  };
+
   const lesKvittering = async () => {
     try {
       if (!fil) return;
@@ -149,6 +146,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const belopBase = finnTotalbelop(text);
       setDato(datoen);
       setValuta(valuta);
+      setBelopOriginal(belopBase);
 
       if (valuta === "NOK" || valuta === "") {
         setBelop(belopBase);
@@ -176,8 +174,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Beløp (NOK)" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
