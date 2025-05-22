@@ -1,4 +1,3 @@
-// pages/admin/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import {
@@ -10,7 +9,27 @@ import {
   FileText,
 } from "lucide-react";
 
+import { useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export default function AdminPanel() {
+  useEffect(() => {
+    const loggInnAdmin = async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: "ole@frilansportalen.com",
+        password: "@Bente01",
+      });
+      if (error) console.error("Innlogging feilet:", error.message);
+      else console.log("Autentisert som:", data.user.email);
+    };
+    loggInnAdmin();
+  }, []);
+
   return (
     <>
       <Head>
