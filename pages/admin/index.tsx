@@ -9,31 +9,21 @@ import {
   Database,
   FileText,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
-
-const supabase = createBrowserSupabaseClient();
+import { useUser } from "@supabase/auth-helpers-react";
 
 export default function AdminPanel() {
-  const [authReady, setAuthReady] = useState(false);
+  const user = useUser();
 
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setAuthReady(true);
-      } else {
-        window.location.href = "/admin/logginn";
-      }
-    });
-    return () => listener?.subscription.unsubscribe();
-  }, []);
+  if (!user) {
+    if (typeof window !== "undefined") window.location.href = "/admin/logginn";
+    return null;
+  }
 
   const loggUt = async () => {
-    await supabase.auth.signOut();
+    const { supabaseClient } = await import("@supabase/auth-helpers-nextjs");
+    await supabaseClient().auth.signOut();
     window.location.href = "/admin/logginn";
   };
-
-  if (!authReady) return null;
 
   return (
     <>
