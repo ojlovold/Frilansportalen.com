@@ -75,7 +75,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    let høyeste = 0;
+    const kandidater: number[] = [];
     for (const linje of linjer) {
       if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const match = linje.match(/[$kr\s]*([0-9\s.,]+)/);
@@ -85,10 +85,11 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
             .replace(/,/g, ".")
             .replace(/\s/g, "");
           const verdi = parseFloat(tall);
-          if (!isNaN(verdi) && verdi > høyeste) høyeste = verdi;
+          if (!isNaN(verdi) && verdi > 100) kandidater.push(verdi);
         }
       }
     }
+    const høyeste = Math.max(...kandidater, 0);
     return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
