@@ -1,3 +1,4 @@
+// pages/admin/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import {
@@ -8,17 +9,22 @@ import {
   Database,
   FileText,
 } from "lucide-react";
-
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 const supabase = createBrowserSupabaseClient();
 
 export default function AdminPanel() {
+  const [authReady, setAuthReady] = useState(false);
+
   useEffect(() => {
     const sjekkAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data.session) window.location.href = "/admin/logginn";
+      if (!data.session) {
+        window.location.href = "/admin/logginn";
+      } else {
+        setAuthReady(true);
+      }
     };
     sjekkAuth();
   }, []);
@@ -29,6 +35,8 @@ export default function AdminPanel() {
       window.location.href = "/admin/logginn";
     }, 300);
   };
+
+  if (!authReady) return null;
 
   return (
     <>
