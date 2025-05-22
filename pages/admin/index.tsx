@@ -1,4 +1,3 @@
-// pages/admin/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import {
@@ -9,6 +8,7 @@ import {
   Database,
   FileText,
 } from "lucide-react";
+
 import { useEffect } from "react";
 import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 
@@ -17,11 +17,18 @@ const supabase = createBrowserSupabaseClient();
 export default function AdminPanel() {
   useEffect(() => {
     const sjekkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data?.user) window.location.href = "/admin/logginn";
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) window.location.href = "/admin/logginn";
     };
     sjekkAuth();
   }, []);
+
+  const loggUt = async () => {
+    await supabase.auth.signOut();
+    setTimeout(() => {
+      window.location.href = "/admin/logginn";
+    }, 300);
+  };
 
   return (
     <>
@@ -29,7 +36,15 @@ export default function AdminPanel() {
         <title>Adminpanel | Frilansportalen</title>
       </Head>
       <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-8">Adminpanel</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Adminpanel</h1>
+          <button
+            onClick={loggUt}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Logg ut
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <Link href="/admin/brukere" legacyBehavior>
