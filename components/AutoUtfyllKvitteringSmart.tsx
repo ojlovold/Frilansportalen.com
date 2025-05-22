@@ -1,3 +1,4 @@
+// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Tesseract from "tesseract.js";
@@ -169,20 +170,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         return;
       }
 
-      const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\\w.-]/g, "")}`;
+      const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
       const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("dokumenter")
         .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
 
       if (uploadError) {
-        setStatus("Feil ved opplasting av fil.");
+        console.error("Opplasting feilet:", uploadError.message);
+        setStatus(`Opplasting feilet: ${uploadError.message}`);
         return;
       }
 
-      const { data: urlData } = supabase.storage.from("dokumenter").getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
+      const { data: urlData } = supabase.storage
+        .from("dokumenter")
+        .getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
 
       const { error } = await supabase.from(tabell).insert([
         {
@@ -197,6 +201,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (error) setStatus("Feil ved lagring til database.");
       else setStatus("Kvittering lagret!");
     } catch (err) {
+      console.error("Uventet feil:", err);
       setStatus("Uventet feil ved lagring.");
     }
   };
