@@ -9,10 +9,12 @@ import {
   Database,
   FileText,
 } from "lucide-react";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useEffect, useState } from "react";
+import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 
 export default function AdminPanel() {
   const user = useUser();
+  const supabase = useSupabaseClient();
 
   if (!user) {
     if (typeof window !== "undefined") window.location.href = "/admin/logginn";
@@ -20,8 +22,7 @@ export default function AdminPanel() {
   }
 
   const loggUt = async () => {
-    const { supabaseClient } = await import("@supabase/auth-helpers-nextjs");
-    await supabaseClient().auth.signOut();
+    await supabase.auth.signOut();
     window.location.href = "/admin/logginn";
   };
 
