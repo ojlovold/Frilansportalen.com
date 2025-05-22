@@ -4,6 +4,7 @@ import Layout from "../../components/Layout";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import Image from "next/image";
 
 export default function LoggInn() {
   const [epost, setEpost] = useState("");
@@ -34,11 +35,18 @@ export default function LoggInn() {
   return (
     <Layout>
       <Head>
-        <title>Logg inn | Admin | Frilansportalen</title>
+        <title>Admin | Frilansportalen</title>
       </Head>
 
       <div className="min-h-screen bg-portalGul flex flex-col justify-center items-center px-4">
-        <div className="w-full max-w-sm space-y-6">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <Image
+            src="/logo-svart.png"
+            alt="Frilansportalen logo"
+            width={120}
+            height={120}
+            className="mx-auto"
+          />
           <h1 className="text-3xl font-bold">Admin</h1>
 
           <input
