@@ -84,9 +84,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         const match = linje.match(/kr\s*([0-9\s.,]+)/);
         if (match) {
           const tall = match[1]
-            .replace(/[-–]/g, "")
+            .replace(/[^0-9.,]/g, "")
             .replace(/\s/g, "")
-            .replace(/\./g, "")
+            .replace(/\.(?=\d{3})/g, "")
             .replace(",", ".")
             .trim();
           const verdi = parseFloat(tall);
