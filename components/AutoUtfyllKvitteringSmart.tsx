@@ -73,6 +73,43 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return data.rates?.[til] || 0;
   };
 
+  const parseDato = (tekst: string): string => {
+    const regexer = [
+      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/, // 11.05.2025
+      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/, // 05-2025-11
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,   // 2025-05-11
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,   // 11/05/2025
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    ];
+
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (match) {
+        if (match.length === 4) {
+          let [_, d1, d2, d3] = match;
+          if (r.source.includes("jan")) {
+            const månedMap: { [key: string]: string } = {
+              jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+              jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+            };
+            const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
+            return `${d2.padStart(2, "0")}.${måned}.${d3}`;
+          }
+          if (d3.length === 2) d3 = "20" + d3;
+          return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
+        }
+      }
+    }
+    return "";
+  };
+
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
   const finnAlleTall = (linje: string): number[] => {
     const matches = [...linje.matchAll(/\d[\d.,]+/g)];
     return matches
@@ -94,24 +131,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
-  const finnValuta = (tekst: string): string => {
-    const lower = tekst.toLowerCase();
-    if (lower.includes("usd") || lower.includes("$")) return "USD";
-    if (lower.includes("eur")) return "EUR";
-    return "NOK";
-  };
-
-  const finnDato = (tekst: string): string => {
-    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    for (const linje of linjer) {
-      if (linje.includes("forfallsdato") || linje.includes("paid on") || linje.includes("invoice date")) {
-        const match = linje.match(/\d{1,2}[./-]\d{1,2}[./-]\d{4}/);
-        if (match) return match[0].replace(/-/g, ".");
-      }
-    }
-    return "";
-  };
-
   const lesKvittering = async () => {
     try {
       if (!fil) return;
@@ -125,8 +144,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
+      const datoen = parseDato(text);
       const valuta = finnValuta(text);
-      const datoen = finnDato(text);
       const belopBase = finnTotalbelop(text);
       setDato(datoen);
       setValuta(valuta);
@@ -139,7 +158,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         setBelop(omregnet.toFixed(2));
       }
 
-      setStatus("Tekst hentet og beløp omregnet til NOK.");
+      setStatus("Tekst hentet og tolket fullstendig.");
     } catch (error) {
       setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
@@ -147,7 +166,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (perfekt parser)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
