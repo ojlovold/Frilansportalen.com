@@ -16,15 +16,11 @@ const supabase = createBrowserSupabaseClient();
 
 export default function AdminPanel() {
   useEffect(() => {
-    const loggInnAdmin = async () => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: "ole@frilansportalen.com",
-        password: "@Bente01",
-      });
-      if (error) console.error("Innlogging feilet:", error.message);
-      else console.log("Autentisert som:", data.user.email);
+    const sjekkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data?.user) window.location.href = "/admin/logginn";
     };
-    loggInnAdmin();
+    sjekkAuth();
   }, []);
 
   return (
@@ -34,16 +30,6 @@ export default function AdminPanel() {
       </Head>
       <main className="min-h-screen bg-portalGul text-black p-8">
         <h1 className="text-3xl font-bold mb-8">Adminpanel</h1>
-
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            location.reload();
-          }}
-          className="mb-6 bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Logg ut
-        </button>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <Link href="/admin/brukere" legacyBehavior>
