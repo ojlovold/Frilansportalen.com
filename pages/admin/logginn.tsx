@@ -2,15 +2,16 @@
 import Head from "next/head";
 import Layout from "../../components/Layout";
 import { useState } from "react";
-import { supabase } from "../../utils/supabaseClient";
 import { useRouter } from "next/router";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
 
-export default function Logginn() {
+export default function LoggInn() {
   const [epost, setEpost] = useState("");
   const [passord, setPassord] = useState("");
   const [feil, setFeil] = useState("");
   const [ok, setOk] = useState(false);
   const router = useRouter();
+  const supabase = useSupabaseClient();
 
   const login = async () => {
     setFeil("");
@@ -36,7 +37,7 @@ export default function Logginn() {
         <title>Logg inn | Admin | Frilansportalen</title>
       </Head>
 
-      <h1 className="text-3xl font-bold mb-6">Manuell innlogging</h1>
+      <h1 className="text-3xl font-bold mb-6">Logg inn</h1>
 
       <div className="max-w-sm space-y-4">
         <input
