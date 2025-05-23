@@ -180,7 +180,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
-      const tabell = rolle === "admin" ? "admin_utgifter" : "bruker_utgifter";
+      const tabell = "kvitteringer";
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("dokumenter")
