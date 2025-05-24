@@ -87,40 +87,21 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const parseDato = (tekst: string): string => {
     const regexer = [
-      /\b(\d{4})[-./](\d{2})[-./](\d{2})\b/,
-      /\b(\d{2})[-./](\d{2})[-./](\d{4})\b/,
-      /\b(\d{2})[-./](\d{2})[-./](\d{2})\b/,
-      /\b(\d{2})[-./](\d{2})[-./](\d{4})\b/,
-      /\b(\d{2})[ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ ]?(\d{2,4})/i,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ ]?(\d{1,2})[a-z]{0,2},?[ ]?(\d{4})/i,
-      /\b(\d{8})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/, // YYYY-MM-DD
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/, // DD-MM-YYYY
+      /\b(\d{2})[./-](\d{2})[./-](\d{2})\b/, // DD-MM-YY
     ];
-
     for (const r of regexer) {
       const match = tekst.match(r);
-      if (!match) continue;
-
-      if (match.length === 4 && match[1].length === 4) {
-        return `${match[1]}-${match[2]}-${match[3]}`;
-      } else if (match.length === 4 && match[3].length === 4) {
-        return `${match[3]}-${match[2]}-${match[1]}`;
-      } else if (match.length === 4 && isNaN(Number(match[2]))) {
-        const månedMap: { [key: string]: string } = {
-          jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-          jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-        };
-        const d = match[2].padStart(2, "0");
-        const m = månedMap[match[1].toLowerCase().slice(0, 3)] || "01";
-        return `${match[3]}-${m}-${d}`;
-      } else if (match.length === 2 && match[1].length === 8) {
-        const str = match[1];
-        return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6)}`;
+      if (match && match.length === 4) {
+        let [_, d1, d2, d3] = match;
+        if (d3.length === 2) d3 = "20" + d3;
+        return `${d3}-${d2}-${d1}`;
       }
     }
     return "";
   };
-
-  const finnTotalbelop = (tekst: string): string => {
+    const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
@@ -153,18 +134,18 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
-      const isoDato = parseDato(text);
+      const datoen = parseDato(text);
       const valuta = finnValuta(text);
       const belopBase = finnTotalbelop(text);
 
-      setDato(isoDato);
+      setDato(datoen);
       setValuta(valuta);
       setBelopOriginal(belopBase);
 
       if (valuta === "NOK" || valuta === "") {
         setBelop(belopBase);
       } else {
-        const kurs = await hentKurs(valuta, "NOK", isoDato || "2024-01-01");
+        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
         const omregnet = parseFloat(belopBase) * kurs;
         setBelop(omregnet.toFixed(2));
       }
