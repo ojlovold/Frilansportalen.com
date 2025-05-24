@@ -173,6 +173,13 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         return;
       }
 
+      alert(JSON.stringify({
+        tittel,
+        belop: parseFloat(belop),
+        valuta,
+        dato,
+      }));
+
       const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
       const tabell = "kvitteringer";
