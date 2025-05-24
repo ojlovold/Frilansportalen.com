@@ -85,17 +85,52 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       .filter((val) => !isNaN(val) && val > 0);
   };
 
+  const parseDato = (tekst: string): string => {
+    const regexer = [
+      /\b(\d{4})[-./](\d{2})[-./](\d{2})\b/,
+      /\b(\d{2})[-./](\d{2})[-./](\d{4})\b/,
+      /\b(\d{2})[-./](\d{2})[-./](\d{2})\b/,
+      /\b(\d{2})[-./](\d{2})[-./](\d{4})\b/,
+      /\b(\d{2})[ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ ]?(\d{2,4})/i,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ ]?(\d{1,2})[a-z]{0,2},?[ ]?(\d{4})/i,
+      /\b(\d{8})\b/,
+    ];
+
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (!match) continue;
+
+      if (match.length === 4 && match[1].length === 4) {
+        return `${match[1]}-${match[2]}-${match[3]}`;
+      } else if (match.length === 4 && match[3].length === 4) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
+      } else if (match.length === 4 && isNaN(Number(match[2]))) {
+        const månedMap: { [key: string]: string } = {
+          jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+          jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+        };
+        const d = match[2].padStart(2, "0");
+        const m = månedMap[match[1].toLowerCase().slice(0, 3)] || "01";
+        return `${match[3]}-${m}-${d}`;
+      } else if (match.length === 2 && match[1].length === 8) {
+        const str = match[1];
+        return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6)}`;
+      }
+    }
+    return "";
+  };
+
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|bel\u00f8p|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const tall = finnAlleTall(linje);
         kandidater.push(...tall);
       }
     }
-    const h\u00f8yeste = Math.max(...kandidater, 0);
-    return h\u00f8yeste > 0 ? h\u00f8yeste.toFixed(2) : "";
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
   const finnValuta = (tekst: string): string => {
@@ -103,33 +138,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (lower.includes("usd") || lower.includes("$")) return "USD";
     if (lower.includes("eur")) return "EUR";
     return "NOK";
-  };
-
-  const parseDato = (tekst: string): string => {
-    const regexer = [
-      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
-      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/,
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
-      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
-    ];
-    for (const r of regexer) {
-      const match = tekst.match(r);
-      if (match && match.length === 4) {
-        let [_, d1, d2, d3] = match;
-        if (r.source.includes("jan")) {
-          const m\u00e5nedMap: { [key: string]: string } = {
-            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-          };
-          const m\u00e5ned = m\u00e5nedMap[d1.slice(0, 3).toLowerCase()] || "";
-          return `${d2.padStart(2, "0")}.${m\u00e5ned}.${d3}`;
-        }
-        if (d3.length === 2) d3 = "20" + d3;
-        return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
-      }
-    }
-    return "";
   };
 
   const lesKvittering = async () => {
@@ -145,46 +153,40 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
-      const datoen = parseDato(text);
+      const isoDato = parseDato(text);
       const valuta = finnValuta(text);
       const belopBase = finnTotalbelop(text);
-      setDato(datoen);
+
+      setDato(isoDato);
       setValuta(valuta);
       setBelopOriginal(belopBase);
 
       if (valuta === "NOK" || valuta === "") {
         setBelop(belopBase);
       } else {
-        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
+        const kurs = await hentKurs(valuta, "NOK", isoDato || "2024-01-01");
         const omregnet = parseFloat(belopBase) * kurs;
         setBelop(omregnet.toFixed(2));
       }
 
       setStatus("Tekst hentet og tolket fullstendig.");
     } catch (error) {
-      setStatus("Kunne ikke lese kvittering. Pr\u00f8v igjen.");
+      setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
   };
 
   const lagreKvittering = async () => {
     try {
       if (!fil || !belop || !dato) {
-        setStatus("Manglende data. Fyll inn bel\u00f8p og dato.");
+        setStatus("Manglende data. Fyll inn beløp og dato.");
         return;
       }
-
-      alert(JSON.stringify({
-        tittel,
-        belop: parseFloat(belop),
-        valuta,
-        dato,
-      }));
 
       const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
       const tabell = "kvitteringer";
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("dokumenter")
         .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
 
@@ -228,10 +230,10 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Originalt bel\u00f8p" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (YYYY-MM-DD)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
