@@ -173,13 +173,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         return;
       }
 
-      if (!user?.id) {
-        setStatus("Ingen bruker funnet. Logg inn p\u00e5 nytt.");
-        return;
-      }
-
-      alert("Bruker-ID: " + user?.id);
-
       const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
       const tabell = "kvitteringer";
@@ -204,7 +197,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
           belop: parseFloat(belop),
           valuta,
           dato,
-          bruker_id: user.id,
           fil_url: urlData?.publicUrl || null,
         },
       ]);
