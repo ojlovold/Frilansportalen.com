@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useUser } from "@supabase/auth-helpers-react";
@@ -89,13 +88,13 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|bel\u00f8p|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const tall = finnAlleTall(linje);
         kandidater.push(...tall);
       }
     }
-    const h\u00f8yeste = Math.max(...kandidater, 0);
-    return h\u00f8yeste > 0 ? h\u00f8yeste.toFixed(2) : "";
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
   const finnValuta = (tekst: string): string => {
@@ -118,12 +117,12 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (match && match.length === 4) {
         let [_, d1, d2, d3] = match;
         if (r.source.includes("jan")) {
-          const m\u00e5nedMap: { [key: string]: string } = {
+          const månedMap: { [key: string]: string } = {
             jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
             jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
           };
-          const m\u00e5ned = m\u00e5nedMap[d1.slice(0, 3).toLowerCase()] || "";
-          return `${d2.padStart(2, "0")}.${m\u00e5ned}.${d3}`;
+          const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
+          return `${d2.padStart(2, "0")}.${måned}.${d3}`;
         }
         if (d3.length === 2) d3 = "20" + d3;
         return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
@@ -162,14 +161,14 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       setStatus("Tekst hentet og tolket fullstendig.");
     } catch (error) {
-      setStatus("Kunne ikke lese kvittering. Pr\u00f8v igjen.");
+      setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
   };
 
   const lagreKvittering = async () => {
     try {
       if (!fil || !belop || !dato) {
-        setStatus("Manglende data. Fyll inn bel\u00f8p og dato.");
+        setStatus("Manglende data. Fyll inn beløp og dato.");
         return;
       }
 
@@ -193,6 +192,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       const { error } = await supabase.from(tabell).insert([
         {
+          bruker_id: user?.id,
           tittel,
           belop: parseFloat(belop),
           valuta,
@@ -221,7 +221,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Originalt bel\u00f8p" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
