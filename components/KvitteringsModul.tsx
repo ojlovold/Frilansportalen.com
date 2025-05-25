@@ -46,6 +46,11 @@ export default function KvitteringsModul() {
       return;
     }
 
+    if (!user?.id) {
+      setStatus("Bruker-ID mangler. Vennligst logg inn på nytt.");
+      return;
+    }
+
     if (!fil || !tittel || !belop) {
       setStatus("Fyll ut alle felt og velg en fil.");
       return;
@@ -68,7 +73,7 @@ export default function KvitteringsModul() {
       .getPublicUrl(path);
 
     const { error: dbError } = await supabase.from("admin_utgifter").insert({
-      bruker_id: user?.id,
+      bruker_id: user.id,
       tittel,
       belop,
       valuta: "NOK",
