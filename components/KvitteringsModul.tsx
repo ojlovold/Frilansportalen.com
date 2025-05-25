@@ -121,7 +121,13 @@ export default function KvitteringsModul() {
       )}
 
       <hr className="my-6" />
-      <h3 className="text-lg font-semibold mb-2">Tidligere utgifter</h3>
+      <div className="text-xs text-gray-500 mb-4">
+  <p><strong>Debug:</strong></p>
+  <p>user.id: {user?.id}</p>
+  <p>Premium: {String(brukerHarPremium)}</p>
+</div>
+
+<h3 className="text-lg font-semibold mb-2">Tidligere utgifter</h3>
       <ul className="text-sm space-y-2">
         {liste.map((rad) => (
           <li key={rad.id} className="flex justify-between items-center border-b pb-1">
