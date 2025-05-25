@@ -55,7 +55,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         resolve(canvas);
       };
     });
-    const parseDato = (tekst: string): string => {
+
+  const parseDato = (tekst: string): string => {
     const regexer = [
       /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
       /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
@@ -145,7 +146,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     setStatus("Ferdig");
   };
-    const lagreKvittering = async () => {
+
+  const lagreKvittering = async () => {
     if (!fil || !belop || !dato || !user) {
       setStatus("Manglende data");
       return;
@@ -171,7 +173,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const tokenRes = await supabase.auth.getSession();
     const token = tokenRes.data.session?.access_token;
 
-    const res = await fetch("/functions/v1/leggTilKvittering", {
+    const res = await fetch("https://tvnwbchnvnvneheuzrzqfq.supabase.co/functions/v1/leggTilKvittering", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
