@@ -22,7 +22,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
 
-  const user = useUser(); // Supabase v2: returns User | null
+  const user = useUser();
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -130,7 +130,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     }
     return "";
   };
-    const lesKvittering = async () => {
+
+  const lesKvittering = async () => {
     try {
       if (!fil) return;
       setStatus("Leser kvittering...");
@@ -140,7 +141,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       } else {
         canvas = await bildeTilCanvas(fil);
       }
-
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
@@ -161,15 +161,14 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       setStatus("Tekst hentet og tolket fullstendig.");
     } catch (error) {
-      console.error(error);
       setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
   };
 
   const lagreKvittering = async () => {
     try {
-      if (!fil || !belop || !dato || !user?.id) {
-        setStatus("Manglende data eller ikke innlogget.");
+      if (!fil || !belop || !dato) {
+        setStatus("Manglende data. Fyll inn beløp og dato.");
         return;
       }
 
@@ -177,11 +176,12 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       const folder = rolle === "admin" ? "admin" : "bruker";
       const tabell = "kvitteringer";
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("dokumenter")
         .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
 
       if (uploadError) {
+        console.error("Opplasting feilet:", uploadError.message);
         setStatus(`Opplasting feilet: ${uploadError.message}`);
         return;
       }
@@ -192,7 +192,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       const { error } = await supabase.from(tabell).insert([
         {
-          bruker_id: user.id,
+          bruker_id: user?.id,
           tittel,
           belop: parseFloat(belop),
           valuta,
@@ -201,20 +201,19 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         },
       ]);
 
-      setStatus(error ? "Feil ved lagring til database." : "Kvittering lagret!");
+      if (error) setStatus("Feil ved lagring til database.");
+      else setStatus("Kvittering lagret!");
     } catch (err) {
-      console.error(err);
+      console.error("Uventet feil:", err);
       setStatus("Uventet feil ved lagring.");
     }
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
-      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">
-        Les kvittering
-      </button>
+      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
       <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
         {tekst || "Ingen tekst funnet."}
