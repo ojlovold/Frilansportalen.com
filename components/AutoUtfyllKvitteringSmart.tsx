@@ -22,7 +22,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
 
-  const { user } = useUser(); // ← DENNE LINJEN ER FIKSET
+  const supaUser = useUser();
+  const userId = supaUser?.user?.id;
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -167,8 +168,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const lagreKvittering = async () => {
     try {
-      if (!fil || !belop || !dato) {
-        setStatus("Manglende data. Fyll inn beløp og dato.");
+      if (!fil || !belop || !dato || !userId) {
+        setStatus("Manglende data. Fyll inn beløp, dato og logg inn.");
         return;
       }
 
@@ -192,7 +193,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
       const { error } = await supabase.from(tabell).insert([
         {
-          bruker_id: user?.id,
+          bruker_id: userId,
           tittel,
           belop: parseFloat(belop),
           valuta,
