@@ -1,4 +1,3 @@
-// Full restitusjon: AutoUtfyllKvitteringSmart.tsx slik den var da den fungerte riktig
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useUser } from "@supabase/auth-helpers-react";
@@ -23,7 +22,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
 
-  const user = useUser();
+  const { user } = useUser(); // ← DENNE LINJEN ER FIKSET
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -212,7 +211,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rettet)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
