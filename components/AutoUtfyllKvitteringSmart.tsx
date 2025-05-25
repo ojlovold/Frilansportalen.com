@@ -1,3 +1,4 @@
+// Tidligere fungerende versjon av AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useUser } from "@supabase/auth-helpers-react";
@@ -69,13 +70,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     });
   };
 
-  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
-    const rensetDato = dato.split(".").reverse().join("-");
-    const res = await fetch(`https://api.frankfurter.app/${rensetDato}?from=${fra}&to=${til}`);
-    const data = await res.json();
-    return data.rates?.[til] || 0;
-  };
-
   const finnAlleTall = (linje: string): number[] => {
     const matches = [...linje.matchAll(/\d[\d.,]+/g)];
     return matches
@@ -97,38 +91,13 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
-  const finnValuta = (tekst: string): string => {
-    const lower = tekst.toLowerCase();
-    if (lower.includes("usd") || lower.includes("$")) return "USD";
-    if (lower.includes("eur")) return "EUR";
-    return "NOK";
-  };
-
   const parseDato = (tekst: string): string => {
-    const regexer = [
-      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
-      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/,
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
-      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
-    ];
-    for (const r of regexer) {
-      const match = tekst.match(r);
-      if (match && match.length === 4) {
-        let [_, d1, d2, d3] = match;
-        if (r.source.includes("jan")) {
-          const månedMap: { [key: string]: string } = {
-            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-          };
-          const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
-          return `${d2.padStart(2, "0")}.${måned}.${d3}`;
-        }
-        if (d3.length === 2) d3 = "20" + d3;
-        return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
-      }
-    }
-    return "";
+    const regex = /(\d{2})[./-](\d{2})[./-](\d{2,4})/;
+    const match = tekst.match(regex);
+    if (!match) return "";
+    let [_, d, m, y] = match;
+    if (y.length === 2) y = "20" + y;
+    return `${d}.${m}.${y}`;
   };
 
   const lesKvittering = async () => {
@@ -143,23 +112,12 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       }
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
-
       const datoen = parseDato(text);
-      const valuta = finnValuta(text);
       const belopBase = finnTotalbelop(text);
       setDato(datoen);
-      setValuta(valuta);
       setBelopOriginal(belopBase);
-
-      if (valuta === "NOK" || valuta === "") {
-        setBelop(belopBase);
-      } else {
-        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
-        const omregnet = parseFloat(belopBase) * kurs;
-        setBelop(omregnet.toFixed(2));
-      }
-
-      setStatus("Tekst hentet og tolket fullstendig.");
+      setBelop(belopBase);
+      setStatus("Tekst hentet og tolket.");
     } catch (error) {
       setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
@@ -211,7 +169,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
