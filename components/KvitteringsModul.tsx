@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useUser } from "@supabase/auth-helpers-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,23 +10,30 @@ const supabase = createClient(
 export default function KvitteringsModul() {
   const [fil, setFil] = useState<File | null>(null);
   const [tittel, setTittel] = useState("");
-  const [beløp, setBeløp] = useState("");
+  const [belop, setBelop] = useState("");
   const [status, setStatus] = useState("");
   const [liste, setListe] = useState<any[]>([]);
 
+  const user = useUser();
+  const brukerHarPremium = user?.user_metadata?.premium === true;
+
   useEffect(() => {
     const hentUtgifter = async () => {
+      if (!user || !brukerHarPremium) return;
+
       const { data } = await supabase
         .from("admin_utgifter")
         .select("*")
+        .eq("bruker_id", user.id)
         .order("opprettet", { ascending: false });
+
       if (data) setListe(data);
     };
 
     hentUtgifter();
   }, [status]);
 
-  const håndterFilvalg = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handterFilvalg = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       setFil(e.target.files[0]);
       setStatus("");
@@ -33,7 +41,12 @@ export default function KvitteringsModul() {
   };
 
   const lastOpp = async () => {
-    if (!fil || !tittel || !beløp) {
+    if (!brukerHarPremium) {
+      setStatus("Funksjonen er kun tilgjengelig for Premium-brukere.");
+      return;
+    }
+
+    if (!fil || !tittel || !belop) {
       setStatus("Fyll ut alle felt og velg en fil.");
       return;
     }
@@ -41,7 +54,7 @@ export default function KvitteringsModul() {
     const safeFilename = fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "");
     const path = `admin/${Date.now()}-${safeFilename}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
       .upload(path, fil);
 
@@ -52,11 +65,12 @@ export default function KvitteringsModul() {
 
     const { data: urlData } = supabase.storage
       .from("kvitteringer")
-      .getPublicUrl(path); // Bruk .getPublicUrl hvis bucket er public – eller signedUrl hvis ikke
+      .getPublicUrl(path);
 
     const { error: dbError } = await supabase.from("admin_utgifter").insert({
+      bruker_id: user?.id,
       tittel,
-      beløp,
+      belop,
       valuta: "NOK",
       fil_url: urlData?.publicUrl ?? "",
     });
@@ -66,7 +80,7 @@ export default function KvitteringsModul() {
     } else {
       setStatus("Kvittering registrert!");
       setTittel("");
-      setBeløp("");
+      setBelop("");
       setFil(null);
     }
   };
@@ -84,12 +98,12 @@ export default function KvitteringsModul() {
       />
       <input
         type="number"
-        placeholder="Beløp"
-        value={beløp}
-        onChange={(e) => setBeløp(e.target.value)}
+        placeholder="Bel\u00f8p"
+        value={belop}
+        onChange={(e) => setBelop(e.target.value)}
         className="mb-2 w-full p-2 border rounded"
       />
-      <input type="file" onChange={håndterFilvalg} className="mb-2 w-full" />
+      <input type="file" onChange={handterFilvalg} className="mb-2 w-full" />
       <button onClick={lastOpp} className="bg-black text-white px-4 py-2 rounded">
         Last opp utgift
       </button>
@@ -101,7 +115,7 @@ export default function KvitteringsModul() {
       <ul className="text-sm space-y-2">
         {liste.map((rad) => (
           <li key={rad.id} className="flex justify-between items-center border-b pb-1">
-            <span>{rad.tittel} – {rad.beløp} {rad.valuta}</span>
+            <span>{rad.tittel} – {rad.belop} {rad.valuta}</span>
             {rad.fil_url && (
               <a href={rad.fil_url} target="_blank" rel="noopener noreferrer" className="underline">
                 Vis kvittering
