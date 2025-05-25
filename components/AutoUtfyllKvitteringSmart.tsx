@@ -1,6 +1,5 @@
-// AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
-import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
 import { useUser } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -8,7 +7,10 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-const supabase = createBrowserSupabaseClient();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
@@ -36,104 +38,182 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     ctx.putImageData(imgData, 0, 0);
   };
 
-  const parseDato = (tekst: string): string => {
-    const match = tekst.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-    if (!match) return "";
-    let [_, dag, mnd, år] = match;
-    if (år.length === 2) år = "20" + år;
-    return `${dag}.${mnd}.${år}`;
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const scale = 3;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d")!;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: context, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
+
+  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
+    return await new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(fil);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
+    });
+  };
+
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const rensetDato = dato.split(".").reverse().join("-");
+    const res = await fetch(`https://api.frankfurter.app/${rensetDato}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return data.rates?.[til] || 0;
+  };
+
+  const finnAlleTall = (linje: string): number[] => {
+    const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+    return matches
+      .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+      .map((str) => parseFloat(str))
+      .filter((val) => !isNaN(val) && val > 0);
   };
 
   const finnTotalbelop = (tekst: string): string => {
-    const linjer = tekst.toLowerCase().split("\n");
-    const kandidater = linjer
-      .filter((l) => /(total|sum|betalt|amount paid)/.test(l) && /\d/.test(l))
-      .flatMap((linje) => {
-        const match = linje.match(/\d+[.,]?\d*/g);
-        return match ? match.map((m) => parseFloat(m.replace(",", "."))) : [];
-      });
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    const kandidater: number[] = [];
+    for (const linje of linjer) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+        const tall = finnAlleTall(linje);
+        kandidater.push(...tall);
+      }
+    }
     const høyeste = Math.max(...kandidater, 0);
     return høyeste > 0 ? høyeste.toFixed(2) : "";
+  };
+
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
+  const parseDato = (tekst: string): string => {
+    const regexer = [
+      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
+      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    ];
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (match && match.length === 4) {
+        let [_, d1, d2, d3] = match;
+        if (r.source.includes("jan")) {
+          const månedMap: { [key: string]: string } = {
+            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+          };
+          const måned = månedMap[d1.slice(0, 3).toLowerCase()] || "";
+          return `${d2.padStart(2, "0")}.${måned}.${d3}`;
+        }
+        if (d3.length === 2) d3 = "20" + d3;
+        return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
+      }
+    }
+    return "";
   };
 
   const lesKvittering = async () => {
     try {
       if (!fil) return;
       setStatus("Leser kvittering...");
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(fil);
-      await new Promise((resolve) => (img.onload = resolve));
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      forbedreKontrast(canvas);
-
+      let canvas;
+      if (fil.type === "application/pdf") {
+        canvas = await pdfTilBilde(fil);
+      } else {
+        canvas = await bildeTilCanvas(fil);
+      }
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
       const datoen = parseDato(text);
+      const valuta = finnValuta(text);
       const belopBase = finnTotalbelop(text);
       setDato(datoen);
+      setValuta(valuta);
       setBelopOriginal(belopBase);
-      setBelop(belopBase);
 
-      setStatus("Tekst hentet og tolket.");
-    } catch (err) {
-      setStatus("Kunne ikke lese kvittering.");
+      if (valuta === "NOK" || valuta === "") {
+        setBelop(belopBase);
+      } else {
+        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
+        const omregnet = parseFloat(belopBase) * kurs;
+        setBelop(omregnet.toFixed(2));
+      }
+
+      setStatus("Tekst hentet og tolket fullstendig.");
+    } catch (error) {
+      setStatus("Kunne ikke lese kvittering. Prøv igjen.");
     }
   };
 
   const lagreKvittering = async () => {
-    if (!user?.id) {
-      setStatus("Bruker-ID mangler. Logg inn på nytt.");
-      return;
+    try {
+      if (!fil || !belop || !dato) {
+        setStatus("Manglende data. Fyll inn beløp og dato.");
+        return;
+      }
+
+      const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
+      const folder = rolle === "admin" ? "admin" : "bruker";
+      const tabell = "kvitteringer";
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("dokumenter")
+        .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
+
+      if (uploadError) {
+        console.error("Opplasting feilet:", uploadError.message);
+        setStatus(`Opplasting feilet: ${uploadError.message}`);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("dokumenter")
+        .getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
+
+      const { error } = await supabase.from(tabell).insert([
+        {
+          bruker_id: user?.id,
+          tittel,
+          belop: parseFloat(belop),
+          valuta,
+          dato,
+          fil_url: urlData?.publicUrl || null,
+        },
+      ]);
+
+      if (error) setStatus("Feil ved lagring til database.");
+      else setStatus("Kvittering lagret!");
+    } catch (err) {
+      console.error("Uventet feil:", err);
+      setStatus("Uventet feil ved lagring.");
     }
-    if (!fil || !belop || !dato) {
-      setStatus("Manglende data. Fyll inn beløp og dato.");
-      return;
-    }
-
-    const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
-    const folder = rolle === "admin" ? "admin" : "bruker";
-    const { error: uploadError } = await supabase.storage
-      .from("dokumenter")
-      .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
-
-    if (uploadError) {
-      setStatus(`Opplasting feilet: ${uploadError.message}`);
-      return;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from("dokumenter")
-      .getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
-
-    const { error } = await supabase.from("kvitteringer").insert([
-      {
-        bruker_id: user.id,
-        tittel,
-        belop: parseFloat(belop),
-        valuta,
-        dato,
-        fil_url: urlData?.publicUrl || null,
-      },
-    ]);
-
-    if (error) setStatus("Feil ved lagring til database.");
-    else setStatus("Kvittering lagret!");
   };
 
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Kvitteringsopplasting</h2>
+      <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
-
-      {user?.id && (
-        <p className="text-xs text-gray-500">Bruker-ID: {user.id}</p>
-      )}
 
       <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
         {tekst || "Ingen tekst funnet."}
