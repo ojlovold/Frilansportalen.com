@@ -1,4 +1,3 @@
-// components/AutoUtfyllKvitteringSmart.tsx
 import { useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
@@ -13,7 +12,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [tittel, setTittel] = useState("");
   const [belop, setBelop] = useState("");
   const [belopOriginal, setBelopOriginal] = useState("");
-  const [belopForslag, setBelopForslag] = useState<string[]>([]);
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
@@ -57,36 +55,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         resolve(canvas);
       };
     });
-
-  const finnAlleTall = (linje: string): number[] => {
-    const matches = [...linje.matchAll(/\d[\d.,]+/g)];
-    return matches
-      .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
-      .map((str) => parseFloat(str))
-      .filter((val) => !isNaN(val) && val > 0);
-  };
-
-  const finnTotalbelop = (tekst: string): string => {
-    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    const kandidater: number[] = [];
-    for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
-        const tall = finnAlleTall(linje);
-        kandidater.push(...tall);
-      }
-    }
-    const høyeste = Math.max(...kandidater, 0);
-    return høyeste > 0 ? høyeste.toFixed(2) : "";
-  };
-
-  const finnValuta = (tekst: string): string => {
-    const lower = tekst.toLowerCase();
-    if (lower.includes("usd") || lower.includes("$")) return "USD";
-    if (lower.includes("eur")) return "EUR";
-    return "NOK";
-  };
-
-  const parseDato = (tekst: string): string => {
+    const parseDato = (tekst: string): string => {
     const regexer = [
       /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
       /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
@@ -110,6 +79,30 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       }
     }
     return "";
+  };
+
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
+  const finnTotalbelop = (tekst: string): string => {
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    const kandidater: number[] = [];
+    for (const linje of linjer) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+        const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+        const tall = matches
+          .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+          .map((str) => parseFloat(str))
+          .filter((val) => !isNaN(val) && val > 0);
+        kandidater.push(...tall);
+      }
+    }
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
@@ -139,7 +132,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     setValuta(valutaFunnet);
     setBelopOriginal(belopBase);
 
-    if (valutaFunnet === "NOK") {
+    if (valutaFunnet === "NOK" || valutaFunnet === "") {
       setBelop(belopBase);
     } else {
       const kurs = await hentKurs(valutaFunnet, "NOK", datoen || "2024-01-01");
@@ -147,16 +140,12 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       setBelop(omregnet.toFixed(2));
     }
 
-    const forslag = Array.from(new Set(finnAlleTall(text).map((b) => b.toFixed(2))));
-    setBelopForslag(forslag);
-
     const linjer = text.split("\n").filter((l) => l.length > 3);
     setTittel(linjer[0] || "Kvittering");
 
     setStatus("Ferdig");
   };
-
-  const lagreKvittering = async () => {
+    const lagreKvittering = async () => {
     if (!fil || !belop || !dato || !user) {
       setStatus("Manglende data");
       return;
@@ -166,16 +155,17 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("dokumenter")
+      .from("kvitteringer")
       .upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
 
     if (uploadError) {
-      setStatus("Feil ved opplasting");
+      console.error("Feil ved opplasting:", uploadError.message);
+      setStatus("Feil ved opplasting: " + uploadError.message);
       return;
     }
 
     const { data: urlData } = supabase.storage
-      .from("dokumenter")
+      .from("kvitteringer")
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
     const tokenRes = await supabase.auth.getSession();
@@ -201,7 +191,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       setStatus("Kvittering lagret!");
     } else {
       const err = await res.json();
-      setStatus("Feil: " + err?.error);
+      setStatus("Feil fra funksjon: " + err?.error);
     }
   };
 
@@ -220,19 +210,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
-
-        {belopForslag.length > 1 && (
-          <div className="text-sm text-gray-700">
-            <p>Forslåtte beløp:</p>
-            <ul className="list-disc list-inside">
-              {belopForslag.map((val, idx) => (
-                <li key={idx} className="cursor-pointer underline" onClick={() => setBelop(val)}>
-                  {val}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
       <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
