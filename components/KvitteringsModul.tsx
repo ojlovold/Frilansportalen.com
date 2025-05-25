@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { useUser } from "@supabase/auth-helpers-react";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createBrowserSupabaseClient();
 
 export default function KvitteringsModul() {
   const [fil, setFil] = useState<File | null>(null);
@@ -50,6 +47,8 @@ export default function KvitteringsModul() {
       setStatus("Bruker-ID mangler. Vennligst logg inn på nytt.");
       return;
     }
+
+    console.log("Bruker-ID som sendes:", user.id);
 
     if (!fil || !tittel || !belop) {
       setStatus("Fyll ut alle felt og velg en fil.");
