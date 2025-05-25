@@ -39,6 +39,21 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     ctx.putImageData(imgData, 0, 0);
   };
 
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const scale = 3;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d")!;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: context, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
+
   const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
     return await new Promise((resolve) => {
       const img = document.createElement("img");
@@ -55,65 +70,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     });
   };
 
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    const page = await pdf.getPage(1);
-    const scale = 3;
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: context, viewport }).promise;
-    forbedreKontrast(canvas);
-    return canvas;
-  };
-
-  const parseDato = (tekst: string): string => {
-    const månedMap: { [key: string]: string } = {
-      jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-      jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-    };
-
-    const regexer = [
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
-      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
-      /\b(\d{2})[./-](\d{2})[./-](\d{2})\b/,
-      /\b(\d{8})\b/,
-      /\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[.,]?\s+(\d{4})\b/i,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})[a-z]{0,2},?\s+(\d{4})\b/i
-    ];
-
-    for (const r of regexer) {
-      const match = tekst.match(r);
-      if (!match) continue;
-
-      if (match.length === 4 && r.source.startsWith("\\b(\\d{4})")) {
-        return `${match[1]}-${match[2]}-${match[3]}`;
-      }
-      if (match.length === 4 && match[3].length === 4) {
-        return `${match[3]}-${match[2]}-${match[1]}`;
-      }
-      if (match.length === 2 && match[1].length === 8) {
-        const d = match[1];
-        return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
-      }
-      if (match.length === 4 && r.source.includes("(\\d{1,2})\\s+")) {
-        const dag = match[1].padStart(2, "0");
-        const mnd = månedMap[match[2].toLowerCase().slice(0, 3)] || "01";
-        return `${match[3]}-${mnd}-${dag}`;
-      }
-      if (match.length === 4 && r.source.startsWith("\\b(jan|feb|mar")) {
-        const mnd = månedMap[match[1].toLowerCase().slice(0, 3)] || "01";
-        const dag = match[2].padStart(2, "0");
-        return `${match[3]}-${mnd}-${dag}`;
-      }
-    }
-    return "";
-  };
-    const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
-    const res = await fetch(`https://api.frankfurter.app/${dato}?from=${fra}&to=${til}`);
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const rensetDato = dato.split(".").reverse().join("-");
+    const res = await fetch(`https://api.frankfurter.app/${rensetDato}?from=${fra}&to=${til}`);
     const data = await res.json();
     return data.rates?.[til] || 0;
   };
@@ -130,13 +89,13 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|bel\u00f8p|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const tall = finnAlleTall(linje);
         kandidater.push(...tall);
       }
     }
-    const høyeste = Math.max(...kandidater, 0);
-    return høyeste > 0 ? høyeste.toFixed(2) : "";
+    const h\u00f8yeste = Math.max(...kandidater, 0);
+    return h\u00f8yeste > 0 ? h\u00f8yeste.toFixed(2) : "";
   };
 
   const finnValuta = (tekst: string): string => {
@@ -146,54 +105,84 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return "NOK";
   };
 
+  const parseDato = (tekst: string): string => {
+    const regexer = [
+      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
+      /\b(\d{2})[./-](\d{2,4})[./-](\d{2})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    ];
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (match && match.length === 4) {
+        let [_, d1, d2, d3] = match;
+        if (r.source.includes("jan")) {
+          const m\u00e5nedMap: { [key: string]: string } = {
+            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+          };
+          const m\u00e5ned = m\u00e5nedMap[d1.slice(0, 3).toLowerCase()] || "";
+          return `${d2.padStart(2, "0")}.${m\u00e5ned}.${d3}`;
+        }
+        if (d3.length === 2) d3 = "20" + d3;
+        return `${d1.padStart(2, "0")}.${d2.padStart(2, "0")}.${d3}`;
+      }
+    }
+    return "";
+  };
+
   const lesKvittering = async () => {
     try {
       if (!fil) return;
       setStatus("Leser kvittering...");
-      const canvas = fil.type === "application/pdf"
-        ? await pdfTilBilde(fil)
-        : await bildeTilCanvas(fil);
-
+      let canvas;
+      if (fil.type === "application/pdf") {
+        canvas = await pdfTilBilde(fil);
+      } else {
+        canvas = await bildeTilCanvas(fil);
+      }
       const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r: any) => r.data.text || "");
       setTekst(text);
 
-      const isoDato = parseDato(text);
+      const datoen = parseDato(text);
       const valuta = finnValuta(text);
       const belopBase = finnTotalbelop(text);
-
-      setDato(isoDato);
+      setDato(datoen);
       setValuta(valuta);
       setBelopOriginal(belopBase);
 
       if (valuta === "NOK" || valuta === "") {
         setBelop(belopBase);
       } else {
-        const kurs = await hentKurs(valuta, "NOK", isoDato || "2024-01-01");
+        const kurs = await hentKurs(valuta, "NOK", datoen || "2024-01-01");
         const omregnet = parseFloat(belopBase) * kurs;
         setBelop(omregnet.toFixed(2));
       }
 
       setStatus("Tekst hentet og tolket fullstendig.");
     } catch (error) {
-      setStatus("Kunne ikke lese kvittering. Prøv igjen.");
+      setStatus("Kunne ikke lese kvittering. Pr\u00f8v igjen.");
     }
   };
 
   const lagreKvittering = async () => {
     try {
       if (!fil || !belop || !dato) {
-        setStatus("Manglende data. Fyll inn beløp og dato.");
+        setStatus("Manglende data. Fyll inn bel\u00f8p og dato.");
         return;
       }
 
       const safeFilename = `${Date.now()}-${fil.name.replace(/\s+/g, "-").replace(/[^\w.-]/g, "")}`;
       const folder = rolle === "admin" ? "admin" : "bruker";
+      const tabell = "kvitteringer";
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("dokumenter")
         .upload(`${folder}/kvitteringer/${safeFilename}`, fil, { upsert: true });
 
       if (uploadError) {
+        console.error("Opplasting feilet:", uploadError.message);
         setStatus(`Opplasting feilet: ${uploadError.message}`);
         return;
       }
@@ -202,7 +191,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         .from("dokumenter")
         .getPublicUrl(`${folder}/kvitteringer/${safeFilename}`);
 
-      const { error } = await supabase.from("kvitteringer").insert([
+      const { error } = await supabase.from(tabell).insert([
         {
           tittel,
           belop: parseFloat(belop),
@@ -215,6 +204,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (error) setStatus("Feil ved lagring til database.");
       else setStatus("Kvittering lagret!");
     } catch (err) {
+      console.error("Uventet feil:", err);
       setStatus("Uventet feil ved lagring.");
     }
   };
@@ -224,15 +214,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       <h2 className="text-xl font-semibold">Kvitteringsopplasting (Rolls)</h2>
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
-      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
+
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">
+        {tekst || "Ingen tekst funnet."}
+      </pre>
+
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+        <input type="text" placeholder="Originalt bel\u00f8p" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Dato (YYYY-MM-DD)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
-      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">Lagre kvittering</button>
+
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
+        Lagre kvittering
+      </button>
+
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
     </div>
   );
