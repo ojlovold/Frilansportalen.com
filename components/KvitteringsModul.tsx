@@ -114,6 +114,12 @@ export default function KvitteringsModul() {
 
       {status && <p className="mt-4 text-sm">{status}</p>}
 
+      {user?.id && (
+        <p className="text-xs text-gray-500">
+          Bruker-ID: <span className="font-mono">{user.id}</span>
+        </p>
+      )}
+
       <hr className="my-6" />
       <h3 className="text-lg font-semibold mb-2">Tidligere utgifter</h3>
       <ul className="text-sm space-y-2">
