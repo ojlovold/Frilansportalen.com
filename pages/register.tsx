@@ -27,7 +27,7 @@ export default function Register() {
     if (error) {
       setFeil("Noe gikk galt: " + error.message);
     } else {
-      setStatus("Bruker registrert! Sjekk e-posten din for å bekrefte kontoen.");
+      setStatus("Bruker registrert! Du må bekrefte e-posten din via lenken vi har sendt.");
       setNavn("");
       setEpost("");
       setPassord("");
@@ -77,7 +77,7 @@ export default function Register() {
           </div>
 
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded text-sm">
-            <strong>Viktig:</strong> Etter at du har opprettet konto, må du bekrefte e-posten din via lenken du får.
+            <strong>Viktig:</strong> Etter at du har opprettet konto, må du bekrefte e-posten din via lenken du får tilsendt.
           </div>
 
           <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 w-full">
