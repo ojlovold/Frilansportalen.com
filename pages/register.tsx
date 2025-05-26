@@ -1,20 +1,37 @@
 import Head from "next/head";
 import Header from "../components/Header";
 import { useState } from "react";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
 
 export default function Register() {
   const [navn, setNavn] = useState("");
   const [epost, setEpost] = useState("");
   const [passord, setPassord] = useState("");
   const [status, setStatus] = useState("");
+  const [feil, setFeil] = useState("");
+  const supabase = useSupabaseClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Ny bruker registrert:", { navn, epost });
-    setStatus("Bruker registrert! Du kan nå logge inn.");
-    setNavn("");
-    setEpost("");
-    setPassord("");
+    setStatus("");
+    setFeil("");
+
+    const { error } = await supabase.auth.signUp({
+      email: epost,
+      password: passord,
+      options: {
+        data: { navn },
+      },
+    });
+
+    if (error) {
+      setFeil("Noe gikk galt: " + error.message);
+    } else {
+      setStatus("Bruker registrert! Sjekk e-posten din for å bekrefte kontoen.");
+      setNavn("");
+      setEpost("");
+      setPassord("");
+    }
   };
 
   return (
@@ -58,12 +75,18 @@ export default function Register() {
               className="w-full p-2 border rounded"
             />
           </div>
-          <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
+
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded text-sm">
+            <strong>Viktig:</strong> Etter at du har opprettet konto, må du bekrefte e-posten din via lenken du får.
+          </div>
+
+          <button type="submit" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 w-full">
             Opprett konto
           </button>
         </form>
 
-        {status && <p className="mt-4 text-sm">{status}</p>}
+        {status && <p className="mt-4 text-green-700 text-sm">{status}</p>}
+        {feil && <p className="mt-4 text-red-700 text-sm">{feil}</p>}
       </main>
     </>
   );
