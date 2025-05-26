@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -15,8 +15,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
+  const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
+
+  useEffect(() => {
+    const hentKvitteringer = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("kvitteringer")
+        .select("*")
+        .eq("bruker_id", user.id)
+        .order("dato", { ascending: false });
+
+      if (!error && data) setKvitteringer(data);
+    };
+    hentKvitteringer();
+  }, [user]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -93,7 +108,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|bel\u00f8p|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -102,8 +117,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         kandidater.push(...tall);
       }
     }
-    const høyeste = Math.max(...kandidater, 0);
-    return høyeste > 0 ? høyeste.toFixed(2) : "";
+    const h\u00f8yeste = Math.max(...kandidater, 0);
+    return h\u00f8yeste > 0 ? h\u00f8yeste.toFixed(2) : "";
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
@@ -170,30 +185,29 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       .from("kvitteringer")
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
-    const tokenRes = await supabase.auth.getSession();
-    const token = tokenRes.data.session?.access_token;
-
-    const res = await fetch("https://tvnwbchnvnvneheuzrzqfq.supabase.co/functions/v1/leggTilKvittering", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const { error } = await supabase.from("kvitteringer").insert([
+      {
+        bruker_id: user.id,
         rolle,
         tittel,
-        belop,
+        belop: parseFloat(belop),
         valuta,
         dato,
-        fil_url: urlData?.publicUrl,
-      }),
-    });
+        fil_url: urlData?.publicUrl || null,
+        opprettet: new Date().toISOString(),
+      },
+    ]);
 
-    if (res.ok) {
-      setStatus("Kvittering lagret!");
+    if (error) {
+      setStatus("Feil ved lagring til database: " + error.message);
     } else {
-      const err = await res.json();
-      setStatus("Feil fra funksjon: " + err?.error);
+      setStatus("Kvittering lagret!");
+      const { data, error } = await supabase
+        .from("kvitteringer")
+        .select("*")
+        .eq("bruker_id", user.id)
+        .order("dato", { ascending: false });
+      if (!error && data) setKvitteringer(data);
     }
   };
 
@@ -219,6 +233,32 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       </button>
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+
+      {kvitteringer.length > 0 && (
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg mb-2">Eksisterende utgifter</h3>
+          <table className="w-full text-sm border">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="p-2 border">Dato</th>
+                <th className="p-2 border">Tittel</th>
+                <th className="p-2 border">Beløp</th>
+                <th className="p-2 border">Valuta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kvitteringer.map((rad, i) => (
+                <tr key={i} className="text-center">
+                  <td className="p-2 border">{rad.dato}</td>
+                  <td className="p-2 border">{rad.tittel}</td>
+                  <td className="p-2 border">{rad.belop}</td>
+                  <td className="p-2 border">{rad.valuta}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
