@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.5";
 
 serve(async (req) => {
+  console.log("Funksjon startet: leggTilKvittering");
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -11,6 +13,7 @@ serve(async (req) => {
   const jwt = req.headers.get("Authorization")?.replace("Bearer ", "");
 
   if (!jwt) {
+    console.log("Token mangler");
     return new Response("Manglende token", { status: 401 });
   }
 
@@ -20,6 +23,7 @@ serve(async (req) => {
   } = await supabase.auth.getUser(jwt);
 
   if (error || !user) {
+    console.log("Autentisering feilet", error);
     return new Response("Ikke autentisert", { status: 401 });
   }
 
@@ -40,8 +44,10 @@ serve(async (req) => {
   ]);
 
   if (insertError) {
+    console.log("Feil ved insert:", insertError.message);
     return new Response(JSON.stringify({ error: insertError.message }), { status: 400 });
   }
 
+  console.log("Kvittering lagret OK for bruker", user.id);
   return new Response(JSON.stringify({ success: true }), { status: 200 });
 });
