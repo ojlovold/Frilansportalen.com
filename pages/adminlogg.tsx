@@ -6,6 +6,7 @@ import { supabase } from "../utils/supabaseClient";
 
 export default function Adminlogg() {
   const [loading, setLoading] = useState(true);
+  const [logg, setLogg] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -14,19 +15,24 @@ export default function Adminlogg() {
       if (!data.user) {
         router.push("/login");
       } else {
+        const { data: loggData } = await supabase
+          .from("admin_logg")
+          .select("*")
+          .order("tidspunkt", { ascending: false });
+
+        setLogg(loggData || []);
         setLoading(false);
       }
     };
     sjekkInnlogging();
   }, [router]);
 
-  if (loading) return <Layout><p className="text-sm">Laster adminlogg...</p></Layout>;
-
-  const logg = [
-    { tid: "10.05.2025 08:03", bruker: "Ole Gründer", handling: "Trykket på Start lansering" },
-    { tid: "10.05.2025 07:40", bruker: "System", handling: "Backup-portal verifisert OK" },
-    { tid: "09.05.2025 23:15", bruker: "Admin", handling: "Publiserte stilling for MediaHuset" },
-  ];
+  if (loading)
+    return (
+      <Layout>
+        <p className="text-sm">Laster adminlogg...</p>
+      </Layout>
+    );
 
   return (
     <Layout>
@@ -45,11 +51,13 @@ export default function Adminlogg() {
           </tr>
         </thead>
         <tbody>
-          {logg.map(({ tid, bruker, handling }, i) => (
+          {logg.map((entry, i) => (
             <tr key={i} className="border-t border-black">
-              <td className="p-2">{tid}</td>
-              <td className="p-2">{bruker}</td>
-              <td className="p-2">{handling}</td>
+              <td className="p-2">
+                {new Date(entry.tidspunkt).toLocaleString("no-NO")}
+              </td>
+              <td className="p-2">{entry.epost}</td>
+              <td className="p-2">{entry.handling}</td>
             </tr>
           ))}
         </tbody>
