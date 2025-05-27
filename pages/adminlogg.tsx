@@ -1,67 +1,43 @@
-import Head from "next/head";
-import Layout from "../components/Layout";
+// pages/admin/logg.tsx
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { supabase } from "../utils/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
+import Head from "next/head";
+import Layout from "@/components/Layout";
 
-export default function Adminlogg() {
-  const [loading, setLoading] = useState(true);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default function AdminLoggSide() {
   const [logg, setLogg] = useState<any[]>([]);
-  const router = useRouter();
 
   useEffect(() => {
-    const sjekkInnlogging = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        const { data: loggData } = await supabase
-          .from("admin_logg")
-          .select("*")
-          .order("tidspunkt", { ascending: false });
-
-        setLogg(loggData || []);
-        setLoading(false);
-      }
-    };
-    sjekkInnlogging();
-  }, [router]);
-
-  if (loading)
-    return (
-      <Layout>
-        <p className="text-sm">Laster adminlogg...</p>
-      </Layout>
-    );
+    supabase
+      .from("admin_logg")
+      .select("*")
+      .order("tidspunkt", { ascending: false })
+      .then(({ data }) => {
+        if (data) setLogg(data);
+      });
+  }, []);
 
   return (
     <Layout>
       <Head>
         <title>Adminlogg | Frilansportalen</title>
       </Head>
-
-      <h1 className="text-3xl font-bold mb-6">Systemlogg</h1>
-
-      <table className="w-full text-sm border border-black bg-white">
-        <thead>
-          <tr className="bg-black text-white text-left">
-            <th className="p-2">Tid</th>
-            <th className="p-2">Bruker</th>
-            <th className="p-2">Handling</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logg.map((entry, i) => (
-            <tr key={i} className="border-t border-black">
-              <td className="p-2">
-                {new Date(entry.tidspunkt).toLocaleString("no-NO")}
-              </td>
-              <td className="p-2">{entry.epost}</td>
-              <td className="p-2">{entry.handling}</td>
-            </tr>
+      <div className="p-6 bg-portalGul min-h-screen max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Adminlogg</h1>
+        <ul className="space-y-4">
+          {logg.map((entry) => (
+            <li key={entry.id} className="bg-white p-4 rounded shadow">
+              <p><strong>{entry.epost}</strong> – {new Date(entry.tidspunkt).toLocaleString()}</p>
+              <p className="text-gray-700">{entry.handling}</p>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      </div>
     </Layout>
   );
 }
