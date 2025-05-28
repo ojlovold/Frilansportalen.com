@@ -95,7 +95,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     }
     return "";
   };
-    const finnValuta = (tekst: string): string => {
+
+  const finnValuta = (tekst: string): string => {
     const lower = tekst.toLowerCase();
     if (lower.includes("usd") || lower.includes("$")) return "USD";
     if (lower.includes("eur")) return "EUR";
@@ -193,6 +194,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     ]);
 
     if (insertError) {
+      console.error("❌ Insert-feil:", insertError);
       setStatus("Feil: " + insertError.message);
     } else {
       setStatus("Kvittering lagret!");
