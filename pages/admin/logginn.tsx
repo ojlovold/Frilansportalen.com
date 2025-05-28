@@ -8,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function LoggInn() {
-  const [epost, setEpost] = useState("");
+  const [epost, setEpost] = useState("ole@frilansportalen.com");
   const [passord, setPassord] = useState("");
   const [feil, setFeil] = useState("");
   const [ok, setOk] = useState(false);
@@ -26,6 +26,7 @@ export default function LoggInn() {
     if (nyTeller >= 5) {
       setVisBypass(true);
     }
+
     const { error } = await supabase.auth.signInWithPassword({
       email: epost,
       password: passord,
@@ -35,6 +36,19 @@ export default function LoggInn() {
       setFeil("Feil e-post eller passord");
     } else {
       setOk(true);
+
+      // Sett inn bruker i `brukere`-tabellen med rolle = admin
+      const { data: session } = await supabase.auth.getUser();
+      const brukerId = session?.user?.id;
+
+      if (brukerId) {
+        await supabase.from("brukere").upsert({
+          id: brukerId,
+          epost,
+          rolle: "admin",
+        });
+      }
+
       setTimeout(() => {
         router.replace("/admin");
       }, 300);
