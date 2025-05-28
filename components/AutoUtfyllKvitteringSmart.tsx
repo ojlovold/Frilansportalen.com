@@ -95,8 +95,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     }
     return "";
   };
-
-  const finnValuta = (tekst: string): string => {
+    const finnValuta = (tekst: string): string => {
     const lower = tekst.toLowerCase();
     if (lower.includes("usd") || lower.includes("$")) return "USD";
     if (lower.includes("eur")) return "EUR";
@@ -188,21 +187,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       valuta,
       dato,
       bruker_id,
+      fil_url: urlData?.publicUrl || null,
     };
 
-    const lagreKvitt = await fetch("/functions/v1/leggTilKvittering", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, fil_url: urlData?.publicUrl }),
-    });
+    const [resKvitt, resRegn] = await Promise.all([
+      fetch("/functions/v1/leggTilKvittering", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      fetch("/functions/v1/leggTilRegnskap", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, type: "utgift", kilde: "Kvittering" }),
+      }),
+    ]);
 
-    const lagreRegn = await fetch("/functions/v1/leggTilRegnskap", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, type: "utgift", kilde: "Kvittering" }),
-    });
-
-    if (lagreKvitt.ok && lagreRegn.ok) {
+    if (resKvitt.ok && resRegn.ok) {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
         .from("kvitteringer")
@@ -211,8 +212,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         .order("dato", { ascending: false });
       if (!error && data) setKvitteringer(data);
     } else {
-      const err1 = await lagreKvitt.text();
-      const err2 = await lagreRegn.text();
+      const err1 = await resKvitt.text();
+      const err2 = await resRegn.text();
       setStatus("Feil: " + err1 + " / " + err2);
     }
   };
