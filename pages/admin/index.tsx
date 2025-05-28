@@ -1,3 +1,4 @@
+// pages/admin/index.tsx
 import Head from "next/head";
 import Link from "next/link";
 import {
@@ -8,7 +9,7 @@ import {
   Database,
   FileText,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 
@@ -16,24 +17,19 @@ export default function AdminPanel() {
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
-  const [tilgang, setTilgang] = useState(false);
 
   useEffect(() => {
-    const erBypasset = localStorage.getItem("admin") === "true";
-    if (user || erBypasset) {
-      setTilgang(true);
-    } else {
-      router.push("/admin-bypass");
+    if (!user) {
+      router.replace("/admin/logginn");
     }
-  }, [user, router]);
+  }, [user]);
 
   const loggUt = async () => {
-    localStorage.removeItem("admin");
     await supabase.auth.signOut();
-    router.push("/admin-bypass");
+    router.replace("/admin/logginn");
   };
 
-  if (!tilgang) return null;
+  if (!user) return null;
 
   return (
     <>
