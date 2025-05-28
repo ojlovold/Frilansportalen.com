@@ -11,18 +11,27 @@ serve(async (req) => {
   if (!jwt) return new Response("Manglende token", { status: 401 });
 
   const { data: { user }, error } = await supabase.auth.getUser(jwt);
-  if (error || !user) return new Response("Feil ved auth", { status: 401 });
+  const body = await req.json();
+  const { tittel, belop, valuta, dato, type, kilde, rolle, bruker_id: innsendtBrukerId } = body;
 
-  const { tittel, belop, valuta, dato, type, kilde } = await req.json();
+  let bruker_id = "";
+
+  if (rolle === "admin" && innsendtBrukerId) {
+    bruker_id = innsendtBrukerId;
+  } else if (user?.id) {
+    bruker_id = user.id;
+  } else {
+    return new Response("Mangler bruker_id", { status: 401 });
+  }
 
   const { error: insertError } = await supabase.from("regnskap").insert({
-    bruker_id: user.id,
+    bruker_id,
     tittel,
     belop,
     valuta,
     dato,
-    type,   // "utgift"
-    kilde,  // "Kvittering"
+    type,
+    kilde,
   });
 
   return insertError
