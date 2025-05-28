@@ -10,23 +10,31 @@ export default function OpprettBruker() {
     setStatus("idle");
     setMelding("Oppretter...");
 
-    const res = await fetch("/api/opprettBruker", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: "ole@frilansportalen.com",
-        password: "@Bente01",
-      }),
-    });
+    try {
+      const res = await fetch("/api/opprettBruker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "ole@frilansportalen.com",
+          password: "@Bente01",
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok) {
+      if (!res.ok) {
+        console.error("❌ FEILDATA FRA BACKEND:", data);
+        setStatus("feil");
+        setMelding(`❌ ${data.error || "Ukjent feil"}`);
+        return;
+      }
+
       setStatus("ok");
       setMelding("✅ Bruker opprettet! Du kan nå logge inn.");
-    } else {
+    } catch (err: any) {
+      console.error("⚠️ Fetch-feil:", err);
       setStatus("feil");
-      setMelding(`❌ Feil: ${data.error || "Ukjent feil"}`);
+      setMelding("❌ Fetch failed – kunne ikke kontakte backend");
     }
   };
 
