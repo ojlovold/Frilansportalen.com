@@ -18,17 +18,15 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
+  const bruker_id = user?.id || "5c141119-628a-4316-9ccd-4f1e46c6b146";
 
   useEffect(() => {
     const hentKvitteringer = async () => {
-      const bruker_id = user?.id || process.env.NEXT_PUBLIC_ADMIN_ID;
-      if (!bruker_id) return;
       const { data, error } = await supabase
         .from("kvitteringer")
         .select("*")
         .eq("bruker_id", bruker_id)
         .order("dato", { ascending: false });
-
       if (!error && data) setKvitteringer(data);
     };
     hentKvitteringer();
@@ -128,7 +126,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const data = await res.json();
     return data.rates?.[til] || 0;
   };
-    const lesKvittering = async () => {
+
+  const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
     let canvas;
@@ -166,9 +165,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
-    const bruker_id = user?.id || process.env.NEXT_PUBLIC_ADMIN_ID;
-    if (!bruker_id) return setStatus("Ingen bruker tilgjengelig");
-
     setStatus("Lagrer...");
 
     const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
@@ -185,7 +181,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const tokenRes = await supabase.auth.getSession();
     const token = tokenRes.data.session?.access_token;
 
-    const fellesData = {
+    const payload = {
       rolle,
       tittel,
       belop,
@@ -194,19 +190,19 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       bruker_id,
     };
 
-    const lagre1 = await fetch("/functions/v1/leggTilKvittering", {
+    const lagreKvitt = await fetch("/functions/v1/leggTilKvittering", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...fellesData, fil_url: urlData?.publicUrl }),
+      body: JSON.stringify({ ...payload, fil_url: urlData?.publicUrl }),
     });
 
-    const lagre2 = await fetch("/functions/v1/leggTilRegnskap", {
+    const lagreRegn = await fetch("/functions/v1/leggTilRegnskap", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...fellesData, type: "utgift", kilde: "Kvittering" }),
+      body: JSON.stringify({ ...payload, type: "utgift", kilde: "Kvittering" }),
     });
 
-    if (lagre1.ok && lagre2.ok) {
+    if (lagreKvitt.ok && lagreRegn.ok) {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
         .from("kvitteringer")
@@ -215,8 +211,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         .order("dato", { ascending: false });
       if (!error && data) setKvitteringer(data);
     } else {
-      const err1 = await lagre1.text();
-      const err2 = await lagre2.text();
+      const err1 = await lagreKvitt.text();
+      const err2 = await lagreRegn.text();
       setStatus("Feil: " + err1 + " / " + err2);
     }
   };
