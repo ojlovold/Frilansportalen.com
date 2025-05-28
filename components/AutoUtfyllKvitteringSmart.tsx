@@ -21,12 +21,14 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   useEffect(() => {
     const hentKvitteringer = async () => {
-      if (!user) return;
+      const bruker_id = user?.id || process.env.NEXT_PUBLIC_ADMIN_ID;
+      if (!bruker_id) return;
       const { data, error } = await supabase
         .from("kvitteringer")
         .select("*")
-        .eq("bruker_id", user.id)
+        .eq("bruker_id", bruker_id)
         .order("dato", { ascending: false });
+
       if (!error && data) setKvitteringer(data);
     };
     hentKvitteringer();
@@ -163,7 +165,9 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
-    if (!user?.id) return setStatus("Ingen bruker logget inn");
+
+    const bruker_id = user?.id || process.env.NEXT_PUBLIC_ADMIN_ID;
+    if (!bruker_id) return setStatus("Ingen bruker tilgjengelig");
 
     setStatus("Lagrer...");
 
@@ -172,10 +176,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       .from("kvitteringer")
       .upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
 
-    if (uploadError) {
-      setStatus("Feil ved opplasting: " + uploadError.message);
-      return;
-    }
+    if (uploadError) return setStatus("Feil ved opplasting: " + uploadError.message);
 
     const { data: urlData } = supabase.storage
       .from("kvitteringer")
@@ -184,50 +185,39 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const tokenRes = await supabase.auth.getSession();
     const token = tokenRes.data.session?.access_token;
 
-    const res = await fetch("https://tvnwbchnvnvneheuzrzqfq.supabase.co/functions/v1/leggTilKvittering", {
+    const fellesData = {
+      rolle,
+      tittel,
+      belop,
+      valuta,
+      dato,
+      bruker_id,
+    };
+
+    const lagre1 = await fetch("/functions/v1/leggTilKvittering", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        rolle,
-        tittel,
-        belop,
-        valuta,
-        dato,
-        fil_url: urlData?.publicUrl,
-      }),
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...fellesData, fil_url: urlData?.publicUrl }),
     });
 
-    await fetch("https://tvnwbchnvnvneheuzrzqfq.supabase.co/functions/v1/leggTilRegnskap", {
+    const lagre2 = await fetch("/functions/v1/leggTilRegnskap", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        rolle,
-        tittel,
-        belop,
-        valuta,
-        dato,
-        type: "utgift",
-        kilde: "Kvittering",
-      }),
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...fellesData, type: "utgift", kilde: "Kvittering" }),
     });
 
-    if (res.ok) {
+    if (lagre1.ok && lagre2.ok) {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
         .from("kvitteringer")
         .select("*")
-        .eq("bruker_id", user.id)
+        .eq("bruker_id", bruker_id)
         .order("dato", { ascending: false });
       if (!error && data) setKvitteringer(data);
     } else {
-      const err = await res.json();
-      setStatus("Feil fra funksjon: " + err?.error);
+      const err1 = await lagre1.text();
+      const err2 = await lagre2.text();
+      setStatus("Feil: " + err1 + " / " + err2);
     }
   };
 
