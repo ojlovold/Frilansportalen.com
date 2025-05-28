@@ -96,6 +96,70 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     return "";
   };
 
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
+  const finnTotalbelop = (tekst: string): string => {
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    const kandidater: number[] = [];
+    for (const linje of linjer) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+        const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+        const tall = matches
+          .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+          .map((str) => parseFloat(str))
+          .filter((val) => !isNaN(val) && val > 0);
+        kandidater.push(...tall);
+      }
+    }
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
+  };
+
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const iso = dato.split(".").reverse().join("-");
+    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return data.rates?.[til] || 0;
+  };
+
+  const lesKvittering = async () => {
+    if (!fil) return;
+    setStatus("Leser kvittering...");
+    let canvas;
+    if (fil.type === "application/pdf") {
+      canvas = await pdfTilBilde(fil);
+    } else {
+      canvas = await bildeTilCanvas(fil);
+    }
+    const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
+    setTekst(text);
+
+    const datoen = parseDato(text);
+    const valutaFunnet = finnValuta(text);
+    const belopBase = finnTotalbelop(text);
+
+    setDato(datoen);
+    setValuta(valutaFunnet);
+    setBelopOriginal(belopBase);
+
+    if (valutaFunnet === "NOK" || valutaFunnet === "") {
+      setBelop(belopBase);
+    } else {
+      const kurs = await hentKurs(valutaFunnet, "NOK", datoen || "2024-01-01");
+      const omregnet = parseFloat(belopBase) * kurs;
+      setBelop(omregnet.toFixed(2));
+    }
+
+    const linjer = text.split("\n").filter((l) => l.length > 3);
+    setTittel(linjer[0] || "Kvittering");
+    setStatus("Ferdig");
+  };
+
   const lagreKvittering = async () => {
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
