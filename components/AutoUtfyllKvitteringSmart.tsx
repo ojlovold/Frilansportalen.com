@@ -178,7 +178,11 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
     const tokenRes = await supabase.auth.getSession();
-    const token = tokenRes.data.session?.access_token;
+    let token = tokenRes.data.session?.access_token;
+
+    if (!token && rolle === "admin") {
+      token = "TEST_ADMIN_TOKEN"; // 🔐 Bytt til en ekte token om nødvendig for produksjon
+    }
 
     const payload = {
       rolle,
