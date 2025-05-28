@@ -27,7 +27,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         .select("*")
         .eq("bruker_id", user.id)
         .order("dato", { ascending: false });
-
       if (!error && data) setKvitteringer(data);
     };
     hentKvitteringer();
@@ -127,8 +126,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const data = await res.json();
     return data.rates?.[til] || 0;
   };
-
-  const lesKvittering = async () => {
+    const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
     let canvas;
@@ -158,15 +156,14 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     const linjer = text.split("\n").filter((l) => l.length > 3);
     setTittel(linjer[0] || "Kvittering");
-
     setStatus("Ferdig");
   };
 
   const lagreKvittering = async () => {
-    if (!fil || !belop || !dato || !user) {
-      setStatus("Manglende data");
-      return;
-    }
+    if (!fil) return setStatus("Mangler fil");
+    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
+    if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
+    if (!user?.id) return setStatus("Ingen bruker logget inn");
 
     setStatus("Lagrer...");
 
