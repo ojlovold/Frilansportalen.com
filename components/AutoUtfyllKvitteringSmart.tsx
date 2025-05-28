@@ -203,6 +203,23 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       }),
     });
 
+    await fetch("https://tvnwbchnvnvneheuzrzqfq.supabase.co/functions/v1/leggTilRegnskap", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rolle,
+        tittel,
+        belop,
+        valuta,
+        dato,
+        type: "utgift",
+        kilde: "Kvittering",
+      }),
+    });
+
     if (res.ok) {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
