@@ -11,7 +11,12 @@ export default function TestOppretting() {
       });
 
       const data = await res.json();
-      alert("✅ Ferdig: " + JSON.stringify(data));
+
+      if (!res.ok) {
+        alert("❌ FEIL: " + (data.error || "ukjent"));
+      } else {
+        alert("✅ Bruker opprettet: " + JSON.stringify(data.user?.email || "OK"));
+      }
     } catch (err) {
       console.error("Feil:", err);
       alert("❌ fetch failed");
@@ -20,12 +25,19 @@ export default function TestOppretting() {
 
   return (
     <div style={{ padding: 40 }}>
-      <h1>Opprett admin</h1>
+      <h1>Test brukeropprettelse</h1>
       <button
         onClick={opprett}
-        style={{ padding: 12, fontSize: 18, background: "black", color: "white" }}
+        style={{
+          padding: 12,
+          fontSize: 18,
+          background: "black",
+          color: "white",
+          border: "none",
+          borderRadius: 6,
+        }}
       >
-        Opprett ole@frilansportalen.com
+        Opprett admin nå
       </button>
     </div>
   );
