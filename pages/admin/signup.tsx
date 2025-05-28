@@ -6,6 +6,7 @@ import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import Layout from "../../components/Layout";
 
 export default function AdminSignup() {
+  const [epost, setEpost] = useState("");
   const [passord, setPassord] = useState("");
   const [feil, setFeil] = useState("");
   const [ok, setOk] = useState(false);
@@ -17,7 +18,7 @@ export default function AdminSignup() {
     setOk(false);
 
     const { data, error } = await supabase.auth.signUp({
-      email: "ole@frilansportalen.com",
+      email: epost,
       password: passord,
     });
 
@@ -41,10 +42,11 @@ export default function AdminSignup() {
           <h1 className="text-2xl font-bold">Registrer Admin</h1>
 
           <input
-            type="text"
-            value="ole@frilansportalen.com"
-            disabled
-            className="p-2 border rounded w-full bg-gray-100"
+            placeholder="E-post"
+            type="email"
+            value={epost}
+            onChange={(e) => setEpost(e.target.value)}
+            className="p-2 border rounded w-full"
           />
           <input
             placeholder="Velg passord"
