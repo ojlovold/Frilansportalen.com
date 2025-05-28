@@ -18,7 +18,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
-  const bruker_id = user?.id || "5c141119-628a-4316-9ccd-4f1e46c6b146";
+  const bruker_id = user?.id ?? "5c141119-628a-4316-9ccd-4f1e46c6b146";
 
   useEffect(() => {
     const hentKvitteringer = async () => {
@@ -30,7 +30,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       if (!error && data) setKvitteringer(data);
     };
     hentKvitteringer();
-  }, [user]);
+  }, [bruker_id]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
