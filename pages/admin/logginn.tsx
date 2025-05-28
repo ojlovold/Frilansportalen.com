@@ -31,7 +31,7 @@ export default function LoggInn() {
 
     setOk(true);
 
-    // Koble inn i `brukere` med rolle: admin
+    // Oppdater `brukere`-tabellen med admin-rolle
     const brukerId = loginData.user?.id;
     if (brukerId) {
       await supabase.from("brukere").upsert({
