@@ -195,8 +195,10 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     if (insertError) {
       console.error("❌ Insert-feil:", insertError);
-      setStatus("Feil: " + insertError.message);
-    } else {
+      if (insertError) {
+  console.error("❌ FEIL VED LAGRING:", insertError);
+  setStatus("Feil: " + JSON.stringify(insertError, null, 2));
+}else {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
         .from("kvitteringer")
