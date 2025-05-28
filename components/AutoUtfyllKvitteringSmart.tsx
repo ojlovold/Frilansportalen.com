@@ -164,6 +164,8 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
+    const datoISO = dato.split(".").reverse().join("-");
+
     setStatus("Lagrer...");
 
     const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
@@ -184,7 +186,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         tittel,
         belop: parseFloat(belop),
         valuta,
-        dato,
+        dato: datoISO,
         fil_url: urlData?.publicUrl || null,
         opprettet: new Date().toISOString(),
       },
