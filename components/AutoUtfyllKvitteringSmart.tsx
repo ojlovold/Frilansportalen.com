@@ -177,37 +177,22 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       .from("kvitteringer")
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
-    const tokenRes = await supabase.auth.getSession();
-    let token = tokenRes.data.session?.access_token;
-
-    if (!token && rolle === "admin") {
-      token = "TEST_ADMIN_TOKEN"; // 🔐 Bytt til en ekte token om nødvendig for produksjon
-    }
-
-    const payload = {
-      rolle,
-      tittel,
-      belop,
-      valuta,
-      dato,
-      bruker_id,
-      fil_url: urlData?.publicUrl || null,
-    };
-
-    const [resKvitt, resRegn] = await Promise.all([
-      fetch("/functions/v1/leggTilKvittering", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }),
-      fetch("/functions/v1/leggTilRegnskap", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, type: "utgift", kilde: "Kvittering" }),
-      }),
+    const { error: insertError } = await supabase.from("kvitteringer").insert([
+      {
+        bruker_id,
+        rolle,
+        tittel,
+        belop: parseFloat(belop),
+        valuta,
+        dato,
+        fil_url: urlData?.publicUrl || null,
+        opprettet: new Date().toISOString(),
+      },
     ]);
 
-    if (resKvitt.ok && resRegn.ok) {
+    if (insertError) {
+      setStatus("Feil: " + insertError.message);
+    } else {
       setStatus("Kvittering lagret!");
       const { data, error } = await supabase
         .from("kvitteringer")
@@ -215,10 +200,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         .eq("bruker_id", bruker_id)
         .order("dato", { ascending: false });
       if (!error && data) setKvitteringer(data);
-    } else {
-      const err1 = await resKvitt.text();
-      const err2 = await resRegn.text();
-      setStatus("Feil: " + err1 + " / " + err2);
     }
   };
 
