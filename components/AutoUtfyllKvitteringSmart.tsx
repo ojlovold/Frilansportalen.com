@@ -1,5 +1,4 @@
-// [Start av fil]
-
+// Start av fil
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
@@ -20,9 +19,10 @@ export default function AutoUtfyllKvitteringSmart() {
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
-  const bruker_id = user?.id ?? "5c141119-628a-4316-9ccd-4f1e46c6b146";
+  const bruker_id = user?.id;
 
   useEffect(() => {
+    if (!bruker_id) return;
     const hentKvitteringer = async () => {
       const { data, error } = await supabase
         .from("kvitteringer")
@@ -76,23 +76,13 @@ export default function AutoUtfyllKvitteringSmart() {
     const regexer = [
       /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
       /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
     ];
     for (const r of regexer) {
       const match = tekst.match(r);
       if (match) {
-        if (match.length === 4 && r.source.includes("jan")) {
-          const månedMap: any = {
-            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-          };
-          const måned = månedMap[match[1].slice(0, 3).toLowerCase()] || "01";
-          return `${match[2].padStart(2, "0")}.${måned}.${match[3]}`;
-        } else if (match.length >= 4) {
-          const [_, a, b, c] = match;
-          const yyyy = c.length === 2 ? `20${c}` : c;
-          return `${a.padStart(2, "0")}.${b.padStart(2, "0")}.${yyyy}`;
-        }
+        const [_, a, b, c] = match;
+        const yyyy = c.length === 2 ? `20${c}` : c;
+        return `${a.padStart(2, "0")}.${b.padStart(2, "0")}.${yyyy}`;
       }
     }
     return "";
@@ -109,7 +99,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -132,12 +122,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
-    let canvas;
-    if (fil.type === "application/pdf") {
-      canvas = await pdfTilBilde(fil);
-    } else {
-      canvas = await bildeTilCanvas(fil);
-    }
+    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
@@ -163,12 +148,12 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   const lagreKvittering = async () => {
+    if (!user?.id) return setStatus("Du er ikke innlogget");
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
     const datoISO = dato.split(".").reverse().join("-");
-
     setStatus("Lagrer...");
 
     const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
@@ -184,7 +169,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
-        bruker_id,
+        bruker_id: user.id,
         tittel,
         belop: parseFloat(belop),
         valuta,
@@ -202,7 +187,7 @@ export default function AutoUtfyllKvitteringSmart() {
       const { data, error } = await supabase
         .from("kvitteringer")
         .select("*")
-        .eq("bruker_id", bruker_id)
+        .eq("bruker_id", user.id)
         .order("dato", { ascending: false });
       if (!error && data) setKvitteringer(data);
     }
