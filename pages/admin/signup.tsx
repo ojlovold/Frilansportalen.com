@@ -5,25 +5,24 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function AdminSignupTest() {
+export default function Signup() {
   const registrer = async () => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: "ole@frilansportalen.com",
-        password: "@Bente01",
-      });
+    const { error } = await supabase.auth.signUp({
+      email: "ole@frilansportalen.com",
+      password: "@Bente01",
+    });
 
-      if (error) return alert("❌ Feil: " + error.message);
-      alert("✅ Opprettet: " + JSON.stringify(data.user?.email || "OK"));
-    } catch (err: any) {
-      alert("💥 Fetch-feil: " + err.message);
+    if (error) {
+      alert("❌ Feil: " + error.message);
+    } else {
+      alert("✅ Bruker opprettet!");
     }
   };
 
   return (
     <div style={{ padding: 40 }}>
-      <h1>Rå signup test</h1>
-      <button onClick={registrer}>Registrer bruker direkte</button>
+      <h1>Registrer admin</h1>
+      <button onClick={registrer}>Opprett bruker</button>
     </div>
   );
 }
