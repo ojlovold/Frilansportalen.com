@@ -1,69 +1,43 @@
-// pages/admin/signup.tsx
-import Head from "next/head";
 import { useState } from "react";
-import { useRouter } from "next/router";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 
-export default function AdminSignup() {
-  const [epost, setEpost] = useState("");
-  const [passord, setPassord] = useState("");
-  const [feil, setFeil] = useState("");
-  const [ok, setOk] = useState(false);
-  const router = useRouter();
+export default function Signup() {
+  const [status, setStatus] = useState("");
   const supabase = useSupabaseClient();
+  const router = useRouter();
 
-  const signup = async () => {
-    setFeil("");
-    setOk(false);
+  const opprett = async () => {
+    setStatus("Prøver å registrere...");
 
     const { data, error } = await supabase.auth.signUp({
-      email: epost,
-      password: passord,
+      email: "ole@frilansportalen.com",
+      password: "@Bente01",
     });
 
     if (error) {
-      setFeil(error.message);
+      console.error("❌ Feil:", error.message);
+      setStatus("❌ Feil: " + error.message);
     } else {
-      setOk(true);
-      setTimeout(() => {
-        router.replace("/admin/logginn");
-      }, 1000);
+      setStatus("✅ Bruker opprettet! Gå til innlogging...");
+      setTimeout(() => router.push("/admin/logginn"), 1500);
     }
   };
 
   return (
     <Layout>
-      <Head>
-        <title>Registrer admin | Frilansportalen</title>
-      </Head>
-      <div className="min-h-screen bg-portalGul flex flex-col justify-center items-center px-4">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <h1 className="text-2xl font-bold">Registrer Admin</h1>
-
-          <input
-            placeholder="E-post"
-            type="email"
-            value={epost}
-            onChange={(e) => setEpost(e.target.value)}
-            className="p-2 border rounded w-full"
-          />
-          <input
-            placeholder="Velg passord"
-            type="password"
-            value={passord}
-            onChange={(e) => setPassord(e.target.value)}
-            className="p-2 border rounded w-full"
-          />
+      <div className="min-h-screen bg-portalGul flex items-center justify-center px-4 text-center">
+        <div className="bg-white p-6 rounded shadow max-w-sm w-full space-y-4">
+          <h1 className="text-xl font-bold">Registrer admin</h1>
+          <p>Registrerer <strong>ole@frilansportalen.com</strong> med passord <strong>@Bente01</strong></p>
           <button
-            onClick={signup}
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 w-full text-sm"
+            onClick={opprett}
+            className="bg-black text-white px-4 py-2 rounded w-full"
           >
-            Registrer bruker
+            Opprett bruker
           </button>
-
-          {feil && <p className="text-red-600 text-sm">{feil}</p>}
-          {ok && <p className="text-green-600 text-sm">Bruker registrert! Går videre til innlogging ...</p>}
+          <p className="text-sm mt-2">{status}</p>
         </div>
       </div>
     </Layout>
