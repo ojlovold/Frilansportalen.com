@@ -43,7 +43,7 @@ export default function AdminRegnskap() {
 
         <section>
           <h2 className="text-xl font-semibold mb-2">Last opp kvittering (PDF/bilde)</h2>
-          <AutoUtfyllKvitteringSmart rolle="admin" />
+          <AutoUtfyllKvitteringSmart />
         </section>
 
         <section>
