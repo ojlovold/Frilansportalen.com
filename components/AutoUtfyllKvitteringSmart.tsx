@@ -1,3 +1,5 @@
+// [Start av fil]
+
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
@@ -6,7 +8,7 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
+export default function AutoUtfyllKvitteringSmart() {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
@@ -183,7 +185,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
         bruker_id,
-        rolle,
         tittel,
         belop: parseFloat(belop),
         valuta,
