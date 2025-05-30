@@ -1,6 +1,4 @@
-/* AutoUtfyllKvitteringSmart.tsx */
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -21,7 +19,6 @@ export default function AutoUtfyllKvitteringSmart() {
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
-  const bruker_id = user?.id;
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -62,10 +59,9 @@ export default function AutoUtfyllKvitteringSmart() {
     });
 
   const parseDato = (tekst: string): string => {
-    const match = tekst.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-    if (!match) return "";
-    const [_, d, m, y] = match;
-    return `${d}.${m}.${y.length === 2 ? "20" + y : y}`;
+    const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
+    if (match) return `${match[1]}.${match[2]}.${match[3]}`;
+    return "";
   };
 
   const finnValuta = (tekst: string): string => {
@@ -79,7 +75,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -102,38 +98,67 @@ export default function AutoUtfyllKvitteringSmart() {
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
-    const canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
+    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
-    setDato(parseDato(text));
+
+    const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
-    setValuta(valutaFunnet);
     const belopBase = finnTotalbelop(text);
+
+    setDato(datoen);
+    setValuta(valutaFunnet);
     setBelopOriginal(belopBase);
 
     if (valutaFunnet === "NOK" || valutaFunnet === "") {
       setBelop(belopBase);
     } else {
-      const kurs = await hentKurs(valutaFunnet, "NOK", dato || "2024-01-01");
+      const kurs = await hentKurs(valutaFunnet, "NOK", datoen || "2024-01-01");
       const omregnet = parseFloat(belopBase) * kurs;
       setBelop(omregnet.toFixed(2));
     }
+
+    const linjer = text.split("\n").filter((l) => l.length > 3);
+    setTittel(linjer[0] || "Kvittering");
+    setStatus("Ferdig");
   };
 
   const lagreKvittering = async () => {
+    if (!user?.id) {
+      setStatus("Du er ikke innlogget");
+      return;
+    }
+
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
+
     const datoISO = dato.split(".").reverse().join("-");
     setStatus("Lagrer...");
-    const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
-    const { error: uploadError } = await supabase.storage.from("kvitteringer").upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
+
+    const filnavn = `${user.id}-${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("kvitteringer")
+      .upload(`bruker/kvitteringer/${filnavn}`, fil, {
+        upsert: true,
+        metadata: {
+          tittel,
+          valuta,
+          dato: datoISO,
+        },
+      });
+
     if (uploadError) return setStatus("Feil ved opplasting: " + uploadError.message);
-    const { data: urlData } = supabase.storage.from("kvitteringer").getPublicUrl(`bruker/kvitteringer/${filnavn}`);
+
+    const { data: urlData } = supabase.storage
+      .from("kvitteringer")
+      .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
+
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
-        bruker_id,
-        tittel: tittel.trim() || "Kvittering",
+        bruker_id: user.id,
+        tittel,
         belop: parseFloat(belop),
         valuta,
         dato: datoISO,
@@ -141,38 +166,44 @@ export default function AutoUtfyllKvitteringSmart() {
         opprettet: new Date().toISOString(),
       },
     ]);
-    if (insertError) return setStatus("Feil ved lagring");
-    setStatus("Kvittering lagret!");
+
+    if (insertError) {
+      console.error("❌ Insert-feil:", insertError);
+      setStatus("Feil: " + JSON.stringify(insertError, null, 2));
+    } else {
+      setStatus("Kvittering lagret!");
+    }
   };
 
   return (
-    <div className="bg-portalGul min-h-screen p-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-6">
-        <h2 className="text-2xl font-bold mb-4">Autoutfyll kvittering</h2>
-        <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} className="mb-3" />
-        <button onClick={lesKvittering} className="bg-black text-white px-4 py-2 rounded w-full mb-4">
-          Les kvittering
-        </button>
-        <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded mb-4">{tekst || "Ingen tekst funnet."}</pre>
-        <div className="space-y-3">
-          <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-          <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
-          <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
-          <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-          <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
-        </div>
-        <button onClick={lagreKvittering} className="bg-green-600 text-white px-4 py-2 rounded w-full mt-4">
-          Lagre kvittering
-        </button>
-        {status && <p className="text-sm text-gray-700 mt-3">{status}</p>}
+    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
+      <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
 
-        <button
-          onClick={() => router.push("/kvitteringer")}
-          className="bg-portalGrå text-white mt-6 px-4 py-2 rounded text-center w-full shadow hover:opacity-90"
-        >
-          Se mine kvitteringer
-        </button>
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
+
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
+
+      <div className="space-y-2">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
+
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
+        Lagre kvittering
+      </button>
+
+      <button
+        onClick={() => router.push("/kvitteringer")}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow mt-4 transition-colors"
+      >
+        Se mine kvitteringer
+      </button>
+
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
     </div>
   );
 }
