@@ -62,8 +62,15 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const parseDato = (tekst: string): string => {
     const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
-    if (match) return `${match[1]}.${match[2]}.${match[3]}`;
-    return "01.01.2024"; // fallback-dato
+    if (match) {
+      const dag = parseInt(match[1]);
+      const mnd = parseInt(match[2]);
+      const år = parseInt(match[3]);
+      if (dag >= 1 && dag <= 31 && mnd >= 1 && mnd <= 12 && år >= 2000) {
+        return `${match[1]}.${match[2]}.${match[3]}`;
+      }
+    }
+    return "01.01.2024"; // fallback
   };
 
   const finnValuta = (tekst: string): string => {
@@ -126,8 +133,12 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(omregnet.toFixed(2));
     }
 
-    const linjer = text.split("\n").filter((l) => l.length > 3);
-    setTittel(linjer[0]?.slice(0, 100) || "Kvittering");
+    // Setter tittel kun hvis den er tom
+    if (!tittel) {
+      const linjer = text.split("\n").filter((l) => l.length > 3);
+      setTittel(linjer[0]?.slice(0, 100) || "Kvittering");
+    }
+
     setStatus("Ferdig");
   };
 
