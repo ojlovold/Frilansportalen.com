@@ -1,4 +1,4 @@
-/// components/layout/AdminLayout.tsx
+// components/layout/AdminLayout.tsx
 
 import Head from "next/head";
 import Link from "next/link";
@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </Head>
       <main className={`min-h-screen ${bakgrunnsfarge} ${tekstfarge} p-6 max-w-6xl mx-auto`}>
         <Link href="/" className="text-blue-700 underline block mb-6">
-          ← Tilbake
+          ← Til forsiden
         </Link>
         {children}
       </main>
