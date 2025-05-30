@@ -139,7 +139,7 @@ export default function Kvitteringer() {
             >
               Kopier alle lenker
             </button>
-            {status === "Lenker kopiert!" && (
+            {status.includes("kopiert") && (
               <p className="text-green-700 text-sm mt-2">Lenker kopiert!</p>
             )}
           </div>
@@ -178,12 +178,7 @@ export default function Kvitteringer() {
                     <td className="p-2 border">{k.belop} {k.valuta}</td>
                     <td className="p-2 border">{omregnet} {visningsvaluta}</td>
                     <td className="p-2 border">
-                      <a
-                        href={k.fil_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 underline"
-                      >
+                      <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                         Åpne
                       </a>
                     </td>
