@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { useRouter } from "next/router";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function AutoUtfyllKvitteringSmart() {
+export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
@@ -18,7 +17,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const [status, setStatus] = useState("");
   const user = useUser();
   const supabase = useSupabaseClient();
-  const router = useRouter();
+  const bruker_id = user?.id ?? "5c141119-628a-4316-9ccd-4f1e46c6b146";
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -59,8 +58,28 @@ export default function AutoUtfyllKvitteringSmart() {
     });
 
   const parseDato = (tekst: string): string => {
-    const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
-    if (match) return `${match[1]}.${match[2]}.${match[3]}`;
+    const regexer = [
+      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})/i,
+    ];
+    for (const r of regexer) {
+      const match = tekst.match(r);
+      if (match) {
+        if (match.length === 4 && r.source.includes("jan")) {
+          const månedMap: any = {
+            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+          };
+          const måned = månedMap[match[1].slice(0, 3).toLowerCase()] || "01";
+          return `${match[2].padStart(2, "0")}.${måned}.${match[3]}`;
+        } else if (match.length >= 4) {
+          const [_, a, b, c] = match;
+          const yyyy = c.length === 2 ? `20${c}` : c;
+          return `${a.padStart(2, "0")}.${b.padStart(2, "0")}.${yyyy}`;
+        }
+      }
+    }
     return "";
   };
 
@@ -75,7 +94,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt|amount paid)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -98,7 +117,12 @@ export default function AutoUtfyllKvitteringSmart() {
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
-    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
+    let canvas;
+    if (fil.type === "application/pdf") {
+      canvas = await pdfTilBilde(fil);
+    } else {
+      canvas = await bildeTilCanvas(fil);
+    }
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
@@ -117,37 +141,21 @@ export default function AutoUtfyllKvitteringSmart() {
       const omregnet = parseFloat(belopBase) * kurs;
       setBelop(omregnet.toFixed(2));
     }
-
-    const linjer = text.split("\n").filter((l) => l.length > 3);
-    setTittel(linjer[0] || "Kvittering");
-    setStatus("Ferdig");
   };
 
   const lagreKvittering = async () => {
-    if (!user?.id) {
-      setStatus("Du er ikke innlogget");
-      return;
-    }
-
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
     const datoISO = dato.split(".").reverse().join("-");
+
     setStatus("Lagrer...");
 
-    const filnavn = `${user.id}-${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
-
+    const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
-      .upload(`bruker/kvitteringer/${filnavn}`, fil, {
-        upsert: true,
-        metadata: {
-          tittel,
-          valuta,
-          dato: datoISO,
-        },
-      });
+      .upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
 
     if (uploadError) return setStatus("Feil ved opplasting: " + uploadError.message);
 
@@ -157,8 +165,9 @@ export default function AutoUtfyllKvitteringSmart() {
 
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
-        bruker_id: user.id,
-        tittel,
+        bruker_id,
+        rolle,
+        tittel: tittel.trim() || "Kvittering",
         belop: parseFloat(belop),
         valuta,
         dato: datoISO,
@@ -176,14 +185,13 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
-
-      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
-      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
-
-      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
-
+    <div className="bg-yellow-300 p-6 rounded shadow max-w-xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Autoutfyll kvittering</h2>
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} className="mb-2" />
+      <button onClick={lesKvittering} className="bg-black text-white px-4 py-2 rounded mb-4 w-full">
+        Les kvittering
+      </button>
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded mb-4">{tekst || "Ingen tekst funnet."}</pre>
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
@@ -191,19 +199,10 @@ export default function AutoUtfyllKvitteringSmart() {
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
-
-      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-4 py-2 rounded mt-4 w-full">
         Lagre kvittering
       </button>
-
-      <button
-        onClick={() => router.push("/kvitteringer")}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow mt-4 transition-colors"
-      >
-        Se mine kvitteringer
-      </button>
-
-      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+      {status && <p className="text-sm text-gray-800 mt-2">{status}</p>}
     </div>
   );
 }
