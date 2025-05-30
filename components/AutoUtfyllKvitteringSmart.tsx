@@ -1,9 +1,9 @@
-// Start av fil
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
+import { useRouter } from "next/router";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -16,23 +16,9 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
-  const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
-  const bruker_id = user?.id;
-
-  useEffect(() => {
-    if (!bruker_id) return;
-    const hentKvitteringer = async () => {
-      const { data, error } = await supabase
-        .from("kvitteringer")
-        .select("*")
-        .eq("bruker_id", bruker_id)
-        .order("dato", { ascending: false });
-      if (!error && data) setKvitteringer(data);
-    };
-    hentKvitteringer();
-  }, [bruker_id]);
+  const router = useRouter();
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -73,18 +59,8 @@ export default function AutoUtfyllKvitteringSmart() {
     });
 
   const parseDato = (tekst: string): string => {
-    const regexer = [
-      /\b(\d{2})[./-](\d{2})[./-](\d{2,4})\b/,
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
-    ];
-    for (const r of regexer) {
-      const match = tekst.match(r);
-      if (match) {
-        const [_, a, b, c] = match;
-        const yyyy = c.length === 2 ? `20${c}` : c;
-        return `${a.padStart(2, "0")}.${b.padStart(2, "0")}.${yyyy}`;
-      }
-    }
+    const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
+    if (match) return `${match[1]}.${match[2]}.${match[3]}`;
     return "";
   };
 
@@ -184,12 +160,6 @@ export default function AutoUtfyllKvitteringSmart() {
       setStatus("Feil: " + JSON.stringify(insertError, null, 2));
     } else {
       setStatus("Kvittering lagret!");
-      const { data, error } = await supabase
-        .from("kvitteringer")
-        .select("*")
-        .eq("bruker_id", user.id)
-        .order("dato", { ascending: false });
-      if (!error && data) setKvitteringer(data);
     }
   };
 
@@ -214,33 +184,14 @@ export default function AutoUtfyllKvitteringSmart() {
         Lagre kvittering
       </button>
 
-      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+      <button
+        onClick={() => router.push("/kvitteringer")}
+        className="text-blue-600 underline text-sm mt-4 block"
+      >
+        Se mine kvitteringer
+      </button>
 
-      {kvitteringer.length > 0 && (
-        <div className="mt-6">
-          <h3 className="font-semibold text-lg mb-2">Eksisterende utgifter</h3>
-          <table className="w-full text-sm border">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="p-2 border">Dato</th>
-                <th className="p-2 border">Tittel</th>
-                <th className="p-2 border">Beløp</th>
-                <th className="p-2 border">Valuta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kvitteringer.map((rad, i) => (
-                <tr key={i} className="text-center">
-                  <td className="p-2 border">{rad.dato}</td>
-                  <td className="p-2 border">{rad.tittel}</td>
-                  <td className="p-2 border">{rad.belop}</td>
-                  <td className="p-2 border">{rad.valuta}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
     </div>
   );
 }
