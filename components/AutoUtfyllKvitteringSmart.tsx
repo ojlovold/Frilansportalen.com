@@ -177,8 +177,6 @@ export default function AutoUtfyllKvitteringSmart() {
 
   return (
     <div className="bg-portalGul p-4 pb-10 rounded-2xl shadow-xl max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
-
       <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
       <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
