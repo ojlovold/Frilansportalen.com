@@ -1,4 +1,6 @@
-import { useState } from "react";
+// components/AutoUtfyllKvitteringSmart.tsx
+
+import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -61,13 +63,14 @@ export default function AutoUtfyllKvitteringSmart() {
   const parseDato = (tekst: string): string => {
     const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
     if (match) return `${match[1]}.${match[2]}.${match[3]}`;
-    return "";
+    return "01.01.2024"; // fallback-dato
   };
 
   const finnValuta = (tekst: string): string => {
     const lower = tekst.toLowerCase();
     if (lower.includes("usd") || lower.includes("$")) return "USD";
     if (lower.includes("eur")) return "EUR";
+    if (lower.includes("gbp")) return "GBP";
     return "NOK";
   };
 
@@ -75,7 +78,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok|gbp)/.test(linje) && !linje.includes("mva")) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -90,15 +93,20 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
     const iso = dato.split(".").reverse().join("-");
-    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
-    const data = await res.json();
-    return data.rates?.[til] || 0;
+    try {
+      const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+      const data = await res.json();
+      return data.rates?.[til] || 1;
+    } catch {
+      return 1;
+    }
   };
 
-  const lesKvittering = async () => {
-    if (!fil) return;
+  const lesKvittering = async (fil: File) => {
     setStatus("Leser kvittering...");
-    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
+    const canvas = fil.type === "application/pdf"
+      ? await pdfTilBilde(fil)
+      : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
@@ -113,22 +121,24 @@ export default function AutoUtfyllKvitteringSmart() {
     if (valutaFunnet === "NOK" || valutaFunnet === "") {
       setBelop(belopBase);
     } else {
-      const kurs = await hentKurs(valutaFunnet, "NOK", datoen || "2024-01-01");
+      const kurs = await hentKurs(valutaFunnet, "NOK", datoen);
       const omregnet = parseFloat(belopBase) * kurs;
       setBelop(omregnet.toFixed(2));
     }
 
     const linjer = text.split("\n").filter((l) => l.length > 3);
-    setTittel(linjer[0] || "Kvittering");
+    setTittel(linjer[0]?.slice(0, 100) || "Kvittering");
     setStatus("Ferdig");
   };
 
-  const lagreKvittering = async () => {
-    if (!user?.id) {
-      setStatus("Du er ikke innlogget");
-      return;
+  useEffect(() => {
+    if (fil) {
+      lesKvittering(fil);
     }
+  }, [fil]);
 
+  const lagreKvittering = async () => {
+    if (!user?.id) return setStatus("Du er ikke innlogget");
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
@@ -136,7 +146,8 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoISO = dato.split(".").reverse().join("-");
     setStatus("Lagrer...");
 
-    const filnavn = `${user.id}-${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
+    const trygtTittel = tittel.replace(/[^\w\s.-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+    const filnavn = `${user.id}-${Date.now()}-${trygtTittel || "kvittering"}`;
 
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
@@ -176,13 +187,17 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
-      <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
+    <div className="bg-yellow-100 p-6 rounded-xl shadow max-w-xl mx-auto space-y-4">
+      <h2 className="text-2xl font-semibold">Autoutfyll kvittering</h2>
 
-      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
-      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
+      <input
+        type="file"
+        accept=".pdf,image/*"
+        onChange={(e) => setFil(e.target.files?.[0] || null)}
+        className="w-full"
+      />
 
-      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
+      <pre className="bg-white p-3 text-sm whitespace-pre-wrap rounded max-h-60 overflow-auto">{tekst || "Ingen tekst funnet."}</pre>
 
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
@@ -192,13 +207,13 @@ export default function AutoUtfyllKvitteringSmart() {
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
-      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
+      <button onClick={lagreKvittering} className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90 w-full">
         Lagre kvittering
       </button>
 
       <button
         onClick={() => router.push("/kvitteringer")}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow mt-4 transition-colors"
+        className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-4 py-2 rounded-xl shadow mt-2 w-full transition-colors"
       >
         Se mine kvitteringer
       </button>
