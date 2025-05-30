@@ -133,7 +133,6 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(omregnet.toFixed(2));
     }
 
-    // Setter tittel kun hvis den er tom
     if (!tittel) {
       const linjer = text.split("\n").filter((l) => l.length > 3);
       setTittel(linjer[0]?.slice(0, 100) || "Kvittering");
@@ -177,6 +176,8 @@ export default function AutoUtfyllKvitteringSmart() {
       .from("kvitteringer")
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
+    const publicUrl = urlData?.publicUrl || null;
+
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
         bruker_id: user.id,
@@ -184,14 +185,31 @@ export default function AutoUtfyllKvitteringSmart() {
         belop: parseFloat(belop),
         valuta,
         dato: datoISO,
-        fil_url: urlData?.publicUrl || null,
+        fil_url: publicUrl,
         opprettet: new Date().toISOString(),
       },
     ]);
 
     if (insertError) {
       console.error("❌ Insert-feil:", insertError);
-      setStatus("Feil: " + JSON.stringify(insertError, null, 2));
+      return setStatus("Feil: " + JSON.stringify(insertError, null, 2));
+    }
+
+    const { error: adminError } = await supabase.from("admin_utgifter").insert([
+      {
+        tittel,
+        dato: datoISO,
+        valuta,
+        belop: parseFloat(belopOriginal),
+        nok: parseFloat(belop),
+        fil_url: publicUrl,
+        opprettet: new Date().toISOString(),
+      },
+    ]);
+
+    if (adminError) {
+      console.warn("⚠️ Kopiering til admin_utgifter feilet:", adminError);
+      setStatus("Kvittering lagret, men ikke synlig i adminoversikt.");
     } else {
       setStatus("Kvittering lagret!");
     }
