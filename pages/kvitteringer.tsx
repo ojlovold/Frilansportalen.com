@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function Kvitteringer() {
   const supabase = useSupabaseClient();
@@ -66,10 +64,7 @@ export default function Kvitteringer() {
   };
 
   const visVedlegg = () => {
-    const urls = kvitteringer
-      .filter((k) => valgte.includes(k.id))
-      .map((k) => k.fil_url);
-    setStatus("Vedlegg:\n" + urls.join("\n"));
+    setStatus("Vis vedlegg");
   };
 
   const lastNedValgte = () => {
@@ -84,7 +79,17 @@ export default function Kvitteringer() {
         document.body.removeChild(link);
       });
   };
-    return (
+
+  const kopierLenker = () => {
+    const urls = kvitteringer
+      .filter((k) => valgte.includes(k.id))
+      .map((k) => k.fil_url)
+      .join("\n");
+    navigator.clipboard.writeText(urls);
+    setStatus("Lenker kopiert!");
+  };
+
+  return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <button
@@ -114,10 +119,30 @@ export default function Kvitteringer() {
           </button>
         </div>
 
-        {status && (
-          <pre className="bg-gray-100 p-3 mb-4 text-sm whitespace-pre-wrap rounded">
-            {status}
-          </pre>
+        {status === "Vis vedlegg" && valgte.length > 0 && (
+          <div className="bg-gray-100 rounded-lg p-4 mb-4 shadow-sm">
+            <h2 className="font-semibold mb-2">Valgte vedlegg:</h2>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              {kvitteringer
+                .filter((k) => valgte.includes(k.id))
+                .map((k) => (
+                  <li key={k.id}>
+                    📎 <a href={k.fil_url} className="text-blue-600 underline" target="_blank" rel="noreferrer">
+                      {k.tittel || "Kvittering"}
+                    </a>
+                  </li>
+                ))}
+            </ul>
+            <button
+              onClick={kopierLenker}
+              className="mt-3 bg-gray-800 hover:bg-gray-900 text-white text-sm px-3 py-1 rounded shadow"
+            >
+              Kopier alle lenker
+            </button>
+            {status === "Lenker kopiert!" && (
+              <p className="text-green-700 text-sm mt-2">Lenker kopiert!</p>
+            )}
+          </div>
         )}
 
         <div className="overflow-x-auto">
