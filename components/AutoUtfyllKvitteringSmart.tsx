@@ -1,12 +1,9 @@
-// components/AutoUtfyllKvitteringSmart.tsx
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { useRouter } from "next/router";
-import Image from "next/image";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -19,214 +16,194 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
-  const [forhåndsvisning, setForhåndsvisning] = useState<string | null>(null);
-
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!fil) return;
-    const reader = new FileReader();
-    reader.onload = () => setForhåndsvisning(reader.result as string);
-    reader.readAsDataURL(fil);
-  }, [fil]);
-
-  const startLesing = async () => {
-    if (!fil) return;
-
-    if (fil.type === "application/pdf") {
-      const arrayBuffer = await fil.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = "";
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const texts = content.items.map((item: any) => item.str);
-        fullText += texts.join(" ") + "\n";
-      }
-
-      setTekst(fullText);
-      identifiserData(fullText);
-    } else {
-      const { data } = await Tesseract.recognize(fil, "eng", {
-        logger: () => {},
-      });
-      setTekst(data.text);
-      identifiserData(data.text);
+  const forbedreKontrast = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext("2d")!;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const brightness = 0.34 * imgData.data[i] + 0.5 * imgData.data[i + 1] + 0.16 * imgData.data[i + 2];
+      const high = brightness > 128 ? 255 : 0;
+      imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = high;
     }
+    ctx.putImageData(imgData, 0, 0);
   };
 
-  const identifiserData = (text: string) => {
-    const sumMatch = text.match(/(\d{1,3}(?:[\., ]\d{3})*[\.,]\d{2})/);
-    const datoMatch = text.match(/\d{2}\.\d{2}\.\d{4}/);
-    const valutamatch = text.match(/(?:NOK|EUR|USD|SEK|DKK|GBP)/i);
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
 
-    if (sumMatch) {
-      const renset = sumMatch[1].replace(/ /g, "").replace(",", ".");
-      setBelopOriginal(renset);
+  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> =>
+    await new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(fil);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
+    });
 
-      // Enkel valutakonvertering
-      const verdi = parseFloat(renset);
-      let omregnet = verdi;
+  const parseDato = (tekst: string): string => {
+    const match = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
+    if (match) return `${match[1]}.${match[2]}.${match[3]}`;
+    return "";
+  };
 
-      switch (valuta.toUpperCase()) {
-        case "USD":
-          omregnet = verdi * 10; break;
-        case "EUR":
-          omregnet = verdi * 11; break;
-        case "SEK":
-          omregnet = verdi * 1.0; break;
-        case "DKK":
-          omregnet = verdi * 1.5; break;
-        case "GBP":
-          omregnet = verdi * 12; break;
-        case "NOK":
-        default:
-          omregnet = verdi; break;
+  const finnValuta = (tekst: string): string => {
+    const lower = tekst.toLowerCase();
+    if (lower.includes("usd") || lower.includes("$")) return "USD";
+    if (lower.includes("eur")) return "EUR";
+    return "NOK";
+  };
+
+  const finnTotalbelop = (tekst: string): string => {
+    const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    const kandidater: number[] = [];
+    for (const linje of linjer) {
+      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok)/.test(linje) && !linje.includes("mva")) {
+        const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+        const tall = matches
+          .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+          .map((str) => parseFloat(str))
+          .filter((val) => !isNaN(val) && val > 0);
+        kandidater.push(...tall);
       }
+    }
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
+  };
 
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const iso = dato.split(".").reverse().join("-");
+    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return data.rates?.[til] || 0;
+  };
+
+  const lesKvittering = async () => {
+    if (!fil) return;
+    setStatus("Leser kvittering...");
+    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
+    const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
+    setTekst(text);
+
+    const datoen = parseDato(text);
+    const valutaFunnet = finnValuta(text);
+    const belopBase = finnTotalbelop(text);
+
+    setDato(datoen);
+    setValuta(valutaFunnet);
+    setBelopOriginal(belopBase);
+
+    if (valutaFunnet === "NOK" || valutaFunnet === "") {
+      setBelop(belopBase);
+    } else {
+      const kurs = await hentKurs(valutaFunnet, "NOK", datoen || "2024-01-01");
+      const omregnet = parseFloat(belopBase) * kurs;
       setBelop(omregnet.toFixed(2));
     }
 
-    if (datoMatch) setDato(datoMatch[0]);
-    if (valutamatch) setValuta(valutamatch[0].toUpperCase());
+    const linjer = text.split("\n").filter((l) => l.length > 3);
+    setTittel(linjer[0] || "Kvittering");
+    setStatus("Ferdig");
   };
 
-  const lastOppKvittering = async () => {
-    if (!user) {
-      setStatus("Du må være innlogget for å laste opp kvitteringer.");
-      return;
-    }
-    if (!fil) {
-      setStatus("Ingen fil valgt.");
+  const lagreKvittering = async () => {
+    if (!user?.id) {
+      setStatus("Du er ikke innlogget");
       return;
     }
 
-    const filnavn = `${user.id}/${fil.name}`;
-    const { data: eksisterende } = await supabase
-      .storage
+    if (!fil) return setStatus("Mangler fil");
+    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
+    if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
+
+    const datoISO = dato.split(".").reverse().join("-");
+    setStatus("Lagrer...");
+
+    const filnavn = `${user.id}-${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
+
+    const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
-      .list(user.id + "/", { search: fil.name });
+      .upload(`bruker/kvitteringer/${filnavn}`, fil, {
+        upsert: true,
+        metadata: {
+          tittel,
+          valuta,
+          dato: datoISO,
+        },
+      });
 
-    if (eksisterende && eksisterende.length > 0) {
-      setStatus("En kvittering med dette navnet finnes allerede.");
-      return;
-    }
+    if (uploadError) return setStatus("Feil ved opplasting: " + uploadError.message);
 
-    const { error: uploadError } = await supabase.storage.from("kvitteringer").upload(filnavn, fil, {
-      contentType: fil.type,
-      upsert: false,
-    });
-
-    if (uploadError) {
-      setStatus("Feil ved opplasting: " + uploadError.message);
-      return;
-    }
+    const { data: urlData } = supabase.storage
+      .from("kvitteringer")
+      .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
 
     const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
         bruker_id: user.id,
         tittel,
-        tekst,
-        dato,
+        belop: parseFloat(belop),
         valuta,
-        belop,
-        belop_original: belopOriginal,
-        filnavn,
+        dato: datoISO,
+        fil_url: urlData?.publicUrl || null,
+        opprettet: new Date().toISOString(),
       },
     ]);
 
     if (insertError) {
-      setStatus("Feil ved lagring i database: " + insertError.message);
+      console.error("❌ Insert-feil:", insertError);
+      setStatus("Feil: " + JSON.stringify(insertError, null, 2));
     } else {
-      setStatus("Kvittering lastet opp og lagret!");
+      setStatus("Kvittering lagret!");
     }
   };
 
   return (
-    <div className="p-4 bg-yellow-100 rounded-xl shadow-lg max-w-xl mx-auto mt-8">
-      <h1 className="text-2xl font-bold mb-4">Last opp kvittering</h1>
+    <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
+      <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
 
-      <input
-        type="file"
-        accept="image/*,.pdf"
-        onChange={(e) => {
-          const valgtFil = e.target.files?.[0] || null;
-          setFil(valgtFil);
-          setTittel(valgtFil?.name || "");
-        }}
-        className="mb-4 w-full"
-      />
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
+      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
 
-      <button
-        onClick={startLesing}
-        disabled={!fil}
-        className="bg-black text-white px-4 py-2 rounded-xl mb-4 hover:opacity-90 disabled:opacity-30"
-      >
-        Les kvittering
-      </button>
+      <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
 
-      {forhåndsvisning && (
-        <Image
-          src={forhåndsvisning}
-          alt="Forhåndsvisning"
-          width={400}
-          height={300}
-          className="rounded mb-4 border"
-        />
-      )}
-
-      <input
-        type="text"
-        placeholder="Tittel"
-        value={tittel}
-        onChange={(e) => setTittel(e.target.value)}
-        className="w-full mb-2 p-2 rounded border"
-      />
-
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Dato"
-          value={dato}
-          onChange={(e) => setDato(e.target.value)}
-          className="p-2 rounded border"
-        />
-        <input
-          type="text"
-          placeholder="Valuta"
-          value={valuta}
-          onChange={(e) => setValuta(e.target.value.toUpperCase())}
-          className="p-2 rounded border"
-        />
-        <input
-          type="text"
-          placeholder="Beløp (NOK)"
-          value={belop}
-          onChange={(e) => setBelop(e.target.value)}
-          className="p-2 rounded border col-span-2"
-        />
+      <div className="space-y-2">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
       </div>
 
-      <button
-        onClick={lastOppKvittering}
-        className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90"
-      >
+      <button onClick={lagreKvittering} className="bg-green-600 text-white px-3 py-2 rounded">
         Lagre kvittering
       </button>
 
-      {status && <p className="mt-4 text-sm text-red-600">{status}</p>}
+      <button
+        onClick={() => router.push("/kvitteringer")}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow mt-4 transition-colors"
+      >
+        Se mine kvitteringer
+      </button>
 
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={() => router.push("/kvitteringer")}
-          className="bg-gray-600 text-white px-4 py-2 rounded-2xl shadow hover:opacity-90"
-        >
-          Se mine kvitteringer
-        </button>
-      </div>
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
     </div>
   );
 }
