@@ -28,8 +28,6 @@ export default function AdminRegnskap() {
     <AdminLayout>
       <div className="space-y-8">
         <section>
-          <h2 className="text-xl font-semibold mb-2">Inntekter</h2>
-          <p className="text-sm text-gray-700 mb-4">Inntekter fra portalen (Stripe, Vipps)</p>
           <div className="bg-white p-4 rounded-xl shadow max-w-3xl">
             <p className="text-sm">Totalt: {sumInntekt.toFixed(2)} kr</p>
             <p className="text-sm">MVA (25%): {(sumInntekt * 0.25).toFixed(2)} kr</p>
@@ -42,12 +40,10 @@ export default function AdminRegnskap() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-2">Last opp kvittering (PDF/bilde)</h2>
           <AutoUtfyllKvitteringSmart />
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-2">Eksisterende utgifter</h2>
           <div className="bg-white p-4 rounded-xl shadow max-w-6xl">
             <p className="text-sm">Totale utgifter: {totalUtgiftNOK.toFixed(2)} kr</p>
             <p className="text-sm">Netto resultat: {netto.toFixed(2)} kr</p>
@@ -73,7 +69,14 @@ export default function AdminRegnskap() {
                       <td className="p-2">{u.nok?.toFixed(2)}</td>
                       <td className="p-2">
                         {u.fil_url ? (
-                          <a href={u.fil_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Vis</a>
+                          <a
+                            href={u.fil_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline"
+                          >
+                            Vis
+                          </a>
                         ) : (
                           "—"
                         )}
