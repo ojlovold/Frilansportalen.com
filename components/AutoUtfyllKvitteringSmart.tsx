@@ -32,28 +32,30 @@ export default function AutoUtfyllKvitteringSmart() {
     reader.readAsDataURL(fil);
   }, [fil]);
 
-  const behandlePDF = async (file: File) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
+  const startLesing = async () => {
+    if (!fil) return;
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const texts = content.items.map((item: any) => item.str);
-      fullText += texts.join(" ") + "\n";
+    if (fil.type === "application/pdf") {
+      const arrayBuffer = await fil.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const texts = content.items.map((item: any) => item.str);
+        fullText += texts.join(" ") + "\n";
+      }
+
+      setTekst(fullText);
+      identifiserData(fullText);
+    } else {
+      const { data } = await Tesseract.recognize(fil, "eng", {
+        logger: () => {},
+      });
+      setTekst(data.text);
+      identifiserData(data.text);
     }
-
-    setTekst(fullText);
-    identifiserData(fullText);
-  };
-
-  const behandleBilde = async (file: File) => {
-    const { data } = await Tesseract.recognize(file, "eng", {
-      logger: () => {},
-    });
-    setTekst(data.text);
-    identifiserData(data.text);
   };
 
   const identifiserData = (text: string) => {
@@ -64,8 +66,30 @@ export default function AutoUtfyllKvitteringSmart() {
     if (sumMatch) {
       const renset = sumMatch[1].replace(/ /g, "").replace(",", ".");
       setBelopOriginal(renset);
-      if (valuta === "NOK") setBelop(renset);
+
+      // Enkel valutakonvertering
+      const verdi = parseFloat(renset);
+      let omregnet = verdi;
+
+      switch (valuta.toUpperCase()) {
+        case "USD":
+          omregnet = verdi * 10; break;
+        case "EUR":
+          omregnet = verdi * 11; break;
+        case "SEK":
+          omregnet = verdi * 1.0; break;
+        case "DKK":
+          omregnet = verdi * 1.5; break;
+        case "GBP":
+          omregnet = verdi * 12; break;
+        case "NOK":
+        default:
+          omregnet = verdi; break;
+      }
+
+      setBelop(omregnet.toFixed(2));
     }
+
     if (datoMatch) setDato(datoMatch[0]);
     if (valutamatch) setValuta(valutamatch[0].toUpperCase());
   };
@@ -81,7 +105,7 @@ export default function AutoUtfyllKvitteringSmart() {
     }
 
     const filnavn = `${user.id}/${fil.name}`;
-    const { data: eksisterende, error: sjekkFeil } = await supabase
+    const { data: eksisterende } = await supabase
       .storage
       .from("kvitteringer")
       .list(user.id + "/", { search: fil.name });
@@ -132,14 +156,17 @@ export default function AutoUtfyllKvitteringSmart() {
           const valgtFil = e.target.files?.[0] || null;
           setFil(valgtFil);
           setTittel(valgtFil?.name || "");
-          if (valgtFil) {
-            valgtFil.type === "application/pdf"
-              ? behandlePDF(valgtFil)
-              : behandleBilde(valgtFil);
-          }
         }}
         className="mb-4 w-full"
       />
+
+      <button
+        onClick={startLesing}
+        disabled={!fil}
+        className="bg-black text-white px-4 py-2 rounded-xl mb-4 hover:opacity-90 disabled:opacity-30"
+      >
+        Les kvittering
+      </button>
 
       {forhåndsvisning && (
         <Image
