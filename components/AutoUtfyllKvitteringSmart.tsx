@@ -124,7 +124,11 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   const lagreKvittering = async () => {
-    if (!user?.id) return setStatus("Du er ikke innlogget");
+    if (!user?.id) {
+      setStatus("Du er ikke innlogget");
+      return;
+    }
+
     if (!fil) return setStatus("Mangler fil");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
@@ -132,10 +136,18 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoISO = dato.split(".").reverse().join("-");
     setStatus("Lagrer...");
 
-    const filnavn = `${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
+    const filnavn = `${user.id}-${Date.now()}-${fil.name.replace(/\s+/g, "-")}`;
+
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
-      .upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
+      .upload(`bruker/kvitteringer/${filnavn}`, fil, {
+        upsert: true,
+        metadata: {
+          tittel,
+          valuta,
+          dato: datoISO,
+        },
+      });
 
     if (uploadError) return setStatus("Feil ved opplasting: " + uploadError.message);
 
@@ -186,7 +198,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
       <button
         onClick={() => router.push("/kvitteringer")}
-        className="text-blue-600 underline text-sm mt-4 block"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow mt-4 transition-colors"
       >
         Se mine kvitteringer
       </button>
