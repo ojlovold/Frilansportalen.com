@@ -89,8 +89,7 @@ export default function Kvitteringer() {
   };
 
   const skrivUt = () => window.print();
-
-  return (
+    return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
@@ -122,55 +121,57 @@ export default function Kvitteringer() {
           </pre>
         )}
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-2 border"></th>
-              <th className="p-2 border">Dato</th>
-              <th className="p-2 border">Tittel</th>
-              <th className="p-2 border">Beløp (original)</th>
-              <th className="p-2 border">I {visningsvaluta}</th>
-              <th className="p-2 border">Fil</th>
-              <th className="p-2 border">Handling</th>
-            </tr>
-          </thead>
-          <tbody>
-            {kvitteringer.map((k) => {
-              const omregnet = kurser[k.valuta]
-                ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
-                : k.belop;
+        <div className="overflow-x-auto">
+          <table className="min-w-full border text-sm">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="p-2 border"></th>
+                <th className="p-2 border">Dato</th>
+                <th className="p-2 border">Tittel</th>
+                <th className="p-2 border">Beløp (original)</th>
+                <th className="p-2 border">I {visningsvaluta}</th>
+                <th className="p-2 border">Fil</th>
+                <th className="p-2 border">Handling</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kvitteringer.map((k) => {
+                const omregnet = kurser[k.valuta]
+                  ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
+                  : k.belop;
 
-              return (
-                <tr key={k.id} className="text-center">
-                  <td className="p-2 border">
-                    <input
-                      type="checkbox"
-                      checked={valgte.includes(k.id)}
-                      onChange={() => toggleValgt(k.id)}
-                    />
-                  </td>
-                  <td className="p-2 border">{k.dato}</td>
-                  <td className="p-2 border">{k.tittel}</td>
-                  <td className="p-2 border">{k.belop} {k.valuta}</td>
-                  <td className="p-2 border">{omregnet} {visningsvaluta}</td>
-                  <td className="p-2 border">
-                    <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                      Åpne
-                    </a>
-                  </td>
-                  <td className="p-2 border">
-                    <button
-                      onClick={() => slett(k.id, k.fil_url)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Slett
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={k.id} className="text-center">
+                    <td className="p-2 border">
+                      <input
+                        type="checkbox"
+                        checked={valgte.includes(k.id)}
+                        onChange={() => toggleValgt(k.id)}
+                      />
+                    </td>
+                    <td className="p-2 border">{k.dato}</td>
+                    <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
+                    <td className="p-2 border">{k.belop} {k.valuta}</td>
+                    <td className="p-2 border">{omregnet} {visningsvaluta}</td>
+                    <td className="p-2 border">
+                      <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                        Åpne
+                      </a>
+                    </td>
+                    <td className="p-2 border">
+                      <button
+                        onClick={() => slett(k.id, k.fil_url)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Slett
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
