@@ -11,8 +11,16 @@ export default function Kvitteringer() {
   const [status, setStatus] = useState("");
   const [visningsvaluta, setVisningsvaluta] = useState("NOK");
   const [kurser, setKurser] = useState<Record<string, number>>({});
+  const [valutaer, setValutaer] = useState<string[]>([]);
 
-  const støttedeValutaer = ["NOK", "USD", "EUR", "SEK", "GBP"];
+  useEffect(() => {
+    const hentValutaer = async () => {
+      const res = await fetch("https://api.frankfurter.app/currencies");
+      const data = await res.json();
+      setValutaer(Object.keys(data).sort());
+    };
+    hentValutaer();
+  }, []);
 
   useEffect(() => {
     const hent = async () => {
@@ -25,8 +33,8 @@ export default function Kvitteringer() {
       if (!error && data) {
         setKvitteringer(data);
         const unike = [...new Set(data.map((k) => k.valuta).filter((v) => v !== visningsvaluta))];
+        const iso = new Date().toISOString().split("T")[0];
         const promises = unike.map(async (val) => {
-          const iso = new Date().toISOString().split("T")[0];
           const res = await fetch(`https://api.frankfurter.app/${iso}?from=${val}&to=${visningsvaluta}`);
           const json = await res.json();
           return [val, json.rates?.[visningsvaluta] || 0];
@@ -83,85 +91,87 @@ export default function Kvitteringer() {
   const skrivUt = () => window.print();
 
   return (
-    <div className="max-w-5xl mx-auto p-4 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
+    <div className="min-h-screen bg-yellow-300 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
+        <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <select
-          value={visningsvaluta}
-          onChange={(e) => setVisningsvaluta(e.target.value)}
-          className="p-2 border rounded bg-gray-100"
-        >
-          {støttedeValutaer.map((val) => (
-            <option key={val}>{val}</option>
-          ))}
-        </select>
-        <button onClick={lagPDF} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-          Last ned PDF
-        </button>
-        <button onClick={skrivUt} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-          Skriv ut
-        </button>
-        <button onClick={visVedlegg} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-          Vis vedlegg for e-post
-        </button>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <select
+            value={visningsvaluta}
+            onChange={(e) => setVisningsvaluta(e.target.value)}
+            className="p-2 border rounded bg-gray-100"
+          >
+            {valutaer.map((val) => (
+              <option key={val}>{val}</option>
+            ))}
+          </select>
+          <button onClick={lagPDF} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+            Last ned PDF
+          </button>
+          <button onClick={skrivUt} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+            Skriv ut
+          </button>
+          <button onClick={visVedlegg} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+            Vis vedlegg for e-post
+          </button>
+        </div>
+
+        {status && (
+          <pre className="bg-gray-100 p-3 mb-4 text-sm whitespace-pre-wrap rounded">
+            {status}
+          </pre>
+        )}
+
+        <table className="w-full border text-sm">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="p-2 border"></th>
+              <th className="p-2 border">Dato</th>
+              <th className="p-2 border">Tittel</th>
+              <th className="p-2 border">Beløp (original)</th>
+              <th className="p-2 border">I {visningsvaluta}</th>
+              <th className="p-2 border">Fil</th>
+              <th className="p-2 border">Handling</th>
+            </tr>
+          </thead>
+          <tbody>
+            {kvitteringer.map((k) => {
+              const omregnet = kurser[k.valuta]
+                ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
+                : k.belop;
+
+              return (
+                <tr key={k.id} className="text-center">
+                  <td className="p-2 border">
+                    <input
+                      type="checkbox"
+                      checked={valgte.includes(k.id)}
+                      onChange={() => toggleValgt(k.id)}
+                    />
+                  </td>
+                  <td className="p-2 border">{k.dato}</td>
+                  <td className="p-2 border">{k.tittel}</td>
+                  <td className="p-2 border">{k.belop} {k.valuta}</td>
+                  <td className="p-2 border">{omregnet} {visningsvaluta}</td>
+                  <td className="p-2 border">
+                    <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                      Åpne
+                    </a>
+                  </td>
+                  <td className="p-2 border">
+                    <button
+                      onClick={() => slett(k.id, k.fil_url)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Slett
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-
-      {status && (
-        <pre className="bg-gray-100 p-3 mb-4 text-sm whitespace-pre-wrap rounded">
-          {status}
-        </pre>
-      )}
-
-      <table className="w-full border text-sm">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="p-2 border"></th>
-            <th className="p-2 border">Dato</th>
-            <th className="p-2 border">Tittel</th>
-            <th className="p-2 border">Beløp (original)</th>
-            <th className="p-2 border">I {visningsvaluta}</th>
-            <th className="p-2 border">Fil</th>
-            <th className="p-2 border">Handling</th>
-          </tr>
-        </thead>
-        <tbody>
-          {kvitteringer.map((k) => {
-            const omregnet = kurser[k.valuta]
-              ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
-              : k.belop;
-
-            return (
-              <tr key={k.id} className="text-center">
-                <td className="p-2 border">
-                  <input
-                    type="checkbox"
-                    checked={valgte.includes(k.id)}
-                    onChange={() => toggleValgt(k.id)}
-                  />
-                </td>
-                <td className="p-2 border">{k.dato}</td>
-                <td className="p-2 border">{k.tittel}</td>
-                <td className="p-2 border">{k.belop} {k.valuta}</td>
-                <td className="p-2 border">{omregnet} {visningsvaluta}</td>
-                <td className="p-2 border">
-                  <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                    Åpne
-                  </a>
-                </td>
-                <td className="p-2 border">
-                  <button
-                    onClick={() => slett(k.id, k.fil_url)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Slett
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
     </div>
   );
 }
