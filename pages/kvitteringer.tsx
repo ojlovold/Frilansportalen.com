@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useRouter } from "next/router";
 
 export default function Kvitteringer() {
   const supabase = useSupabaseClient();
   const user = useUser();
+  const router = useRouter();
+
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const [valgte, setValgte] = useState<string[]>([]);
   const [status, setStatus] = useState("");
@@ -89,9 +92,17 @@ export default function Kvitteringer() {
   };
 
   const skrivUt = () => window.print();
-    return (
+
+  return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
+        <button
+          onClick={() => router.back()}
+          className="mb-4 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow"
+        >
+          ← Tilbake
+        </button>
+
         <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
 
         <div className="flex flex-wrap gap-2 mb-4">
