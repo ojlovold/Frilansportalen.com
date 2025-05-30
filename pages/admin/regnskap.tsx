@@ -1,4 +1,5 @@
 // pages/admin/regnskap.tsx
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -27,6 +28,8 @@ export default function AdminRegnskap() {
   return (
     <AdminLayout>
       <div className="space-y-8">
+        <h1 className="text-3xl font-bold mb-6">Regnskap</h1>
+
         <section>
           <div className="bg-white p-4 rounded-xl shadow max-w-3xl">
             <p className="text-sm">Totalt: {sumInntekt.toFixed(2)} kr</p>
