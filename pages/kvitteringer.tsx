@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { useRouter } from "next/router";
 
 export default function Kvitteringer() {
   const supabase = useSupabaseClient();
@@ -66,34 +66,25 @@ export default function Kvitteringer() {
   };
 
   const visVedlegg = () => {
-    const valgteUrls = kvitteringer
+    const urls = kvitteringer
       .filter((k) => valgte.includes(k.id))
       .map((k) => k.fil_url);
-    setStatus("Vedlegg:\n" + valgteUrls.join("\n"));
+    setStatus("Vedlegg:\n" + urls.join("\n"));
   };
 
-  const lagPDF = () => {
-    const pdf = new jsPDF();
-    autoTable(pdf, {
-      head: [["Dato", "Tittel", "Original", visningsvaluta]],
-      body: kvitteringer.map((k) => {
-        const omregnet = kurser[k.valuta]
-          ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
-          : k.belop;
-        return [
-          k.dato,
-          k.tittel,
-          `${k.belop} ${k.valuta}`,
-          `${omregnet} ${visningsvaluta}`,
-        ];
-      }),
-    });
-    pdf.save("kvitteringer.pdf");
+  const lastNedValgte = () => {
+    kvitteringer
+      .filter((k) => valgte.includes(k.id))
+      .forEach((k) => {
+        const link = document.createElement("a");
+        link.href = k.fil_url;
+        link.download = k.tittel || "kvittering";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   };
-
-  const skrivUt = () => window.print();
-
-  return (
+    return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <button
@@ -115,11 +106,8 @@ export default function Kvitteringer() {
               <option key={val}>{val}</option>
             ))}
           </select>
-          <button onClick={lagPDF} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-            Last ned PDF
-          </button>
-          <button onClick={skrivUt} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-            Skriv ut
+          <button onClick={lastNedValgte} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+            Last ned valgte
           </button>
           <button onClick={visVedlegg} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
             Vis vedlegg for e-post
@@ -165,7 +153,12 @@ export default function Kvitteringer() {
                     <td className="p-2 border">{k.belop} {k.valuta}</td>
                     <td className="p-2 border">{omregnet} {visningsvaluta}</td>
                     <td className="p-2 border">
-                      <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                      <a
+                        href={k.fil_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 underline"
+                      >
                         Åpne
                       </a>
                     </td>
