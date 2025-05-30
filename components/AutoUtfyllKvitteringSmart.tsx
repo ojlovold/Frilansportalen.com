@@ -18,7 +18,6 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
-  const [visKvitteringerKnapp, setVisKvitteringerKnapp] = useState(true);
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
