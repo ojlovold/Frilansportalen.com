@@ -7,8 +7,12 @@ export default function Kvitteringer() {
   const supabase = useSupabaseClient();
   const user = useUser();
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
-  const [status, setStatus] = useState("");
   const [valgte, setValgte] = useState<string[]>([]);
+  const [status, setStatus] = useState("");
+  const [visningsvaluta, setVisningsvaluta] = useState("NOK");
+  const [kurser, setKurser] = useState<Record<string, number>>({});
+
+  const støttedeValutaer = ["NOK", "USD", "EUR", "SEK", "GBP"];
 
   useEffect(() => {
     const hent = async () => {
@@ -18,36 +22,30 @@ export default function Kvitteringer() {
         .select("*")
         .eq("bruker_id", user.id)
         .order("dato", { ascending: false });
-      if (!error) setKvitteringer(data);
+      if (!error && data) {
+        setKvitteringer(data);
+        const unike = [...new Set(data.map((k) => k.valuta).filter((v) => v !== visningsvaluta))];
+        const promises = unike.map(async (val) => {
+          const iso = new Date().toISOString().split("T")[0];
+          const res = await fetch(`https://api.frankfurter.app/${iso}?from=${val}&to=${visningsvaluta}`);
+          const json = await res.json();
+          return [val, json.rates?.[visningsvaluta] || 0];
+        });
+        const results = await Promise.all(promises);
+        const rateMap: Record<string, number> = {};
+        results.forEach(([fra, kurs]) => (rateMap[fra] = kurs));
+        setKurser(rateMap);
+      }
     };
     hent();
-  }, [user]);
+  }, [user, visningsvaluta]);
 
   const slett = async (id: string, fil_url: string) => {
-    const bekreft = confirm("Slette kvittering permanent?");
-    if (!bekreft) return;
+    if (!confirm("Slette kvittering permanent?")) return;
     const path = fil_url.split("/").slice(7).join("/");
     await supabase.storage.from("kvitteringer").remove([path]);
     await supabase.from("kvitteringer").delete().eq("id", id);
     setKvitteringer((prev) => prev.filter((k) => k.id !== id));
-  };
-
-  const lagPDF = () => {
-    const pdf = new jsPDF();
-    autoTable(pdf, {
-      head: [["Dato", "Tittel", "Beløp", "Valuta"]],
-      body: kvitteringer.map((k) => [
-        k.dato,
-        k.tittel,
-        k.belop,
-        k.valuta,
-      ]),
-    });
-    pdf.save("kvitteringer.pdf");
-  };
-
-  const skrivUt = () => {
-    window.print();
   };
 
   const toggleValgt = (id: string) => {
@@ -63,11 +61,41 @@ export default function Kvitteringer() {
     setStatus("Vedlegg:\n" + valgteUrls.join("\n"));
   };
 
+  const lagPDF = () => {
+    const pdf = new jsPDF();
+    autoTable(pdf, {
+      head: [["Dato", "Tittel", "Original", visningsvaluta]],
+      body: kvitteringer.map((k) => {
+        const omregnet = kurser[k.valuta]
+          ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
+          : k.belop;
+        return [
+          k.dato,
+          k.tittel,
+          `${k.belop} ${k.valuta}`,
+          `${omregnet} ${visningsvaluta}`,
+        ];
+      }),
+    });
+    pdf.save("kvitteringer.pdf");
+  };
+
+  const skrivUt = () => window.print();
+
   return (
     <div className="max-w-5xl mx-auto p-4 bg-white rounded shadow">
       <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
 
       <div className="flex flex-wrap gap-2 mb-4">
+        <select
+          value={visningsvaluta}
+          onChange={(e) => setVisningsvaluta(e.target.value)}
+          className="p-2 border rounded bg-gray-100"
+        >
+          {støttedeValutaer.map((val) => (
+            <option key={val}>{val}</option>
+          ))}
+        </select>
         <button onClick={lagPDF} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
           Last ned PDF
         </button>
@@ -91,41 +119,47 @@ export default function Kvitteringer() {
             <th className="p-2 border"></th>
             <th className="p-2 border">Dato</th>
             <th className="p-2 border">Tittel</th>
-            <th className="p-2 border">Beløp</th>
-            <th className="p-2 border">Valuta</th>
+            <th className="p-2 border">Beløp (original)</th>
+            <th className="p-2 border">I {visningsvaluta}</th>
             <th className="p-2 border">Fil</th>
             <th className="p-2 border">Handling</th>
           </tr>
         </thead>
         <tbody>
-          {kvitteringer.map((k) => (
-            <tr key={k.id} className="text-center">
-              <td className="p-2 border">
-                <input
-                  type="checkbox"
-                  checked={valgte.includes(k.id)}
-                  onChange={() => toggleValgt(k.id)}
-                />
-              </td>
-              <td className="p-2 border">{k.dato}</td>
-              <td className="p-2 border">{k.tittel}</td>
-              <td className="p-2 border">{k.belop}</td>
-              <td className="p-2 border">{k.valuta}</td>
-              <td className="p-2 border">
-                <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                  Åpne
-                </a>
-              </td>
-              <td className="p-2 border">
-                <button
-                  onClick={() => slett(k.id, k.fil_url)}
-                  className="text-red-600 hover:underline"
-                >
-                  Slett
-                </button>
-              </td>
-            </tr>
-          ))}
+          {kvitteringer.map((k) => {
+            const omregnet = kurser[k.valuta]
+              ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
+              : k.belop;
+
+            return (
+              <tr key={k.id} className="text-center">
+                <td className="p-2 border">
+                  <input
+                    type="checkbox"
+                    checked={valgte.includes(k.id)}
+                    onChange={() => toggleValgt(k.id)}
+                  />
+                </td>
+                <td className="p-2 border">{k.dato}</td>
+                <td className="p-2 border">{k.tittel}</td>
+                <td className="p-2 border">{k.belop} {k.valuta}</td>
+                <td className="p-2 border">{omregnet} {visningsvaluta}</td>
+                <td className="p-2 border">
+                  <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                    Åpne
+                  </a>
+                </td>
+                <td className="p-2 border">
+                  <button
+                    onClick={() => slett(k.id, k.fil_url)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Slett
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
