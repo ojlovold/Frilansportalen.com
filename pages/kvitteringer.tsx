@@ -10,23 +10,28 @@ export default function Kvitteringer() {
 
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const [valgte, setValgte] = useState<string[]>([]);
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const hent = async () => {
       if (!user) return;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("kvitteringer")
         .select("*")
         .eq("bruker_id", user.id)
         .order("dato", { ascending: false });
-      if (!error && data) setKvitteringer(data);
+
+      const unike = Object.values(
+        (data || []).reduce((acc, k) => {
+          acc[k.fil_url] = k;
+          return acc;
+        }, {} as Record<string, any>)
+      );
+      setKvitteringer(unike);
     };
     hent();
   }, [user]);
 
   const slett = async (id: string, fil_url: string) => {
-    if (!confirm("Slette kvittering permanent?")) return;
     const path = fil_url.split("/").slice(7).join("/");
     await supabase.storage.from("kvitteringer").remove([path]);
     await supabase.from("kvitteringer").delete().eq("id", id);
@@ -66,6 +71,15 @@ export default function Kvitteringer() {
     doc.save("kvitteringer-lenker.pdf");
   };
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const eksporterPDFmedVedlegg = async () => {
     const doc = new jsPDF();
     const utvalgte = kvitteringer.filter((k) => valgte.includes(k.id));
@@ -85,14 +99,9 @@ export default function Kvitteringer() {
     doc.save("kvitteringer-med-bilder.pdf");
   };
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  const inneværendeÅr = new Date().getFullYear();
+  const aktive = kvitteringer.filter(k => parseInt(k.dato?.split("-")[0]) === inneværendeÅr);
+  const arkiv = kvitteringer.filter(k => parseInt(k.dato?.split("-")[0]) < inneværendeÅr);
 
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
@@ -118,59 +127,73 @@ export default function Kvitteringer() {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="p-2 border"></th>
-                <th className="p-2 border">Dato</th>
-                <th className="p-2 border">Tittel</th>
-                <th className="p-2 border">Beløp</th>
-                <th className="p-2 border">Valuta</th>
-                <th className="p-2 border">I NOK</th>
-                <th className="p-2 border">Fil</th>
-                <th className="p-2 border">Handling</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kvitteringer.map((k) => (
-                <tr key={k.id} className="text-center">
-                  <td className="p-2 border">
-                    <input
-                      type="checkbox"
-                      checked={valgte.includes(k.id)}
-                      onChange={() =>
-                        setValgte((prev) =>
-                          prev.includes(k.id) ? prev.filter((v) => v !== k.id) : [...prev, k.id]
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="p-2 border">{k.dato}</td>
-                  <td className="p-2 border">{k.tittel}</td>
-                  <td className="p-2 border">{k.belop}</td>
-                  <td className="p-2 border">{k.valuta}</td>
-                  <td className="p-2 border">{k.nok ? `${k.nok.toFixed(2)} NOK` : k.valuta === "NOK" ? `${k.belop} NOK` : "-"}</td>
-                  <td className="p-2 border">
-                    <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                      Åpne
-                    </a>
-                  </td>
-                  <td className="p-2 border">
-                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 hover:underline">
-                      Slett
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {aktive.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mb-2">Aktive kvitteringer</h2>
+            <Kvitteringstabell liste={aktive} slett={slett} valgte={valgte} setValgte={setValgte} />
+          </>
+        )}
 
-        <div className="text-right text-sm mt-4 pr-2">
-          <p>Antall kvitteringer: <strong>{kvitteringer.length}</strong></p>
-        </div>
+        {arkiv.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mt-8 mb-2">Arkiv</h2>
+            <Kvitteringstabell liste={arkiv} slett={slett} valgte={valgte} setValgte={setValgte} />
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full border text-sm">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="p-2 border"></th>
+            <th className="p-2 border">Dato</th>
+            <th className="p-2 border">Tittel</th>
+            <th className="p-2 border">Beløp</th>
+            <th className="p-2 border">Valuta</th>
+            <th className="p-2 border">I NOK</th>
+            <th className="p-2 border">Fil</th>
+            <th className="p-2 border">Handling</th>
+          </tr>
+        </thead>
+        <tbody>
+          {liste.map((k: any) => (
+            <tr key={k.id} className="text-center">
+              <td className="p-2 border">
+                <input
+                  type="checkbox"
+                  checked={valgte.includes(k.id)}
+                  onChange={() =>
+                    setValgte((prev: any[]) =>
+                      prev.includes(k.id) ? prev.filter((v) => v !== k.id) : [...prev, k.id]
+                    )
+                  }
+                />
+              </td>
+              <td className="p-2 border">{k.dato}</td>
+              <td className="p-2 border">{k.tittel}</td>
+              <td className="p-2 border">{k.belop}</td>
+              <td className="p-2 border">{k.valuta}</td>
+              <td className="p-2 border">{k.nok}</td>
+              <td className="p-2 border">
+                <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                  Åpne
+                </a>
+              </td>
+              <td className="p-2 border">
+                <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 hover:underline">
+                  Slett
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
