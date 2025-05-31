@@ -16,6 +16,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
+  const [liste, setListe] = useState<any[]>([]);
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function AutoUtfyllKvitteringSmart() {
     if (lower.includes("usd") || lower.includes("$")) return "USD";
     if (lower.includes("eur")) return "EUR";
     if (lower.includes("gbp")) return "GBP";
+    if (lower.includes("nok") || lower.includes("kr")) return "NOK";
     return "NOK";
   };
 
@@ -79,17 +81,17 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt)/.test(linje) && /(kr|\$|eur|usd|nok|gbp)/.test(linje) && !linje.includes("mva")) {
+      if (/(total|sum|beløp|betalt)/.test(linje)) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
-          .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+          .map((m) => m[0].replace(/\./g, "").replace(",", "."))
           .map((str) => parseFloat(str))
           .filter((val) => !isNaN(val) && val > 0);
         kandidater.push(...tall);
       }
     }
-    const høyeste = Math.max(...kandidater, 0);
-    return høyeste > 0 ? høyeste.toFixed(2) : "";
+    const valgt = Math.max(...kandidater, 0);
+    return valgt > 0 ? valgt.toFixed(2) : "";
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
@@ -132,13 +134,29 @@ export default function AutoUtfyllKvitteringSmart() {
 
   useEffect(() => {
     if (fil) lesKvittering(fil);
+    else hentTidligere();
   }, [fil]);
 
+  const hentTidligere = async () => {
+    const { data } = await supabase
+      .from("kvitteringer")
+      .select("*")
+      .eq("bruker_id", user?.id)
+      .order("opprettet", { ascending: false });
+    setListe(data || []);
+  };
+
+  const slett = async (id: string, fil_url: string) => {
+    const path = fil_url.split("/").slice(7).join("/");
+    await supabase.storage.from("kvitteringer").remove([path]);
+    await supabase.from("kvitteringer").delete().eq("id", id);
+    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
+    setListe((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const lagreKvittering = async () => {
-    if (!user?.id) return setStatus("Du er ikke innlogget");
-    if (!fil) return setStatus("Mangler fil");
-    if (!tittel.trim()) return setStatus("Mangler tittel");
-    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
+    if (!user?.id || !fil || !tittel.trim()) return setStatus("Mangler felt");
+    if (!belop || isNaN(parseFloat(belop))) return setStatus("Ugyldig beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
     const datoISO = dato.split(".").reverse().join("-");
@@ -165,21 +183,18 @@ export default function AutoUtfyllKvitteringSmart() {
       {
         bruker_id: user.id,
         tittel,
-        belop: parseFloat(belop),
+        belop: parseFloat(belopOriginal),
         valuta,
-        nok: valuta !== "NOK" ? parseFloat(belop) : null,
+        nok: parseFloat(belop),
         dato: datoISO,
         fil_url: publicUrl,
         opprettet: new Date().toISOString(),
       },
     ]);
 
-    if (insertError) {
-      console.error("❌ Insert-feil:", insertError);
-      return setStatus("Feil: " + JSON.stringify(insertError, null, 2));
-    }
+    if (insertError) return setStatus("Feil: " + JSON.stringify(insertError));
 
-    const { error: kopiFeil } = await supabase.from("bruker_utgifter").insert([
+    await supabase.from("bruker_utgifter").insert([
       {
         bruker_id: user.id,
         tittel,
@@ -192,48 +207,67 @@ export default function AutoUtfyllKvitteringSmart() {
       },
     ]);
 
-    if (kopiFeil) {
-      console.error("⚠️ Feil ved kopi til bruker_utgifter:", kopiFeil);
-      alert("FEIL: " + JSON.stringify(kopiFeil, null, 2));
-      setStatus("Kvittering lagret, men ikke synlig i økonomioversikt.");
-    } else {
-      setStatus("Kvittering lagret!");
-    }
+    setStatus("Kvittering lagret!");
+    setFil(null);
+    hentTidligere();
   };
 
   return (
-    <div className="bg-yellow-100 p-6 rounded-xl shadow max-w-xl mx-auto space-y-4">
-      <h2 className="text-2xl font-semibold">Autoutfyll kvittering</h2>
+    <div className="bg-yellow-100 p-4 space-y-4 max-w-xl mx-auto">
+      <h2 className="text-2xl font-bold">Autoutfyll kvittering</h2>
 
-      <input
-        type="file"
-        accept=".pdf,image/*"
-        onChange={(e) => setFil(e.target.files?.[0] || null)}
-        className="w-full"
-      />
+      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} className="w-full" />
+      <pre className="text-sm bg-white p-2 rounded whitespace-pre-wrap">{tekst || "Ingen tekst funnet."}</pre>
 
-      <pre className="bg-white p-3 text-sm whitespace-pre-wrap rounded max-h-60 overflow-auto">{tekst || "Ingen tekst funnet."}</pre>
+      <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
+      <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
+      <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
+      <input type="text" placeholder="Omregnet til NOK" value={belop} readOnly className="w-full p-2 border rounded bg-gray-100" />
+      <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
 
-      <div className="space-y-2">
-        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="w-full p-2 border rounded bg-gray-100" />
-        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="w-full p-2 border rounded" />
-        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="w-full p-2 border rounded" />
-      </div>
-
-      <button onClick={lagreKvittering} className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90 w-full">
+      <button onClick={lagreKvittering} className="w-full bg-black text-white px-4 py-2 rounded-xl">
         Lagre kvittering
       </button>
 
-      <button
-        onClick={() => router.push("/kvitteringer")}
-        className="bg-gray-700 hover:bg-gray-800 text-white font-semibold px-4 py-2 rounded-xl shadow mt-2 w-full transition-colors"
-      >
+      <button onClick={() => router.push("/kvitteringer")} className="w-full bg-gray-700 text-white px-4 py-2 rounded-xl">
         Se mine kvitteringer
       </button>
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+
+      {liste.length > 0 && (
+        <div className="mt-6 bg-white rounded shadow p-4">
+          <h3 className="font-semibold mb-2">Tidligere kvitteringer</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="text-left">Dato</th>
+                <th className="text-left">Tittel</th>
+                <th>Beløp</th>
+                <th>Valuta</th>
+                <th>NOK</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {liste.map((k) => (
+                <tr key={k.id} className="border-t">
+                  <td>{k.dato}</td>
+                  <td>{k.tittel}</td>
+                  <td>{k.belop}</td>
+                  <td>{k.valuta}</td>
+                  <td>{k.nok}</td>
+                  <td>
+                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">
+                      Slett
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
