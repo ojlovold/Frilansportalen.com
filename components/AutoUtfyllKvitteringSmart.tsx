@@ -1,5 +1,3 @@
-// AutoUtfyllKvitteringSmart.tsx – alt du trenger, inkludert arkiv etter år og korrekt datolesing
-
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
@@ -10,18 +8,19 @@ import { useRouter } from "next/router";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function AutoUtfyllKvitteringSmart() {
+  const supabase = useSupabaseClient();
+  const user = useUser();
+  const router = useRouter();
+
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
-  const [belop, setBelop] = useState("");
   const [belopOriginal, setBelopOriginal] = useState("");
-  const [dato, setDato] = useState("");
+  const [belop, setBelop] = useState("");
   const [valuta, setValuta] = useState("NOK");
+  const [dato, setDato] = useState("");
   const [status, setStatus] = useState("");
   const [liste, setListe] = useState<any[]>([]);
-  const user = useUser();
-  const supabase = useSupabaseClient();
-  const router = useRouter();
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -34,18 +33,44 @@ export default function AutoUtfyllKvitteringSmart() {
     ctx.putImageData(imgData, 0, 0);
   };
 
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
+
+  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> =>
+    await new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(fil);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
+    });
+
   const parseDato = (tekst: string): string => {
     const mønstre = [
-      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,              // 05.05.2025
-      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,              // 2025-05-05
-      /\b([A-Za-z]+) (\d{1,2}), (\d{4})\b/,              // May 5, 2025
-      /\b(\d{1,2}) ([A-Za-z]+) (\d{4})\b/                // 5 May 2025
+      /\b(\d{2})[./-](\d{2})[./-](\d{4})\b/,
+      /\b(\d{4})[./-](\d{2})[./-](\d{2})\b/,
+      /\b([A-Za-z]+) (\d{1,2}), (\d{4})\b/,
+      /\b(\d{1,2}) ([A-Za-z]+) (\d{4})\b/
     ];
     const måneder: any = {
       january: "01", february: "02", march: "03", april: "04", may: "05", june: "06",
       july: "07", august: "08", september: "09", october: "10", november: "11", december: "12"
     };
-
     for (const mønster of mønstre) {
       const match = tekst.match(mønster);
       if (match) {
@@ -60,51 +85,9 @@ export default function AutoUtfyllKvitteringSmart() {
         }
       }
     }
-    return "01.01.2024";
+    return "";
   };
 
-  const hentKvitteringer = async () => {
-    const { data } = await supabase
-      .from("kvitteringer")
-      .select("*")
-      .eq("bruker_id", user?.id)
-      .order("dato", { ascending: false });
-    const unike = Object.values(
-      (data || []).reduce((acc, k) => {
-        acc[k.fil_url] = k;
-        return acc;
-      }, {} as Record<string, any>)
-    );
-    setListe(unike);
-  };
-
-  useEffect(() => {
-    if (!fil) hentKvitteringer();
-  }, [fil]);
-
-  const slett = async (id: string, fil_url: string) => {
-    const path = fil_url.split("/").slice(7).join("/");
-    await supabase.storage.from("kvitteringer").remove([path]);
-    await supabase.from("kvitteringer").delete().eq("id", id);
-    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
-    setListe((prev) => prev.filter((k) => k.id !== id));
-  };
-
-  const grupperteKvitteringer = () => {
-    const grupper: Record<string, any[]> = {};
-    liste.forEach((k) => {
-      const år = k.dato?.split("-")[0] || "Ukjent";
-      if (!grupper[år]) grupper[år] = [];
-      grupper[år].push(k);
-    });
-    return grupper;
-  };
-
-  const sorterGrupper = (grupper: Record<string, any[]>) => {
-    return Object.keys(grupper).sort((a, b) => Number(b) - Number(a));
-  };
-
-  // resten (lesKvittering, lagreKvittering, visning) kommer i neste melding
   const finnValuta = (tekst: string): string => {
     const lower = tekst.toLowerCase();
     if (lower.includes("usd") || lower.includes("$")) return "USD";
@@ -146,52 +129,48 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const lesKvittering = async (fil: File) => {
     setStatus("Leser kvittering...");
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const img = new Image();
-      img.src = reader.result as string;
-      img.onload = async () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        forbedreKontrast(canvas);
-        const result = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} });
-        const text = result.data.text;
-        setTekst(text);
+    const canvas = fil.type === "application/pdf"
+      ? await pdfTilBilde(fil)
+      : await bildeTilCanvas(fil);
 
-        const d = parseDato(text);
-        const v = finnValuta(text);
-        const b = finnTotalbelop(text);
-        setDato(d);
-        setValuta(v);
-        setBelopOriginal(b);
+    const result = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} });
+    const text = result.data.text || "";
+    setTekst(text);
 
-        if (v === "NOK" || v === "") {
-          setBelop(b);
-        } else {
-          const kurs = await hentKurs(v, "NOK", d);
-          setBelop((parseFloat(b) * kurs).toFixed(2));
-        }
+    const d = parseDato(text);
+    const v = finnValuta(text);
+    const b = finnTotalbelop(text);
 
-        setStatus("Ferdig");
-      };
-    };
-    reader.readAsDataURL(fil);
+    setDato(d);
+    setValuta(v);
+    setBelopOriginal(b);
+
+    if (!d) {
+      setStatus("Fant ikke dato – fyll inn manuelt.");
+      return;
+    }
+
+    if (v === "NOK" || v === "") {
+      setBelop(b);
+    } else {
+      const kurs = await hentKurs(v, "NOK", d);
+      setBelop((parseFloat(b) * kurs).toFixed(2));
+    }
+
+    setStatus("Ferdig");
   };
+    const lagreKvittering = async () => {
+    if (!user?.id || !fil || !tittel.trim()) return setStatus("Mangler tittel");
+    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler eller ugyldig beløp");
+    if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Mangler eller ugyldig dato");
 
-  const lagreKvittering = async () => {
-    if (!user?.id || !fil || !tittel || !belop || !dato) return;
     const datoISO = dato.split(".").reverse().join("-");
     const trygtTittel = tittel.replace(/[^\w\s.-]/g, "").replace(/\s+/g, "-").slice(0, 60);
     const filnavn = `${user.id}-${Date.now()}-${trygtTittel || "kvittering"}`;
 
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
-      .upload(`bruker/kvitteringer/${filnavn}`, fil, {
-        upsert: true,
-      });
+      .upload(`bruker/kvitteringer/${filnavn}`, fil, { upsert: true });
     if (uploadError) return setStatus("Feil: " + uploadError.message);
 
     const { data: urlData } = supabase.storage
@@ -202,36 +181,66 @@ export default function AutoUtfyllKvitteringSmart() {
     const finnes = await supabase.from("kvitteringer").select("id").eq("fil_url", publicUrl).maybeSingle();
     if (finnes.data) return setStatus("Kvittering finnes allerede.");
 
-    await supabase.from("kvitteringer").insert([
-      {
-        bruker_id: user.id,
-        tittel,
-        belop: parseFloat(belopOriginal),
-        valuta,
-        nok: parseFloat(belop),
-        dato: datoISO,
-        fil_url: publicUrl,
-        opprettet: new Date().toISOString(),
-      },
-    ]);
+    await supabase.from("kvitteringer").insert([{
+      bruker_id: user.id,
+      tittel,
+      belop: parseFloat(belopOriginal),
+      valuta,
+      nok: parseFloat(belop),
+      dato: datoISO,
+      fil_url: publicUrl,
+      opprettet: new Date().toISOString(),
+    }]);
 
-    await supabase.from("bruker_utgifter").insert([
-      {
-        bruker_id: user.id,
-        tittel,
-        dato: datoISO,
-        valuta,
-        belop: parseFloat(belopOriginal),
-        nok: parseFloat(belop),
-        fil_url: publicUrl,
-        opprettet: new Date().toISOString(),
-      },
-    ]);
+    await supabase.from("bruker_utgifter").insert([{
+      bruker_id: user.id,
+      tittel,
+      dato: datoISO,
+      valuta,
+      belop: parseFloat(belopOriginal),
+      nok: parseFloat(belop),
+      fil_url: publicUrl,
+      opprettet: new Date().toISOString(),
+    }]);
 
     setStatus("Kvittering lagret!");
     setFil(null);
-    hentKvitteringer();
+    hentTidligere();
   };
+
+  const hentTidligere = async () => {
+    const { data } = await supabase
+      .from("kvitteringer")
+      .select("*")
+      .eq("bruker_id", user?.id)
+      .order("dato", { ascending: false });
+
+    setListe(data || []);
+  };
+
+  const slett = async (id: string, fil_url: string) => {
+    const path = fil_url.split("/").slice(7).join("/");
+    await supabase.storage.from("kvitteringer").remove([path]);
+    await supabase.from("kvitteringer").delete().eq("id", id);
+    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
+    setListe((prev) => prev.filter((k) => k.id !== id));
+  };
+
+  useEffect(() => {
+    if (!fil) hentTidligere();
+  }, []);
+
+  const grupperPerÅr = () => {
+    const grupper: Record<string, any[]> = {};
+    liste.forEach((k) => {
+      const år = k.dato?.split("-")[0] || "Ukjent";
+      if (!grupper[år]) grupper[år] = [];
+      grupper[år].push(k);
+    });
+    return grupper;
+  };
+
+  const sorterteÅr = () => Object.keys(grupperPerÅr()).sort((a, b) => Number(b) - Number(a));
 
   return (
     <div className="bg-yellow-100 p-4 space-y-4 max-w-xl mx-auto">
@@ -256,22 +265,17 @@ export default function AutoUtfyllKvitteringSmart() {
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
 
-      {sorterGrupper(grupperteKvitteringer()).map((år) => (
+      {sorterteÅr().map((år) => (
         <div key={år} className="mt-6 bg-white rounded shadow p-4">
           <h3 className="font-semibold mb-2">Kvitteringer {år}</h3>
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th>Dato</th>
-                <th>Tittel</th>
-                <th>Beløp</th>
-                <th>Valuta</th>
-                <th>NOK</th>
-                <th></th>
+                <th>Dato</th><th>Tittel</th><th>Beløp</th><th>Valuta</th><th>NOK</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {grupperteKvitteringer()[år].map((k: any) => (
+              {grupperPerÅr()[år].map((k) => (
                 <tr key={k.id} className="border-t">
                   <td>{k.dato}</td>
                   <td>{k.tittel}</td>
@@ -279,9 +283,7 @@ export default function AutoUtfyllKvitteringSmart() {
                   <td>{k.valuta}</td>
                   <td>{k.nok}</td>
                   <td>
-                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">
-                      Slett
-                    </button>
+                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">Slett</button>
                   </td>
                 </tr>
               ))}
