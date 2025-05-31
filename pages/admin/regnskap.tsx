@@ -13,7 +13,7 @@ export default function AdminRegnskap() {
   useEffect(() => {
     const hent = async () => {
       const { data: inntekter } = await supabase.from("transaksjoner").select("*");
-      const { data: utgifter } = await supabase.from("admin_utgifter").select("*");
+      const { data: utgifter } = await supabase.from("bruker_utgifter").select("*");
       setInntekter(inntekter || []);
       setUtgifter(utgifter || []);
       const sum = inntekter?.reduce((acc, curr) => acc + (curr.belop || 0), 0) || 0;
