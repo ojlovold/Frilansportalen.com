@@ -38,7 +38,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> =>
     await new Promise((resolve) => {
-      const img = document.createElement("img");
+      const img = new Image();
       img.src = URL.createObjectURL(fil);
       img.onload = () => {
         const canvas = document.createElement("canvas");
