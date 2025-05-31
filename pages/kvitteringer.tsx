@@ -1,8 +1,3 @@
-// ORIGINALFILEN DU LEVERTE + KUN TO FUNKSJONER INNLAGT:
-// - Eksporter som CSV
-// - Eksporter som PDF
-// Absolutt alt annet urørt. Status, valgte[], vedlegg, slett, summering – ALT er på plass.
-
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -63,7 +58,9 @@ export default function Kvitteringer() {
   };
 
   const toggleValgt = (id: string) => {
-    setValgte((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
+    setValgte((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+    );
   };
 
   const visVedlegg = () => {
@@ -196,37 +193,33 @@ export default function Kvitteringer() {
               </tr>
             </thead>
             <tbody>
-              {kvitteringer.map((k) => {
-                const omregnet = kurser[k.valuta]
-                  ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
-                  : k.belop;
-
-                return (
-                  <tr key={k.id} className="text-center">
-                    <td className="p-2 border">
-                      <input
-                        type="checkbox"
-                        checked={valgte.includes(k.id)}
-                        onChange={() => toggleValgt(k.id)}
-                      />
-                    </td>
-                    <td className="p-2 border">{k.dato}</td>
-                    <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
-                    <td className="p-2 border">{k.belop} {k.valuta}</td>
-                    <td className=\"p-2 border\">{(k.nok ? k.nok.toFixed(2) : (k.belop * (kurser[k.valuta] || 1)).toFixed(2))} NOK</td>
-                    <td className="p-2 border">
-                      <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                        Åpne
-                      </a>
-                    </td>
-                    <td className="p-2 border">
-                      <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 hover:underline">
-                        Slett
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {kvitteringer.map((k) => (
+                <tr key={k.id} className="text-center">
+                  <td className="p-2 border">
+                    <input
+                      type="checkbox"
+                      checked={valgte.includes(k.id)}
+                      onChange={() => toggleValgt(k.id)}
+                    />
+                  </td>
+                  <td className="p-2 border">{k.dato}</td>
+                  <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
+                  <td className="p-2 border">{k.belop} {k.valuta}</td>
+                  <td className="p-2 border">
+                    {(k.nok ? k.nok.toFixed(2) : (k.belop * (kurser[k.valuta] || 1)).toFixed(2))} NOK
+                  </td>
+                  <td className="p-2 border">
+                    <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                      Åpne
+                    </a>
+                  </td>
+                  <td className="p-2 border">
+                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 hover:underline">
+                      Slett
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
