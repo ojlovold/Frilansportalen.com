@@ -96,7 +96,11 @@ export default function Kvitteringer() {
       `"${k.tittel}"`,
       k.valuta,
       k.belop,
-      kurser[k.valuta] ? (k.belop * kurser[k.valuta]).toFixed(2) : k.belop,
+      visningsvaluta === "NOK"
+        ? k.valuta === "NOK"
+          ? k.belop
+          : (k.nok || 0).toFixed(2)
+        : (k.belop * (kurser[k.valuta] || 1)).toFixed(2),
       k.fil_url,
     ]);
     const csvContent = [header, ...rows].map((row) => row.join(";")).join("\n");
@@ -206,7 +210,11 @@ export default function Kvitteringer() {
                   <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
                   <td className="p-2 border">{k.belop} {k.valuta}</td>
                   <td className="p-2 border">
-                    {(k.nok ? k.nok.toFixed(2) : (k.belop * (kurser[k.valuta] || 1)).toFixed(2))} NOK
+                    {visningsvaluta === "NOK"
+                      ? k.valuta === "NOK"
+                        ? `${k.belop} NOK`
+                        : `${(k.nok || 0).toFixed(2)} NOK`
+                      : `${(k.belop * (kurser[k.valuta] || 1)).toFixed(2)} ${visningsvaluta}`}
                   </td>
                   <td className="p-2 border">
                     <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
