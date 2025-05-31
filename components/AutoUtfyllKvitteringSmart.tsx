@@ -20,7 +20,6 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
-  const [liste, setListe] = useState<any[]>([]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -117,14 +116,17 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
-    const iso = dato.split(".").reverse().join("-");
-    try {
+    const fallback = async (d: Date): Promise<number> => {
+      const iso = d.toISOString().split("T")[0];
       const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
       const data = await res.json();
-      return data.rates?.[til] || 1;
-    } catch {
-      return 1;
-    }
+      if (data?.rates?.[til]) return data.rates[til];
+      d.setDate(d.getDate() - 1);
+      return fallback(d);
+    };
+
+    const d = new Date(dato.split(".").reverse().join("-"));
+    return fallback(d);
   };
 
   const lesKvittering = async (fil: File) => {
@@ -159,14 +161,6 @@ export default function AutoUtfyllKvitteringSmart() {
 
     setStatus("Ferdig");
   };
-
-  useEffect(() => {
-    if (fil) {
-      lesKvittering(fil);
-    } else {
-      hentTidligere();
-    }
-  }, [fil]);
 
   const lagreKvittering = async () => {
     if (!user?.id || !fil || !tittel.trim()) return setStatus("Mangler tittel");
@@ -214,38 +208,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
     setStatus("Kvittering lagret!");
     setFil(null);
-    hentTidligere();
   };
-
-  const hentTidligere = async () => {
-    const { data } = await supabase
-      .from("kvitteringer")
-      .select("*")
-      .eq("bruker_id", user?.id)
-      .order("dato", { ascending: false });
-
-    setListe(data || []);
-  };
-
-  const slett = async (id: string, fil_url: string) => {
-    const path = fil_url.split("/").slice(7).join("/");
-    await supabase.storage.from("kvitteringer").remove([path]);
-    await supabase.from("kvitteringer").delete().eq("id", id);
-    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
-    setListe((prev) => prev.filter((k) => k.id !== id));
-  };
-
-  const grupperPerÅr = () => {
-    const grupper: Record<string, any[]> = {};
-    liste.forEach((k) => {
-      const år = k.dato?.split("-")[0] || "Ukjent";
-      if (!grupper[år]) grupper[år] = [];
-      grupper[år].push(k);
-    });
-    return grupper;
-  };
-
-  const sorterteÅr = () => Object.keys(grupperPerÅr()).sort((a, b) => Number(b) - Number(a));
 
   return (
     <div className="bg-yellow-100 p-4 space-y-4 max-w-xl mx-auto">
@@ -269,33 +232,6 @@ export default function AutoUtfyllKvitteringSmart() {
       </button>
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
-
-      {sorterteÅr().map((år) => (
-        <div key={år} className="mt-6 bg-white rounded shadow p-4">
-          <h3 className="font-semibold mb-2">Kvitteringer {år}</h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th>Dato</th><th>Tittel</th><th>Beløp</th><th>Valuta</th><th>NOK</th><th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {grupperPerÅr()[år].map((k) => (
-                <tr key={k.id} className="border-t">
-                  <td>{k.dato}</td>
-                  <td>{k.tittel}</td>
-                  <td>{k.belop}</td>
-                  <td>{k.valuta}</td>
-                  <td>{k.nok}</td>
-                  <td>
-                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">Slett</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
     </div>
   );
 }
