@@ -145,7 +145,13 @@ export default function AutoUtfyllKvitteringSmart() {
       .select("*")
       .eq("bruker_id", user?.id)
       .order("opprettet", { ascending: false });
-    setListe(data || []);
+    const unike = Object.values(
+      (data || []).reduce((acc, k) => {
+        acc[k.fil_url] = k;
+        return acc;
+      }, {} as Record<string, any>)
+    );
+    setListe(unike);
   };
 
   const slett = async (id: string, fil_url: string) => {
@@ -165,8 +171,6 @@ export default function AutoUtfyllKvitteringSmart() {
     const trygtTittel = tittel.replace(/[^\w\s.-]/g, "").replace(/\s+/g, "-").slice(0, 60);
     const filnavn = `${user.id}-${Date.now()}-${trygtTittel || "kvittering"}`;
 
-    setStatus("Lagrer...");
-
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
       .upload(`bruker/kvitteringer/${filnavn}`, fil, {
@@ -180,6 +184,9 @@ export default function AutoUtfyllKvitteringSmart() {
       .from("kvitteringer")
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
     const publicUrl = urlData?.publicUrl || null;
+
+    const finnes = await supabase.from("kvitteringer").select("id").eq("fil_url", publicUrl).maybeSingle();
+    if (finnes.data) return setStatus("Kvittering finnes allerede.");
 
     await supabase.from("kvitteringer").insert([
       {
@@ -212,6 +219,10 @@ export default function AutoUtfyllKvitteringSmart() {
     hentTidligere();
   };
 
+  const inneværendeÅr = new Date().getFullYear();
+  const aktive = liste.filter(k => parseInt(k.dato?.split("-")[0]) === inneværendeÅr);
+  const arkiv = liste.filter(k => parseInt(k.dato?.split("-")[0]) < inneværendeÅr);
+
   return (
     <div className="bg-yellow-100 p-4 space-y-4 max-w-xl mx-auto">
       <h2 className="text-2xl font-bold">Autoutfyll kvittering</h2>
@@ -235,22 +246,17 @@ export default function AutoUtfyllKvitteringSmart() {
 
       {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
 
-      {liste.length > 0 && (
+      {aktive.length > 0 && (
         <div className="mt-6 bg-white rounded shadow p-4">
-          <h3 className="font-semibold mb-2">Tidligere kvitteringer</h3>
+          <h3 className="font-semibold mb-2">Aktive kvitteringer</h3>
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="text-left">Dato</th>
-                <th className="text-left">Tittel</th>
-                <th>Beløp</th>
-                <th>Valuta</th>
-                <th>NOK</th>
-                <th></th>
+                <th>Dato</th><th>Tittel</th><th>Beløp</th><th>Valuta</th><th>NOK</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {liste.map((k) => (
+              {aktive.map((k) => (
                 <tr key={k.id} className="border-t">
                   <td>{k.dato}</td>
                   <td>{k.tittel}</td>
@@ -258,9 +264,34 @@ export default function AutoUtfyllKvitteringSmart() {
                   <td>{k.valuta}</td>
                   <td>{k.nok}</td>
                   <td>
-                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">
-                      Slett
-                    </button>
+                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">Slett</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {arkiv.length > 0 && (
+        <div className="mt-6 bg-white rounded shadow p-4">
+          <h3 className="font-semibold mb-2">Arkiv</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th>Dato</th><th>Tittel</th><th>Beløp</th><th>Valuta</th><th>NOK</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {arkiv.map((k) => (
+                <tr key={k.id} className="border-t">
+                  <td>{k.dato}</td>
+                  <td>{k.tittel}</td>
+                  <td>{k.belop}</td>
+                  <td>{k.valuta}</td>
+                  <td>{k.nok}</td>
+                  <td>
+                    <button onClick={() => slett(k.id, k.fil_url)} className="text-red-600 text-sm">Slett</button>
                   </td>
                 </tr>
               ))}
