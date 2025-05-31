@@ -15,11 +15,15 @@ export default function AutoUtfyllKvitteringSmart() {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
-  const [belop, setBelop] = useState("");
   const [belopOriginal, setBelopOriginal] = useState("");
-  const [dato, setDato] = useState("");
+  const [belop, setBelop] = useState("");
   const [valuta, setValuta] = useState("NOK");
+  const [dato, setDato] = useState("");
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    if (fil) lesKvittering(fil);
+  }, [fil]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -30,19 +34,6 @@ export default function AutoUtfyllKvitteringSmart() {
       imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = high;
     }
     ctx.putImageData(imgData, 0, 0);
-  };
-
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 3 });
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
-    forbedreKontrast(canvas);
-    return canvas;
   };
 
   const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> =>
@@ -58,6 +49,19 @@ export default function AutoUtfyllKvitteringSmart() {
         resolve(canvas);
       };
     });
+
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
 
   const parseDato = (tekst: string): string => {
     const mønstre = [
@@ -124,7 +128,6 @@ export default function AutoUtfyllKvitteringSmart() {
       d.setDate(d.getDate() - 1);
       return fallback(d);
     };
-
     const d = new Date(dato.split(".").reverse().join("-"));
     return fallback(d);
   };
