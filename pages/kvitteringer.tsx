@@ -1,5 +1,3 @@
-// pages/kvitteringer.tsx
-
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -60,33 +58,24 @@ export default function Kvitteringer() {
   };
 
   const toggleValgt = (id: string) => {
-    setValgte((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
-    );
+    setValgte((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
-  const visVedlegg = () => {
-    setStatus("Vis vedlegg");
-  };
+  const visVedlegg = () => setStatus("Vis vedlegg");
 
   const lastNedValgte = () => {
-    kvitteringer
-      .filter((k) => valgte.includes(k.id))
-      .forEach((k) => {
-        const link = document.createElement("a");
-        link.href = k.fil_url;
-        link.download = k.tittel || "kvittering";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
+    kvitteringer.filter((k) => valgte.includes(k.id)).forEach((k) => {
+      const link = document.createElement("a");
+      link.href = k.fil_url;
+      link.download = k.tittel || "kvittering";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   };
 
   const kopierLenker = () => {
-    const urls = kvitteringer
-      .filter((k) => valgte.includes(k.id))
-      .map((k) => k.fil_url)
-      .join("\n");
+    const urls = kvitteringer.filter((k) => valgte.includes(k.id)).map((k) => k.fil_url).join("\n");
     navigator.clipboard.writeText(urls);
     setStatus("Lenker kopiert!");
   };
@@ -106,6 +95,36 @@ export default function Kvitteringer() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  const eksporterCSV = () => {
+    const header = ["Dato", "Tittel", "Valuta", "Bel\u00f8p", "NOK", "Fil-URL"];
+    const rows = kvitteringer.map((k) => [
+      k.dato,
+      `"${k.tittel}"`,
+      k.valuta,
+      k.belop,
+      kurser[k.valuta] ? (k.belop * kurser[k.valuta]).toFixed(2) : k.belop,
+      k.fil_url,
+    ]);
+    const csvContent = [header, ...rows].map((row) => row.join(";")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const dato = new Date().toISOString().split("T")[0];
+    link.href = URL.createObjectURL(blob);
+    link.download = `kvitteringer-${dato}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const eksporterPDF = () => {
+    window.print();
+  };
+
+  const sum = kvitteringer.reduce((acc, k) => {
+    const kurs = kurser[k.valuta] || 1;
+    return acc + parseFloat(k.belop || 0) * kurs;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
@@ -138,86 +157,18 @@ export default function Kvitteringer() {
           <button onClick={eksporterAltinnJson} className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded shadow">
             Send til Altinn
           </button>
+          <button onClick={eksporterCSV} className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded shadow">
+            Eksporter som CSV
+          </button>
+          <button onClick={eksporterPDF} className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded shadow">
+            Eksporter som PDF
+          </button>
         </div>
 
         {status === "Vis vedlegg" && valgte.length > 0 && (
           <div className="bg-gray-100 rounded-lg p-4 mb-4 shadow-sm">
             <h2 className="font-semibold mb-2">Valgte vedlegg:</h2>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              {kvitteringer
-                .filter((k) => valgte.includes(k.id))
-                .map((k) => (
-                  <li key={k.id}>
-                    📎 <a href={k.fil_url} className="text-blue-600 underline" target="_blank" rel="noreferrer">
-                      {k.tittel || "Kvittering"}
-                    </a>
-                  </li>
-                ))}
-            </ul>
-            <button
-              onClick={kopierLenker}
-              className="mt-3 bg-gray-800 hover:bg-gray-900 text-white text-sm px-3 py-1 rounded shadow"
-            >
-              Kopier alle lenker
-            </button>
-            {status.includes("kopiert") && (
-              <p className="text-green-700 text-sm mt-2">Lenker kopiert!</p>
-            )}
-          </div>
-        )}
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="p-2 border"></th>
-                <th className="p-2 border">Dato</th>
-                <th className="p-2 border">Tittel</th>
-                <th className="p-2 border">Beløp (original)</th>
-                <th className="p-2 border">I {visningsvaluta}</th>
-                <th className="p-2 border">Fil</th>
-                <th className="p-2 border">Handling</th>
-              </tr>
-            </thead>
-            <tbody>
-              {kvitteringer.map((k) => {
-                const omregnet = kurser[k.valuta]
-                  ? (parseFloat(k.belop) * kurser[k.valuta]).toFixed(2)
-                  : k.belop;
-
-                return (
-                  <tr key={k.id} className="text-center">
-                    <td className="p-2 border">
-                      <input
-                        type="checkbox"
-                        checked={valgte.includes(k.id)}
-                        onChange={() => toggleValgt(k.id)}
-                      />
-                    </td>
-                    <td className="p-2 border">{k.dato}</td>
-                    <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
-                    <td className="p-2 border">{k.belop} {k.valuta}</td>
-                    <td className="p-2 border">{omregnet} {visningsvaluta}</td>
-                    <td className="p-2 border">
-                      <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                        Åpne
-                      </a>
-                    </td>
-                    <td className="p-2 border">
-                      <button
-                        onClick={() => slett(k.id, k.fil_url)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Slett
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
+              {kvitteringer.filter((k) => valgte.includes(k.id)).map((k) => (
+                <li key={k.id}>
+                  
