@@ -1,3 +1,5 @@
+// pages/kvitteringer.tsx
+
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -89,6 +91,22 @@ export default function Kvitteringer() {
     setStatus("Lenker kopiert!");
   };
 
+  const eksporterAltinnJson = async () => {
+    const res = await fetch("/api/altinn/export");
+    if (!res.ok) return alert("Eksporten feilet");
+    const json = await res.json();
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dato = new Date().toISOString().split("T")[0];
+    link.href = url;
+    link.download = `altinn-utgifter-${dato}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
@@ -116,6 +134,9 @@ export default function Kvitteringer() {
           </button>
           <button onClick={visVedlegg} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
             Vis vedlegg for e-post
+          </button>
+          <button onClick={eksporterAltinnJson} className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded shadow">
+            Eksporter til Altinn (.json)
           </button>
         </div>
 
