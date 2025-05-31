@@ -15,10 +15,10 @@ export default function AutoUtfyllKvitteringSmart() {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
-  const [belopOriginal, setBelopOriginal] = useState("");
   const [belop, setBelop] = useState("");
-  const [valuta, setValuta] = useState("NOK");
+  const [belopOriginal, setBelopOriginal] = useState("");
   const [dato, setDato] = useState("");
+  const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
   const [liste, setListe] = useState<any[]>([]);
 
@@ -159,7 +159,16 @@ export default function AutoUtfyllKvitteringSmart() {
 
     setStatus("Ferdig");
   };
-    const lagreKvittering = async () => {
+
+  useEffect(() => {
+    if (fil) {
+      lesKvittering(fil);
+    } else {
+      hentTidligere();
+    }
+  }, [fil]);
+
+  const lagreKvittering = async () => {
     if (!user?.id || !fil || !tittel.trim()) return setStatus("Mangler tittel");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler eller ugyldig beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Mangler eller ugyldig dato");
@@ -225,10 +234,6 @@ export default function AutoUtfyllKvitteringSmart() {
     await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
     setListe((prev) => prev.filter((k) => k.id !== id));
   };
-
-  useEffect(() => {
-    if (!fil) hentTidligere();
-  }, []);
 
   const grupperPerÅr = () => {
     const grupper: Record<string, any[]> = {};
