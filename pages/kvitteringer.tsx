@@ -136,7 +136,7 @@ export default function Kvitteringer() {
             Vis vedlegg for e-post
           </button>
           <button onClick={eksporterAltinnJson} className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded shadow">
-            Eksporter til Altinn (.json)
+            Send til Altinn
           </button>
         </div>
 
