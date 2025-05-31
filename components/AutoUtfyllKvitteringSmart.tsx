@@ -80,17 +80,19 @@ export default function AutoUtfyllKvitteringSmart() {
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
+
     for (const linje of linjer) {
-      if (/(total|sum|beløp|betalt)/.test(linje)) {
+      if (/(total|amount paid|sum|beløp|betalt|subtotal)/.test(linje)) {
         const matches = [...linje.matchAll(/\d[\d.,]+/g)];
         const tall = matches
-          .map((m) => m[0].replace(/\./g, "").replace(",", "."))
+          .map((m) => m[0].replace(/\.(?=\d{3})/g, "").replace(",", "."))
           .map((str) => parseFloat(str))
-          .filter((val) => !isNaN(val) && val > 0);
+          .filter((val) => !isNaN(val) && val > 0 && val < 10000);
         kandidater.push(...tall);
       }
     }
-    const valgt = Math.max(...kandidater, 0);
+
+    const valgt = kandidater.length > 0 ? kandidater[kandidater.length - 1] : 0;
     return valgt > 0 ? valgt.toFixed(2) : "";
   };
 
@@ -179,7 +181,7 @@ export default function AutoUtfyllKvitteringSmart() {
       .getPublicUrl(`bruker/kvitteringer/${filnavn}`);
     const publicUrl = urlData?.publicUrl || null;
 
-    const { error: insertError } = await supabase.from("kvitteringer").insert([
+    await supabase.from("kvitteringer").insert([
       {
         bruker_id: user.id,
         tittel,
@@ -191,8 +193,6 @@ export default function AutoUtfyllKvitteringSmart() {
         opprettet: new Date().toISOString(),
       },
     ]);
-
-    if (insertError) return setStatus("Feil: " + JSON.stringify(insertError));
 
     await supabase.from("bruker_utgifter").insert([
       {
