@@ -213,7 +213,7 @@ export default function Kvitteringer() {
                     <td className="p-2 border">{k.dato}</td>
                     <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
                     <td className="p-2 border">{k.belop} {k.valuta}</td>
-                    <td className="p-2 border">{omregnet} {visningsvaluta}</td>
+                    <td className="p-2 border">{k.nok?.toFixed(2)} NOK</td>
                     <td className="p-2 border">
                       <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                         Åpne
