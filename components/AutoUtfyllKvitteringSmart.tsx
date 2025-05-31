@@ -70,7 +70,7 @@ export default function AutoUtfyllKvitteringSmart() {
         return `${match[1]}.${match[2]}.${match[3]}`;
       }
     }
-    return "01.01.2024"; // fallback
+    return "01.01.2024";
   };
 
   const finnValuta = (tekst: string): string => {
@@ -133,11 +133,6 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(omregnet.toFixed(2));
     }
 
-    if (!tittel) {
-      const linjer = text.split("\n").filter((l) => l.length > 3);
-      setTittel(linjer[0]?.slice(0, 100) || "Kvittering");
-    }
-
     setStatus("Ferdig");
   };
 
@@ -150,6 +145,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const lagreKvittering = async () => {
     if (!user?.id) return setStatus("Du er ikke innlogget");
     if (!fil) return setStatus("Mangler fil");
+    if (!tittel.trim()) return setStatus("Mangler tittel");
     if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
@@ -195,8 +191,9 @@ export default function AutoUtfyllKvitteringSmart() {
       return setStatus("Feil: " + JSON.stringify(insertError, null, 2));
     }
 
-    const { error: adminError } = await supabase.from("admin_utgifter").insert([
+    const { error: kopiFeil } = await supabase.from("bruker_utgifter").insert([
       {
+        bruker_id: user.id,
         tittel,
         dato: datoISO,
         valuta,
@@ -207,9 +204,10 @@ export default function AutoUtfyllKvitteringSmart() {
       },
     ]);
 
-    if (adminError) {
-      console.warn("⚠️ Kopiering til admin_utgifter feilet:", adminError);
-      setStatus("Kvittering lagret, men ikke synlig i adminoversikt.");
+    if (kopiFeil) {
+      console.error("⚠️ Feil ved kopi til bruker_utgifter:", kopiFeil);
+      alert("FEIL: " + JSON.stringify(kopiFeil, null, 2));
+      setStatus("Kvittering lagret, men ikke synlig i økonomioversikt.");
     } else {
       setStatus("Kvittering lagret!");
     }
