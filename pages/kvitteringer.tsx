@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
+import jsPDF from "jspdf";
 
 export default function Kvitteringer() {
   const supabase = useSupabaseClient();
@@ -115,7 +116,42 @@ export default function Kvitteringer() {
   };
 
   const eksporterPDF = () => {
-    window.print();
+    const doc = new jsPDF();
+    doc.text("Kvitteringsrapport", 10, 10);
+    let y = 20;
+    kvitteringer.filter((k) => valgte.includes(k.id)).forEach((k) => {
+      doc.text(`• ${k.dato} – ${k.tittel} – ${k.belop} ${k.valuta} – ${k.fil_url}`, 10, y);
+      y += 10;
+    });
+    doc.save("kvitteringer-lenker.pdf");
+  };
+
+  const eksporterPDFmedVedlegg = async () => {
+    const doc = new jsPDF();
+    const utvalgte = kvitteringer.filter((k) => valgte.includes(k.id));
+    for (let i = 0; i < utvalgte.length; i++) {
+      const k = utvalgte[i];
+      doc.text(`${k.dato} – ${k.tittel} – ${k.belop} ${k.valuta}`, 10, 10);
+      try {
+        const res = await fetch(k.fil_url);
+        const blob = await res.blob();
+        const imgData = await blobToBase64(blob);
+        doc.addImage(imgData, "JPEG", 10, 20, 180, 200);
+      } catch (err) {
+        doc.text("Kunne ikke hente bilde", 10, 30);
+      }
+      if (i < utvalgte.length - 1) doc.addPage();
+    }
+    doc.save("kvitteringer-med-bilder.pdf");
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
 
   const sum = kvitteringer.reduce((acc, k) => {
@@ -145,17 +181,20 @@ export default function Kvitteringer() {
               <option key={val}>{val}</option>
             ))}
           </select>
-          <button onClick={lastNedValgte} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+          <button onClick={lastNedValgte} className="bg-gray-800 text-white px-4 py-2 rounded shadow">
             Last ned valgte
           </button>
-          <button onClick={visVedlegg} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+          <button onClick={visVedlegg} className="bg-gray-800 text-white px-4 py-2 rounded shadow">
             Vis vedlegg for e-post
           </button>
-          <button onClick={eksporterCSV} className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded shadow">
+          <button onClick={eksporterCSV} className="bg-blue-700 text-white px-4 py-2 rounded shadow">
             Eksporter som CSV
           </button>
-          <button onClick={eksporterPDF} className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded shadow">
-            Eksporter som PDF
+          <button onClick={eksporterPDF} className="bg-black text-white px-4 py-2 rounded shadow">
+            Eksporter rapport (PDF med lenker)
+          </button>
+          <button onClick={eksporterPDFmedVedlegg} className="bg-black text-white px-4 py-2 rounded shadow">
+            Eksporter bilder (PDF med vedlegg)
           </button>
         </div>
 
@@ -173,7 +212,7 @@ export default function Kvitteringer() {
             </ul>
             <button
               onClick={kopierLenker}
-              className="mt-3 bg-gray-800 hover:bg-gray-900 text-white text-sm px-3 py-1 rounded shadow"
+              className="mt-3 bg-gray-800 text-white text-sm px-3 py-1 rounded shadow"
             >
               Kopier alle lenker
             </button>
