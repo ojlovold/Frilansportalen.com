@@ -11,18 +11,6 @@ export default function Kvitteringer() {
   const [kvitteringer, setKvitteringer] = useState<any[]>([]);
   const [valgte, setValgte] = useState<string[]>([]);
   const [status, setStatus] = useState("");
-  const [visningsvaluta, setVisningsvaluta] = useState("NOK");
-  const [kurser, setKurser] = useState<Record<string, number>>({});
-  const [valutaer, setValutaer] = useState<string[]>([]);
-
-  useEffect(() => {
-    const hentValutaer = async () => {
-      const res = await fetch("https://api.frankfurter.app/currencies");
-      const data = await res.json();
-      setValutaer(Object.keys(data).sort());
-    };
-    hentValutaer();
-  }, []);
 
   useEffect(() => {
     const hent = async () => {
@@ -32,62 +20,18 @@ export default function Kvitteringer() {
         .select("*")
         .eq("bruker_id", user.id)
         .order("dato", { ascending: false });
-      if (!error && data) {
-        setKvitteringer(data);
-        const unike = [...new Set(data.map((k) => k.valuta).filter((v) => v !== visningsvaluta))];
-        const iso = new Date().toISOString().split("T")[0];
-        const promises = unike.map(async (val) => {
-          const res = await fetch(`https://api.frankfurter.app/${iso}?from=${val}&to=${visningsvaluta}`);
-          const json = await res.json();
-          return [val, json.rates?.[visningsvaluta] || 0];
-        });
-        const results = await Promise.all(promises);
-        const rateMap: Record<string, number> = {};
-        results.forEach(([fra, kurs]) => (rateMap[fra] = kurs));
-        setKurser(rateMap);
-      }
+      if (!error && data) setKvitteringer(data);
     };
     hent();
-  }, [user, visningsvaluta]);
+  }, [user]);
 
   const slett = async (id: string, fil_url: string) => {
     if (!confirm("Slette kvittering permanent?")) return;
     const path = fil_url.split("/").slice(7).join("/");
     await supabase.storage.from("kvitteringer").remove([path]);
     await supabase.from("kvitteringer").delete().eq("id", id);
+    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
     setKvitteringer((prev) => prev.filter((k) => k.id !== id));
-  };
-
-  const toggleValgt = (id: string) => {
-    setValgte((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
-    );
-  };
-
-  const visVedlegg = () => {
-    setStatus("Vis vedlegg");
-  };
-
-  const lastNedValgte = () => {
-    kvitteringer
-      .filter((k) => valgte.includes(k.id))
-      .forEach((k) => {
-        const link = document.createElement("a");
-        link.href = k.fil_url;
-        link.download = k.tittel || "kvittering";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-  };
-
-  const kopierLenker = () => {
-    const urls = kvitteringer
-      .filter((k) => valgte.includes(k.id))
-      .map((k) => k.fil_url)
-      .join("\n");
-    navigator.clipboard.writeText(urls);
-    setStatus("Lenker kopiert!");
   };
 
   const eksporterCSV = () => {
@@ -97,11 +41,7 @@ export default function Kvitteringer() {
       `"${k.tittel}"`,
       k.valuta,
       k.belop,
-      visningsvaluta === "NOK"
-        ? k.valuta === "NOK"
-          ? k.belop
-          : (k.nok || 0).toFixed(2)
-        : (k.belop * (kurser[k.valuta] || 1)).toFixed(2),
+      k.nok ?? "",
       k.fil_url,
     ]);
     const csvContent = [header, ...rows].map((row) => row.join(";")).join("\n");
@@ -154,11 +94,6 @@ export default function Kvitteringer() {
     });
   };
 
-  const sum = kvitteringer.reduce((acc, k) => {
-    const kurs = kurser[k.valuta] || 1;
-    return acc + parseFloat(k.belop || 0) * kurs;
-  }, 0);
-
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
@@ -172,21 +107,6 @@ export default function Kvitteringer() {
         <h1 className="text-2xl font-bold mb-4">Mine kvitteringer</h1>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          <select
-            value={visningsvaluta}
-            onChange={(e) => setVisningsvaluta(e.target.value)}
-            className="p-2 border rounded bg-gray-100"
-          >
-            {valutaer.map((val) => (
-              <option key={val}>{val}</option>
-            ))}
-          </select>
-          <button onClick={lastNedValgte} className="bg-gray-800 text-white px-4 py-2 rounded shadow">
-            Last ned valgte
-          </button>
-          <button onClick={visVedlegg} className="bg-gray-800 text-white px-4 py-2 rounded shadow">
-            Vis vedlegg for e-post
-          </button>
           <button onClick={eksporterCSV} className="bg-blue-700 text-white px-4 py-2 rounded shadow">
             Eksporter som CSV
           </button>
@@ -198,30 +118,6 @@ export default function Kvitteringer() {
           </button>
         </div>
 
-        {status === "Vis vedlegg" && valgte.length > 0 && (
-          <div className="bg-gray-100 rounded-lg p-4 mb-4 shadow-sm">
-            <h2 className="font-semibold mb-2">Valgte vedlegg:</h2>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              {kvitteringer.filter((k) => valgte.includes(k.id)).map((k) => (
-                <li key={k.id}>
-                  📎 <a href={k.fil_url} className="text-blue-600 underline" target="_blank" rel="noreferrer">
-                    {k.tittel || "Kvittering"}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={kopierLenker}
-              className="mt-3 bg-gray-800 text-white text-sm px-3 py-1 rounded shadow"
-            >
-              Kopier alle lenker
-            </button>
-            {status.includes("kopiert") && (
-              <p className="text-green-700 text-sm mt-2">Lenker kopiert!</p>
-            )}
-          </div>
-        )}
-
         <div className="overflow-x-auto">
           <table className="min-w-full border text-sm">
             <thead className="bg-gray-200">
@@ -229,8 +125,9 @@ export default function Kvitteringer() {
                 <th className="p-2 border"></th>
                 <th className="p-2 border">Dato</th>
                 <th className="p-2 border">Tittel</th>
-                <th className="p-2 border">Beløp (original)</th>
-                <th className="p-2 border">I {visningsvaluta}</th>
+                <th className="p-2 border">Beløp</th>
+                <th className="p-2 border">Valuta</th>
+                <th className="p-2 border">I NOK</th>
                 <th className="p-2 border">Fil</th>
                 <th className="p-2 border">Handling</th>
               </tr>
@@ -242,19 +139,18 @@ export default function Kvitteringer() {
                     <input
                       type="checkbox"
                       checked={valgte.includes(k.id)}
-                      onChange={() => toggleValgt(k.id)}
+                      onChange={() =>
+                        setValgte((prev) =>
+                          prev.includes(k.id) ? prev.filter((v) => v !== k.id) : [...prev, k.id]
+                        )
+                      }
                     />
                   </td>
                   <td className="p-2 border">{k.dato}</td>
-                  <td className="p-2 border whitespace-pre-wrap break-words max-w-xs">{k.tittel}</td>
-                  <td className="p-2 border">{k.belop} {k.valuta}</td>
-                  <td className="p-2 border">
-                    {visningsvaluta === "NOK"
-                      ? k.valuta === "NOK"
-                        ? `${k.belop} NOK`
-                        : `${(k.nok || 0).toFixed(2)} NOK`
-                      : `${(k.belop * (kurser[k.valuta] || 1)).toFixed(2)} ${visningsvaluta}`}
-                  </td>
+                  <td className="p-2 border">{k.tittel}</td>
+                  <td className="p-2 border">{k.belop}</td>
+                  <td className="p-2 border">{k.valuta}</td>
+                  <td className="p-2 border">{k.nok ? `${k.nok.toFixed(2)} NOK` : k.valuta === "NOK" ? `${k.belop} NOK` : "-"}</td>
                   <td className="p-2 border">
                     <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                       Åpne
@@ -272,15 +168,7 @@ export default function Kvitteringer() {
         </div>
 
         <div className="text-right text-sm mt-4 pr-2">
-          <p>
-            Antall kvitteringer: <strong>{kvitteringer.length}</strong>
-          </p>
-          <p>
-            Sum: <strong>{sum.toFixed(2)} {visningsvaluta}</strong>
-          </p>
-          <p>
-            MVA (25%): <strong>{(sum * 0.25).toFixed(2)} {visningsvaluta}</strong>
-          </p>
+          <p>Antall kvitteringer: <strong>{kvitteringer.length}</strong></p>
         </div>
       </div>
     </div>
