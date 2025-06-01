@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og fungerende knapp
+// AutoUtfyllKvitteringSmart.tsx – komplett med valutafiks og full struktur
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -37,10 +37,18 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   const parseDato = (tekst: string): string => {
-    const norsk = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
-    if (norsk) return `${norsk[1]}.${norsk[2]}.${norsk[3]}`;
-    const engelsk = tekst.match(/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,\-]+(\d{1,2})(?:st|nd|rd|th)?[., ]+(\d{4})/i);
-    if (engelsk) return `${engelsk[1].padStart(2, "0")}.05.${engelsk[2]}`;
+    const linjer = tekst.split("\n");
+    for (const linje of linjer) {
+      const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
+      if (norsk) {
+        const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
+        return `${norsk[1]}.${norsk[2]}.${yyyy}`;
+      }
+      const engelsk1 = linje.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,\-]+(\d{1,2})(?:st|nd|rd|th)?[., ]+(\d{4})/i);
+      if (engelsk1) return `${engelsk1[1].padStart(2, "0")}.05.${engelsk1[2]}`;
+      const engelsk2 = linje.match(/(\d{1,2})[ .-]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[., ]+(\d{4})/i);
+      if (engelsk2) return `${engelsk2[1].padStart(2, "0")}.05.${engelsk2[3]}`;
+    }
     return "";
   };
 
