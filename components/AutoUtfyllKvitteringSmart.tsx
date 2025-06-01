@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og fungerende knapp
+// RETTET: Bruker alltid historisk valutakurs, og foreslår ikke tittel automatisk
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -68,12 +68,6 @@ export default function AutoUtfyllKvitteringSmart() {
     return "";
   };
 
-  const finnTittel = (tekst: string): string => {
-    const linjer = tekst.split("\n").map((l) => l.trim());
-    const prioritert = linjer.find((l) => /description|invoice|from|vendor|receipt/i.test(l));
-    return prioritert || linjer.find((l) => l.length > 3 && !l.match(/[@:]/)) || "Kvittering";
-  };
-
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
@@ -86,12 +80,11 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
-    const tittelFunnet = finnTittel(text);
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
+
     setDato(datoen);
     setValuta(valutaFunnet);
-    setTittel(tittelFunnet);
     setBelopOriginal(belopBase);
 
     if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
@@ -135,6 +128,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
     const iso = dato.split(".").reverse().join("-");
+    if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return 0;
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
     const data = await res.json();
     return data.rates?.[til] || 0;
