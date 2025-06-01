@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -19,6 +19,10 @@ export default function AutoUtfyllKvitteringSmart() {
   const user = useUser();
   const supabase = useSupabaseClient();
   const router = useRouter();
+
+  useEffect(() => {
+    if (fil) lesKvittering();
+  }, [fil]);
 
   const forbedreKontrast = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")!;
@@ -191,11 +195,7 @@ export default function AutoUtfyllKvitteringSmart() {
       <input
         type="file"
         accept=".pdf,image/*"
-        onChange={(e) => {
-          const valgtFil = e.target.files?.[0] || null;
-          setFil(valgtFil);
-          if (valgtFil) lesKvittering();
-        }}
+        onChange={(e) => setFil(e.target.files?.[0] || null)}
       />
       <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
       <div className="space-y-2">
