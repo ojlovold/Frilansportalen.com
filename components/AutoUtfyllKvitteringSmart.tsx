@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – nå med parseAlleDatoer(): finner første gyldige dato i hele teksten
+// AutoUtfyllKvitteringSmart.tsx – med feiltolerant dato-parser (OCR-rettinger før søk)
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -37,22 +37,28 @@ export default function AutoUtfyllKvitteringSmart() {
   };
 
   const parseAlleDatoer = (tekst: string): string => {
+    const korrigert = tekst
+      .replace(/o/g, "0")
+      .replace(/O/g, "0")
+      .replace(/l/g, "1")
+      .replace(/–|—/g, "-")
+      .replace(/\s+/g, " ");
+
     const mønstre = [
-      /(\d{2})[./-](\d{2})[./-](\d{2,4})/g, // 25.04.2025
-      /(\d{4})[./-](\d{2})[./-](\d{2})/g,   // 2025-04-25
-      /([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/g, // April 25, 2025
-      /(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/g  // 25 April 2025
+      /(\d{2})[./ -](\d{2})[./ -](\d{2,4})/g,
+      /(\d{4})[./ -](\d{2})[./ -](\d{2})/g,
+      /([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/g,
+      /(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/g
     ];
+
     for (const regex of mønstre) {
       let match;
-      while ((match = regex.exec(tekst)) !== null) {
+      while ((match = regex.exec(korrigert)) !== null) {
         if (regex === mønstre[0]) {
           const yyyy = match[3].length === 2 ? `20${match[3]}` : match[3];
           return `${match[1]}.${match[2]}.${yyyy}`;
         }
-        if (regex === mønstre[1]) {
-          return `${match[3]}.${match[2]}.${match[1]}`;
-        }
+        if (regex === mønstre[1]) return `${match[3]}.${match[2]}.${match[1]}`;
         if (regex === mønstre[2]) {
           const dag = match[2].padStart(2, "0");
           const mnd = new Date(`${match[1]} 1, 2000`).getMonth() + 1;
