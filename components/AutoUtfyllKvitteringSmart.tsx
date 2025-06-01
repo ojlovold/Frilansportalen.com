@@ -3,10 +3,13 @@ import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+function generateUUID() {
+  return crypto.randomUUID();
+}
 
 export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
   const [fil, setFil] = useState<File | null>(null);
@@ -75,7 +78,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
     setOpplastingStatus("Lagrer...");
 
-    const filnavn = `${uuidv4()}-${fil.name}`;
+    const filnavn = `${generateUUID()}-${fil.name}`;
     const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
       .upload(filnavn, fil);
@@ -88,7 +91,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
     const url = supabase.storage.from("kvitteringer").getPublicUrl(filnavn).data.publicUrl;
     setVedleggUrl(url);
 
-    const { error } = await supabase.from("kvitteringer").insert([
+    const { error: insertError } = await supabase.from("kvitteringer").insert([
       {
         bruker_id: user.id,
         tittel,
@@ -102,7 +105,7 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       },
     ]);
 
-    if (error) {
+    if (insertError) {
       setOpplastingStatus("Feil ved lagring");
     } else {
       setOpplastingStatus("Kvittering lagret");
