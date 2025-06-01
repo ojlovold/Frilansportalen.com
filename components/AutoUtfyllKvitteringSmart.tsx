@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med robust dato-parser og manuell tittel
+// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med forbedret dato-parser, tittel kun manuelt, alt annet urørt
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -39,23 +39,24 @@ export default function AutoUtfyllKvitteringSmart() {
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
     for (const linje of linjer) {
-      const lower = linje.toLowerCase();
-      const erDatoRelevant = /fakturadato|dato|invoice|issued|date/.test(lower);
-
-      if (erDatoRelevant || true) {
-        const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-        if (norsk) {
-          const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
-          return `${norsk[1]}.${norsk[2]}.${yyyy}`;
-        }
-        const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
-        if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-        const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
-        if (engelsk) {
-          const dag = engelsk[2].padStart(2, "0");
-          const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
-          return `${dag}.${mnd.toString().padStart(2, "0")}.${engelsk[3]}`;
-        }
+      const r1 = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
+      if (r1) {
+        const yyyy = r1[3].length === 2 ? `20${r1[3]}` : r1[3];
+        return `${r1[1]}.${r1[2]}.${yyyy}`;
+      }
+      const r2 = linje.match(/(\d{4})[./-](\d{2})[./-](\d{2})/);
+      if (r2) return `${r2[3]}.${r2[2]}.${r2[1]}`;
+      const r3 = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
+      if (r3) {
+        const dag = r3[2].padStart(2, "0");
+        const mnd = new Date(`${r3[1]} 1, 2000`).getMonth() + 1;
+        return `${dag}.${mnd.toString().padStart(2, "0")}.${r3[3]}`;
+      }
+      const r4 = linje.match(/(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/);
+      if (r4) {
+        const dag = r4[1].padStart(2, "0");
+        const mnd = new Date(`${r4[2]} 1, 2000`).getMonth() + 1;
+        return `${dag}.${mnd.toString().padStart(2, "0")}.${r4[3]}`;
       }
     }
     return "";
