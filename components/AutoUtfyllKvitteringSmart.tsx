@@ -1,5 +1,3 @@
-// AutoUtfyllKvitteringSmart.tsx – MESTERVERKET. Perfekt. Fullt funksjonell. Intakt. Vercel-klar.
-
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -18,6 +16,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
   const [status, setStatus] = useState("");
+  const [kursInfo, setKursInfo] = useState<{ rate: number; faktiskDato: string } | null>(null);
   const user = useUser();
   const supabase = useSupabaseClient();
 
@@ -98,6 +97,12 @@ export default function AutoUtfyllKvitteringSmart() {
   const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
     const iso = dato.split(".").reverse().join("-");
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+    if (!res.ok) {
+      const fallback = new Date(Date.parse(iso) - 86400000).toISOString().split("T")[0];
+      const res2 = await fetch(`https://api.frankfurter.app/${fallback}?from=${fra}&to=${til}`);
+      const data2 = await res2.json();
+      return { rate: data2?.rates?.[til] || 0, faktiskDato: data2?.date || fallback };
+    }
     const data = await res.json();
     return {
       rate: data?.rates?.[til] || 0,
@@ -108,6 +113,8 @@ export default function AutoUtfyllKvitteringSmart() {
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
+    setKursInfo(null);
+
     const canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
@@ -134,7 +141,8 @@ export default function AutoUtfyllKvitteringSmart() {
       }
       const omregnet = parseFloat(belopBase) * rate;
       setBelop(omregnet.toFixed(2));
-      setStatus(faktiskDato !== dato.split(".").reverse().join("-") ? `Brukte kurs fra ${faktiskDato}` : "Ferdig");
+      setKursInfo({ rate, faktiskDato });
+      setStatus("Ferdig");
     }
   };
 
@@ -197,7 +205,8 @@ export default function AutoUtfyllKvitteringSmart() {
         valuta,
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
-        opprettet: new Date().toISOString()
+        opprettet: new Date().toISOString(),
+        slettet: false
       },
     ]);
 
@@ -227,6 +236,11 @@ export default function AutoUtfyllKvitteringSmart() {
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-3 border rounded-xl" />
+        {kursInfo && (
+          <p className="text-xs text-gray-600 text-center">
+            Kurs: {kursInfo.rate.toFixed(4)} ({valuta} → NOK), brukt dato: {kursInfo.faktiskDato}
+          </p>
+        )}
       </div>
       <button onClick={lagreKvittering} className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl w-full">
         Lagre kvittering
