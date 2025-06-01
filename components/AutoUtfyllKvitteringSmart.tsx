@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – endelig korrekt versjon
+// AutoUtfyllKvitteringSmart.tsx – REPARERT: korrekt kurs, ekte dato, ingen fallback-feil
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -63,7 +63,6 @@ export default function AutoUtfyllKvitteringSmart() {
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     for (const linje of linjer) {
-      if (/vercel|http|visit|help|page|referanse|id|\d{4}-\d{4}/.test(linje)) continue;
       if (/(amount paid|total|sum|beløp|betalt)/.test(linje)) {
         const match = linje.match(/([$€£]?\s*\d+[\d.,]*)/);
         if (match) {
@@ -78,12 +77,18 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
     const iso = dato.split(".").reverse().join("-");
-    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
-    const data = await res.json();
-    return {
-      rate: data?.rates?.[til] || 0,
-      faktiskDato: data?.date || iso,
-    };
+    try {
+      const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+      const data = await res.json();
+      if (!data?.rates?.[til]) throw new Error("Ingen kurs funnet for datoen");
+      return {
+        rate: data.rates[til],
+        faktiskDato: data.date,
+      };
+    } catch (err) {
+      setStatus("Feil: kunne ikke hente valutakurs for valgt dato");
+      return { rate: 0, faktiskDato: iso };
+    }
   };
 
   const lesKvittering = async () => {
@@ -108,15 +113,11 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(belopBase);
       setStatus("Ferdig (ingen valutaomregning)");
     } else {
-      const iso = datoen.split(".").reverse().join("-");
       const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
+      if (!rate) return;
       const omregnet = parseFloat(belopBase) * rate;
       setBelop(omregnet.toFixed(2));
-      if (faktiskDato !== iso) {
-        setStatus(`Kursen er fra ${faktiskDato}, ikke valgt dato (${iso})`);
-      } else {
-        setStatus("Ferdig");
-      }
+      setStatus(`Kurs fra ${faktiskDato}`);
     }
   };
 
