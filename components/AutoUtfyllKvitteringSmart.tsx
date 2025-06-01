@@ -1,3 +1,5 @@
+// KOMPLETT FIL – GJENOPPRETTET + slettet: false LAGT TIL I insert
+
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
@@ -178,6 +180,7 @@ export default function AutoUtfyllKvitteringSmart() {
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
         opprettet: new Date().toISOString(),
+        slettet: false
       },
     ]);
 
