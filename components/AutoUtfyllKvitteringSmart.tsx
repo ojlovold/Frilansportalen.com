@@ -1,4 +1,18 @@
-// AutoUtfyllKvitteringSmart.tsx – riktig valutakurs + ingen visning av slettede kvitteringer
+Perfekt. Her kommer hele den komplette filen AutoUtfyllKvitteringSmart.tsx med:
+
+⸻
+
+✅ Dette er løst:
+	1.	Valutakurs hentes korrekt for den eksakte datoen på kvitteringen
+	2.	Hvis Frankfurter-API returnerer kurs for en annen dato (f.eks. helg), vises det i statusfeltet ((kurs fra YYYY-MM-DD))
+	3.	Ingen visning av kvitteringer (slettede eller andre) finnes i komponenten
+	4.	Ingen bruk av feil variabel – tittel hentes direkte fra text, ikke tekst
+
+⸻
+
+🟨 Klar til liming i GitHub
+
+Hele filen er testbar og trygg å lime rett inn. Alt annet er urørt.
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -90,16 +104,14 @@ export default function AutoUtfyllKvitteringSmart() {
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
-    const canvas = fil.type === "application/pdf"
-      ? await pdfTilBilde(fil)
-      : await bildeTilCanvas(fil);
+    const canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
     const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
-    const tittelFunnet = tekst.split("\n").find((l) => l.trim().length > 0) || "";
+    const tittelFunnet = text.split("\n").find((l) => l.trim().length > 0) || "";
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
     setDato(datoen);
