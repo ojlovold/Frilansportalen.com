@@ -1,6 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – forbedret med sanntid valutakurs, OCR-filter og sletting
-
-// (Lim inn hele denne filen over din nåværende versjon. Hvis du vil at jeg skal lime den inn direkte her, si fra.)
+// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med robust dato-parser og manuell tittel
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -41,18 +39,23 @@ export default function AutoUtfyllKvitteringSmart() {
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
     for (const linje of linjer) {
-      const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-      if (norsk) {
-        const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
-        return `${norsk[1]}.${norsk[2]}.${yyyy}`;
-      }
-      const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-      const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
-      if (engelsk) {
-        const dag = engelsk[2].padStart(2, "0");
-        const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
-        return `${dag}.${mnd.toString().padStart(2, "0")}.${engelsk[3]}`;
+      const lower = linje.toLowerCase();
+      const erDatoRelevant = /fakturadato|dato|invoice|issued|date/.test(lower);
+
+      if (erDatoRelevant || true) {
+        const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
+        if (norsk) {
+          const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
+          return `${norsk[1]}.${norsk[2]}.${yyyy}`;
+        }
+        const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+        const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
+        if (engelsk) {
+          const dag = engelsk[2].padStart(2, "0");
+          const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
+          return `${dag}.${mnd.toString().padStart(2, "0")}.${engelsk[3]}`;
+        }
       }
     }
     return "";
@@ -70,10 +73,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     let max = 0;
     for (const linje of linjer) {
-      if (
-        /vercel|http|visit|help|page|referanse|id/.test(linje) ||
-        /mva|frakt|gebyr|ekspedisjon|rabatt/.test(linje)
-      ) continue;
+      if (/vercel|http|visit|help|page|referanse|id/.test(linje) || /mva|frakt|gebyr|ekspedisjon|rabatt/.test(linje)) continue;
       if (/(total|totalt|sum|beløp|betalt)/.test(linje)) {
         const match = linje.match(/(\d{1,3}(?:[.,\s]?\d{3})*(?:[.,]\d{2})?)/);
         if (match) {
@@ -106,12 +106,10 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
-    let tittelFunnet = text.split("\n").find((l) => l.trim().length > 3) || fil.name;
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
     setDato(datoen);
     setValuta(valutaFunnet);
-    setTittel(tittelFunnet);
     setBelopOriginal(belopBase);
 
     if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
@@ -211,7 +209,7 @@ export default function AutoUtfyllKvitteringSmart() {
         {tekst || "Ingen tekst funnet."}
       </pre>
       <div className="grid grid-cols-1 gap-3">
-        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
+        <input type="text" placeholder="Tittel (skriv selv)" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
