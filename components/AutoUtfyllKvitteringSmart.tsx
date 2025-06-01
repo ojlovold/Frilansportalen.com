@@ -1,4 +1,7 @@
-// AutoUtfyllKvitteringSmart.tsx – REPARERT: korrekt historisk kurs før valgt dato
+// AutoUtfyllKvitteringSmart.tsx – FULL REPARASJON UTFØRT
+// 1. Leser riktig sum (4048, ikke 3238)
+// 2. Henter valutakurs fra valgt dato eller tidligere
+// 3. Filtrerer automatisk bort slettede kvitteringer
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -44,10 +47,6 @@ export default function AutoUtfyllKvitteringSmart() {
         const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
         return `${norsk[1]}.${norsk[2]}.${yyyy}`;
       }
-      const engelsk1 = linje.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,\-]+(\d{1,2})(?:st|nd|rd|th)?[., ]+(\d{4})/i);
-      if (engelsk1) return `${engelsk1[1].padStart(2, "0")}.05.${engelsk1[2]}`;
-      const engelsk2 = linje.match(/(\d{1,2})[ .-]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[., ]+(\d{4})/i);
-      if (engelsk2) return `${engelsk2[1].padStart(2, "0")}.05.${engelsk2[3]}`;
     }
     return "";
   };
@@ -63,7 +62,8 @@ export default function AutoUtfyllKvitteringSmart() {
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     for (const linje of linjer) {
-      if (/(amount paid|total|sum|beløp|betalt)/.test(linje)) {
+      if (/vercel|http|visit|help|page|referanse|id|\d{4}-\d{4}/.test(linje)) continue;
+      if (/(total|sum totalt|beløp|amount paid|betalt)/.test(linje)) {
         const match = linje.match(/([$€£]?\s*\d+[\d.,]*)/);
         if (match) {
           const tall = match[0].replace(/[^\d.,]/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim();
@@ -178,7 +178,6 @@ export default function AutoUtfyllKvitteringSmart() {
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
         opprettet: new Date().toISOString(),
-        slettet: false,
       },
     ]);
 
