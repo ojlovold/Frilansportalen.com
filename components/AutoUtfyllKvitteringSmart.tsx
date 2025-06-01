@@ -1,3 +1,5 @@
+// AutoUtfyllKvitteringSmart.tsx – endelig korrekt versjon
+
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -76,7 +78,6 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
     const iso = dato.split(".").reverse().join("-");
-    if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return { rate: 0, faktiskDato: "" };
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
     const data = await res.json();
     return {
@@ -105,16 +106,16 @@ export default function AutoUtfyllKvitteringSmart() {
 
     if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
       setBelop(belopBase);
+      setStatus("Ferdig (ingen valutaomregning)");
     } else {
+      const iso = datoen.split(".").reverse().join("-");
       const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
-      if (rate === 0) {
-        setStatus("Fant ikke valutakurs for valgt dato");
-        setBelop(belopBase);
+      const omregnet = parseFloat(belopBase) * rate;
+      setBelop(omregnet.toFixed(2));
+      if (faktiskDato !== iso) {
+        setStatus(`Kursen er fra ${faktiskDato}, ikke valgt dato (${iso})`);
       } else {
-        const omregnet = parseFloat(belopBase) * rate;
-        const bruktDato = faktiskDato !== datoen.split(".").reverse().join("-") ? ` (kurs fra ${faktiskDato})` : "";
-        setStatus(`Ferdig${bruktDato}`);
-        setBelop(omregnet.toFixed(2));
+        setStatus("Ferdig");
       }
     }
   };
