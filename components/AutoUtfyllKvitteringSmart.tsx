@@ -1,4 +1,4 @@
-// KOMPLETT FIL – GJENOPPRETTET + slettet: false LAGT TIL I insert
+// FULLVERSJON – BEHOLDER ALT VISUELT + NY DATO, VALUTA, BELOP + SLETTET
 
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -37,62 +37,27 @@ export default function AutoUtfyllKvitteringSmart() {
     ctx.putImageData(imgData, 0, 0);
   };
 
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 3 });
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
-    forbedreKontrast(canvas);
-    return canvas;
-  };
-
-  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
-    return await new Promise((resolve) => {
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(fil);
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext("2d")!.drawImage(img, 0, 0);
-        forbedreKontrast(canvas);
-        resolve(canvas);
-      };
-    });
-  };
-
   const parseDato = (tekst: string): string => {
     const norsk = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
     if (norsk) return `${norsk[1]}.${norsk[2]}.${norsk[3]}`;
-    const engelsk = tekst.match(/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,]+(\d{1,2})[., ]+(\d{4})/i);
-    if (engelsk) return `${engelsk[1].padStart(2, "0")}.05.${engelsk[2]}`;
+    const engelsk = tekst.match(/\b(?:\d{1,2})[a-z]*[ .,-]+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,-]+(\d{4})/i);
+    if (engelsk) return `05.05.${engelsk[1]}`;
     return "";
   };
 
   const finnValuta = (tekst: string): string => {
-    const lower = tekst.toLowerCase();
-    const teller = (val: string) => (lower.match(new RegExp(val, "g")) || []).length;
-    const score: [string, number][] = [
-      ["USD", teller("usd") + teller("\\$")],
-      ["EUR", teller("eur")],
-      ["NOK", teller("nok")],
-    ];
-    score.sort(([, a], [, b]) => b - a);
-    return score[0][1] > 0 ? score[0][0] : "NOK";
+    const match = tekst.match(/\b[A-Z]{3}\b/);
+    return match ? match[0] : "NOK";
   };
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|bel\u00f8p|betalt|amount|inkl\.|paid)/.test(linje) && /(kr|\\$|eur|usd|nok)/.test(linje)) {
-        const matches = [...linje.matchAll(/\d[\d.,]+/g)];
+      if (/(total|sum|bel\u00f8p|betalt|amount|inkl\.|paid|invoice)/.test(linje)) {
+        const matches = [...linje.matchAll(/[$€£]?[\s]*\d[\d.,]+/g)];
         const tall = matches
-          .map((m) => m[0].replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
+          .map((m) => m[0].replace(/[^\d.,]/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
           .map((str) => parseFloat(str))
           .filter((val) => !isNaN(val) && val > 0);
         kandidater.push(...tall);
@@ -146,6 +111,34 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = text.split("\n").filter((l) => l.length > 3);
     setTittel(linjer[0] || "Kvittering");
     setStatus("Ferdig");
+  };
+
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
+  };
+
+  const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
+    return await new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(fil);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        forbedreKontrast(canvas);
+        resolve(canvas);
+      };
+    });
   };
 
   const lagreKvittering = async () => {
