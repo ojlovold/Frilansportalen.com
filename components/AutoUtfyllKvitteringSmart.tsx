@@ -25,81 +25,70 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const user = useUser();
 
   useEffect(() => {
-    if (fil) {
-      const lesFil = async () => {
-        if (fil.type === "application/pdf") {
-          const pdfData = await fil.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-          const page = await pdf.getPage(1);
-          const content = await page.getTextContent();
-          const text = content.items.map((item: any) => item.str).join(" ");
-          setTekst(text);
-        } else {
-          const reader = new FileReader();
-          reader.onload = async () => {
-            const result = reader.result as string;
-            setForhandsvisning(result);
-            const ocrResult = await Tesseract.recognize(result, "eng+nor", {
-              logger: (m) => console.log(m),
-            });
-            setTekst(ocrResult.data.text);
-          };
-          reader.readAsDataURL(fil);
-        }
-      };
-      lesFil();
-    }
+    if (!fil) return;
+
+    const behandleFil = async () => {
+      if (fil.type === "application/pdf") {
+        const buffer = await fil.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+        const page = await pdf.getPage(1);
+        const content = await page.getTextContent();
+        const text = content.items.map((item: any) => item.str).join(" ");
+        setTekst(text);
+      } else {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const dataUrl = reader.result as string;
+          setForhandsvisning(dataUrl);
+          const result = await Tesseract.recognize(dataUrl, "eng+nor");
+          setTekst(result.data.text);
+        };
+        reader.readAsDataURL(fil);
+      }
+    };
+
+    behandleFil();
   }, [fil]);
 
   useEffect(() => {
-    if (tekst) {
-      const belopRegex = /(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})\s?(NOK|kr|USD|EUR)?/i;
-      const match = tekst.match(belopRegex);
-      if (match) {
-        const rawBelop = match[1].replace(/\s/g, "").replace(",", ".");
-        setBelopOriginal(rawBelop);
-        setBelop(rawBelop);
-        if (match[2]) {
-          const valutaMatch = match[2].toUpperCase().replace("KR", "NOK");
-          setValuta(valutaMatch);
-        }
-      }
+    if (!tekst) return;
 
-      const datoRegex = /(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})/;
-      const datoMatch = tekst.match(datoRegex);
-      if (datoMatch) {
-        setDato(datoMatch[1]);
-      }
-
-      if (!tittel && fil) {
-        setTittel(fil.name.replace(/\.[^/.]+$/, ""));
+    const belopMatch = tekst.match(/(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})\s?(NOK|kr|USD|EUR)?/i);
+    if (belopMatch) {
+      const raw = belopMatch[1].replace(/\s/g, "").replace(",", ".");
+      setBelopOriginal(raw);
+      setBelop(raw);
+      if (belopMatch[2]) {
+        const valutaRenset = belopMatch[2].toUpperCase().replace("KR", "NOK");
+        setValuta(valutaRenset);
       }
     }
-  }, [tekst, tittel, fil]);
+
+    const datoMatch = tekst.match(/(\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4})/);
+    if (datoMatch) setDato(datoMatch[1]);
+
+    if (!tittel && fil) setTittel(fil.name.replace(/\.[^/.]+$/, ""));
+  }, [tekst]);
 
   const lagreKvittering = async () => {
-    if (!fil || !user) {
-      alert("Manglende fil eller bruker");
-      return;
-    }
+    if (!fil || !user) return;
 
     setOpplastingStatus("Lagrer...");
 
     const filnavn = `${uuidv4()}-${fil.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("kvitteringer")
       .upload(filnavn, fil);
 
     if (uploadError) {
       setOpplastingStatus("Feil under opplasting");
-      console.error("Feil under opplasting:", uploadError.message);
       return;
     }
 
     const url = supabase.storage.from("kvitteringer").getPublicUrl(filnavn).data.publicUrl;
     setVedleggUrl(url);
 
-    const { error: insertError } = await supabase.from("kvitteringer").insert([
+    const { error } = await supabase.from("kvitteringer").insert([
       {
         bruker_id: user.id,
         tittel,
@@ -113,13 +102,11 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       },
     ]);
 
-    if (insertError) {
-      setOpplastingStatus("Feil ved lagring i database");
-      console.error("Feil ved lagring:", insertError.message);
-      return;
+    if (error) {
+      setOpplastingStatus("Feil ved lagring");
+    } else {
+      setOpplastingStatus("Kvittering lagret");
     }
-
-    setOpplastingStatus("Kvittering lagret!");
   };
 
   return (
@@ -139,38 +126,39 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
         </div>
       )}
 
-      <div className="space-y-2">
-        <input
-          type="text"
-          placeholder="Tittel"
-          value={tittel}
-          onChange={(e) => setTittel(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <input
-          type="text"
-          placeholder="Beløp"
-          value={belop}
-          onChange={(e) => setBelop(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <input
-          type="text"
-          placeholder="Dato"
-          value={dato}
-          onChange={(e) => setDato(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-        <input
-          type="text"
-          placeholder="Valuta"
-          value={valuta}
-          onChange={(e) => setValuta(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
-      </div>
+      <input
+        type="text"
+        placeholder="Tittel"
+        value={tittel}
+        onChange={(e) => setTittel(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+      <input
+        type="text"
+        placeholder="Beløp"
+        value={belop}
+        onChange={(e) => setBelop(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+      <input
+        type="text"
+        placeholder="Dato"
+        value={dato}
+        onChange={(e) => setDato(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+      <input
+        type="text"
+        placeholder="Valuta"
+        value={valuta}
+        onChange={(e) => setValuta(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
 
-      <button onClick={lagreKvittering} className="px-4 py-2 bg-yellow-500 text-black rounded">
+      <button
+        onClick={lagreKvittering}
+        className="bg-yellow-500 text-black px-4 py-2 rounded"
+      >
         Lagre Kvittering
       </button>
 
