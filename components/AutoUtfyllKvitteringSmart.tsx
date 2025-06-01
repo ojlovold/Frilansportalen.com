@@ -67,7 +67,7 @@ export default function AutoUtfyllKvitteringSmart() {
         if (match) {
           const tall = match[0].replace(/[^\d.,]/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim();
           const val = parseFloat(tall);
-          if (!isNaN(val) && val > 0 && val < 10000) return val.toFixed(2);
+          if (!isNaN(val) && val > 0 && val < 100000) return val.toFixed(2);
         }
       }
     }
