@@ -1,4 +1,4 @@
-// FULLVERSJON – BEHOLDER ALT VISUELT + NY DATO, VALUTA, BELOP + SLETTET
+// ENDELIG VERSJON – ALT PÅ PLASS, INTET TILFELDIG, INGENTING FJERNET
 
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -40,8 +40,14 @@ export default function AutoUtfyllKvitteringSmart() {
   const parseDato = (tekst: string): string => {
     const norsk = tekst.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
     if (norsk) return `${norsk[1]}.${norsk[2]}.${norsk[3]}`;
-    const engelsk = tekst.match(/\b(?:\d{1,2})[a-z]*[ .,-]+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,-]+(\d{4})/i);
-    if (engelsk) return `05.05.${engelsk[1]}`;
+
+    const engelsk = tekst.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,-]*(\d{1,2})(?:st|nd|rd|th)?[,]?\s+(\d{4})/i);
+    if (engelsk) {
+      const måned = ("jan feb mar apr may jun jul aug sep oct nov dec".split(" ").indexOf(engelsk[0].toLowerCase().slice(0, 3)) + 1).toString().padStart(2, "0");
+      const dag = engelsk[1].padStart(2, "0");
+      return `${dag}.${måned}.${engelsk[2]}`;
+    }
+
     return "";
   };
 
@@ -54,7 +60,8 @@ export default function AutoUtfyllKvitteringSmart() {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
     const kandidater: number[] = [];
     for (const linje of linjer) {
-      if (/(total|sum|bel\u00f8p|betalt|amount|inkl\.|paid|invoice)/.test(linje)) {
+      if (/(total|amount paid|sum|bel\u00f8p|betalt|invoice|subtotal)/.test(linje)) {
+        if (/http|vercel|visit|help|page|referanse|id|\d{4}-\d{4}/.test(linje)) continue;
         const matches = [...linje.matchAll(/[$€£]?[\s]*\d[\d.,]+/g)];
         const tall = matches
           .map((m) => m[0].replace(/[^\d.,]/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim())
@@ -63,8 +70,8 @@ export default function AutoUtfyllKvitteringSmart() {
         kandidater.push(...tall);
       }
     }
-    const hoyeste = Math.max(...kandidater, 0);
-    return hoyeste > 0 ? hoyeste.toFixed(2) : "";
+    const høyeste = Math.max(...kandidater, 0);
+    return høyeste > 0 ? høyeste.toFixed(2) : "";
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
@@ -86,7 +93,7 @@ export default function AutoUtfyllKvitteringSmart() {
     }
 
     setStatus("Leser kvittering...");
-    let canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
+    const canvas = fil.type === "application/pdf" ? await pdfTilBilde(fil) : await bildeTilCanvas(fil);
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
