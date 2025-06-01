@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
@@ -19,13 +19,31 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
   const [belopOriginal, setBelopOriginal] = useState("");
   const [dato, setDato] = useState("");
   const [valuta, setValuta] = useState("NOK");
-  const [forhandsvisning, setForhandsvisning] = useState<string | null>(null);
-  const [opplastingStatus, setOpplastingStatus] = useState("");
-  const [vedleggUrl, setVedleggUrl] = useState("");
   const [status, setStatus] = useState("aktiv");
+  const [opplastingStatus, setOpplastingStatus] = useState("");
+  const [forhandsvisning, setForhandsvisning] = useState<string | null>(null);
+  const [vedleggUrl, setVedleggUrl] = useState("");
+
+  const [kvitteringer, setKvitteringer] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"aktiv" | "arkiv">("aktiv");
 
   const supabase = useSupabaseClient();
   const user = useUser();
+
+  useEffect(() => {
+    const hentKvitteringer = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("kvitteringer")
+        .select("*")
+        .eq("bruker_id", user.id)
+        .eq("status", filter)
+        .order("dato", { ascending: false });
+      if (!error) setKvitteringer(data);
+    };
+
+    hentKvitteringer();
+  }, [user, supabase, filter]);
 
   useEffect(() => {
     if (!fil) return;
@@ -75,7 +93,6 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
 
   const lagreKvittering = async () => {
     if (!fil || !user) return;
-
     setOpplastingStatus("Lagrer...");
 
     const filnavn = `${generateUUID()}-${fil.name}`;
@@ -109,12 +126,40 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       setOpplastingStatus("Feil ved lagring");
     } else {
       setOpplastingStatus("Kvittering lagret");
+      setFil(null);
+      setTekst("");
+      setTittel("");
+      setBelop("");
+      setBelopOriginal("");
+      setDato("");
+      setValuta("NOK");
+      setStatus("aktiv");
     }
+  };
+
+  const slettKvittering = async (id: string) => {
+    await supabase.from("kvitteringer").delete().eq("id", id);
+    setKvitteringer((prev) => prev.filter((k) => k.id !== id));
   };
 
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-xl font-bold">AutoUtfyll Kvittering</h1>
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => setFilter("aktiv")}
+          className={`px-4 py-2 rounded ${filter === "aktiv" ? "bg-yellow-500" : "bg-gray-300"}`}
+        >
+          Aktive
+        </button>
+        <button
+          onClick={() => setFilter("arkiv")}
+          className={`px-4 py-2 rounded ${filter === "arkiv" ? "bg-yellow-500" : "bg-gray-300"}`}
+        >
+          Arkiv
+        </button>
+      </div>
 
       <input
         type="file"
@@ -166,6 +211,29 @@ export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | 
       </button>
 
       {opplastingStatus && <p>{opplastingStatus}</p>}
+
+      <hr className="my-6" />
+
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Mine kvitteringer ({filter})</h2>
+        <ul className="space-y-2">
+          {kvitteringer.map((k) => (
+            <li key={k.id} className="border p-2 rounded flex justify-between items-center">
+              <div>
+                <div className="font-bold">{k.tittel}</div>
+                <div>{k.belop} {k.valuta}</div>
+                <div className="text-sm text-gray-500">{k.dato}</div>
+              </div>
+              <button
+                onClick={() => slettKvittering(k.id)}
+                className="bg-red-500 text-white px-3 py-1 rounded"
+              >
+                Slett
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
