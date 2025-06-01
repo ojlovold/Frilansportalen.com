@@ -1,11 +1,11 @@
-// FULL OG FERDIG VERSJON – INGEN KUTT, ALLE FELT, ALLE FORBEDRINGER PRESIST
+// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og fungerende knapp
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { useRouter } from "next/router";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -20,7 +20,6 @@ export default function AutoUtfyllKvitteringSmart() {
   const [status, setStatus] = useState("");
   const user = useUser();
   const supabase = useSupabaseClient();
-  const router = useRouter();
 
   useEffect(() => {
     if (fil) lesKvittering();
@@ -90,13 +89,12 @@ export default function AutoUtfyllKvitteringSmart() {
     const tittelFunnet = finnTittel(text);
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
-
     setDato(datoen);
     setValuta(valutaFunnet);
     setTittel(tittelFunnet);
     setBelopOriginal(belopBase);
 
-    if (valutaFunnet === "NOK" || valutaFunnet === "") {
+    if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
       setBelop(belopBase);
     } else {
       const kurs = await hentKurs(valutaFunnet, "NOK", datoen);
@@ -189,18 +187,15 @@ export default function AutoUtfyllKvitteringSmart() {
   return (
     <div className="bg-yellow-100 p-6 rounded-2xl shadow-xl max-w-2xl mx-auto space-y-5">
       <h2 className="text-2xl font-bold text-gray-800">Autoutfyll kvittering</h2>
-
       <input
         type="file"
         accept=".pdf,image/*"
         className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
         onChange={(e) => setFil(e.target.files?.[0] || null)}
       />
-
       <pre className="bg-gray-50 p-3 text-sm rounded-xl whitespace-pre-wrap text-gray-600">
         {tekst || "Ingen tekst funnet."}
       </pre>
-
       <div className="grid grid-cols-1 gap-3">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
@@ -208,15 +203,14 @@ export default function AutoUtfyllKvitteringSmart() {
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-3 border rounded-xl" />
       </div>
-
       <button onClick={lagreKvittering} className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl w-full">
         Lagre kvittering
       </button>
-
-      <button onClick={() => router.push("/kvitteringer")} className="bg-black hover:bg-gray-900 text-white font-bold px-4 py-2 rounded-xl w-full">
-        Se mine kvitteringer
-      </button>
-
+      <Link href="/kvitteringer" className="block">
+        <button className="bg-black hover:bg-gray-900 text-white font-bold px-4 py-2 rounded-xl w-full">
+          Se mine kvitteringer
+        </button>
+      </Link>
       {status && <p className="text-sm text-gray-700 text-center">{status}</p>}
     </div>
   );
