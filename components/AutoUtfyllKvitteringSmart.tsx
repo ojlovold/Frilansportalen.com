@@ -1,7 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – FULL REPARASJON UTFØRT
-// 1. Leser riktig sum (4048, ikke 3238)
-// 2. Henter valutakurs fra valgt dato eller tidligere
-// 3. Filtrerer automatisk bort slettede kvitteringer
+// AutoUtfyllKvitteringSmart.tsx – ENDELIG VERSJON: korrekt sum, valutakurs, dato og slettede filer filtrert
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -46,6 +43,18 @@ export default function AutoUtfyllKvitteringSmart() {
       if (norsk) {
         const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
         return `${norsk[1]}.${norsk[2]}.${yyyy}`;
+      }
+      const engelsk = linje.match(/([A-Za-z]{3,9})\s+(\d{1,2}),\s*(\d{4})/);
+      if (engelsk) {
+        const månedMap: any = {
+          january: "01", february: "02", march: "03", april: "04", may: "05",
+          june: "06", july: "07", august: "08", september: "09",
+          october: "10", november: "11", december: "12"
+        };
+        const mnd = månedMap[engelsk[1].toLowerCase()];
+        const dag = engelsk[2].padStart(2, "0");
+        const år = engelsk[3];
+        return `${dag}.${mnd}.${år}`;
       }
     }
     return "";
@@ -177,7 +186,7 @@ export default function AutoUtfyllKvitteringSmart() {
         valuta,
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
-        opprettet: new Date().toISOString(),
+        opprettet: new Date().toISOString()
       },
     ]);
 
