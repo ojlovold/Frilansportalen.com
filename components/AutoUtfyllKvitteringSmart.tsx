@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – valutakurs DATOFIX + slettet-filter i kvitteringer.tsx neste
+// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og fungerende knapp
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -68,6 +68,14 @@ export default function AutoUtfyllKvitteringSmart() {
     return "";
   };
 
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+    const iso = dato.split(".").reverse().join("-");
+    if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return 0;
+    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return data.rates?.[til] || 0;
+  };
+
   const lesKvittering = async () => {
     if (!fil) return;
     setStatus("Leser kvittering...");
@@ -80,19 +88,18 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
+    const tittelFunnet = tekst.split("\n").find((l) => l.trim().length > 0) || "";
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
-
     setDato(datoen);
     setValuta(valutaFunnet);
+    setTittel(tittelFunnet);
     setBelopOriginal(belopBase);
 
     if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
       setBelop(belopBase);
     } else {
-      const iso = datoen.split(".").reverse().join("-");
-      if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return setStatus("Ugyldig dato for valutakurs");
-      const kurs = await hentKurs(valutaFunnet, "NOK", iso);
+      const kurs = await hentKurs(valutaFunnet, "NOK", datoen);
       const omregnet = parseFloat(belopBase) * kurs;
       setBelop(omregnet.toFixed(2));
     }
@@ -126,12 +133,6 @@ export default function AutoUtfyllKvitteringSmart() {
         resolve(canvas);
       };
     });
-  };
-
-  const hentKurs = async (fra: string, til: string, isoDato: string): Promise<number> => {
-    const res = await fetch(`https://api.frankfurter.app/${isoDato}?from=${fra}&to=${til}`);
-    const data = await res.json();
-    return data.rates?.[til] || 0;
   };
 
   const lagreKvittering = async () => {
@@ -178,5 +179,34 @@ export default function AutoUtfyllKvitteringSmart() {
     }
   };
 
-  return (<div className="bg-yellow-100 p-6 rounded-2xl shadow-xl max-w-2xl mx-auto space-y-5">...</div>);
+  return (
+    <div className="bg-yellow-100 p-6 rounded-2xl shadow-xl max-w-2xl mx-auto space-y-5">
+      <h2 className="text-2xl font-bold text-gray-800">Autoutfyll kvittering</h2>
+      <input
+        type="file"
+        accept=".pdf,image/*"
+        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
+        onChange={(e) => setFil(e.target.files?.[0] || null)}
+      />
+      <pre className="bg-gray-50 p-3 text-sm rounded-xl whitespace-pre-wrap text-gray-600">
+        {tekst || "Ingen tekst funnet."}
+      </pre>
+      <div className="grid grid-cols-1 gap-3">
+        <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-3 border rounded-xl" />
+        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-3 border rounded-xl" />
+      </div>
+      <button onClick={lagreKvittering} className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl w-full">
+        Lagre kvittering
+      </button>
+      <Link href="/kvitteringer" className="block">
+        <button className="bg-black hover:bg-gray-900 text-white font-bold px-4 py-2 rounded-xl w-full">
+          Se mine kvitteringer
+        </button>
+      </Link>
+      {status && <p className="text-sm text-gray-700 text-center">{status}</p>}
+    </div>
+  );
 }
