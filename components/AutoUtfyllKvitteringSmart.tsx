@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – REPARERT: korrekt kurs, ekte dato, ingen fallback-feil
+// AutoUtfyllKvitteringSmart.tsx – REPARERT: korrekt historisk kurs før valgt dato
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -77,18 +77,12 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
     const iso = dato.split(".").reverse().join("-");
-    try {
-      const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
-      const data = await res.json();
-      if (!data?.rates?.[til]) throw new Error("Ingen kurs funnet for datoen");
-      return {
-        rate: data.rates[til],
-        faktiskDato: data.date,
-      };
-    } catch (err) {
-      setStatus("Feil: kunne ikke hente valutakurs for valgt dato");
-      return { rate: 0, faktiskDato: iso };
-    }
+    const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
+    const data = await res.json();
+    return {
+      rate: data?.rates?.[til] || 0,
+      faktiskDato: data?.date || iso,
+    };
   };
 
   const lesKvittering = async () => {
@@ -114,10 +108,13 @@ export default function AutoUtfyllKvitteringSmart() {
       setStatus("Ferdig (ingen valutaomregning)");
     } else {
       const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
-      if (!rate) return;
+      if (!rate || isNaN(rate)) {
+        setStatus("Klarte ikke å hente kurs for denne datoen eller tidligere");
+        return;
+      }
       const omregnet = parseFloat(belopBase) * rate;
       setBelop(omregnet.toFixed(2));
-      setStatus(`Kurs fra ${faktiskDato}`);
+      setStatus(faktiskDato !== dato.split(".").reverse().join("-") ? `Brukte kurs fra ${faktiskDato}` : "Ferdig");
     }
   };
 
