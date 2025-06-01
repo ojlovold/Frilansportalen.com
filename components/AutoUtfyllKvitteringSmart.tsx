@@ -1,3 +1,5 @@
+// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og uten kvitteringsliste
+
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -79,8 +81,7 @@ export default function AutoUtfyllKvitteringSmart() {
     if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return 0;
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
     const data = await res.json();
-    if (data.date !== iso) return 0;
-    return data.rates?.[til] || 0;
+    return data?.rates?.[til] || 0;
   };
 
   const lesKvittering = async () => {
