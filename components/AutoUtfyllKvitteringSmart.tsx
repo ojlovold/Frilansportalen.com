@@ -39,7 +39,10 @@ export default function AutoUtfyllKvitteringSmart() {
         .eq("bruker_id", user.id)
         .eq("status", filter)
         .order("dato", { ascending: false });
-      if (!error) setKvitteringer(data);
+      if (!error && data) {
+        const aktive = data.filter((k) => k !== null);
+        setKvitteringer(aktive);
+      }
     };
 
     hentKvitteringer();
@@ -74,11 +77,10 @@ export default function AutoUtfyllKvitteringSmart() {
   useEffect(() => {
     if (!tekst) return;
 
-    const belopMatch = tekst.match(/(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})\s?(NOK|kr|USD|EUR)?/i);
+    const belopMatch = tekst.match(/(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})\s?(NOK|kr|USD|EUR|GBP|SEK|DKK)?/i);
     if (belopMatch) {
       const raw = belopMatch[1].replace(/\s/g, "").replace(",", ".");
       setBelopOriginal(raw);
-      setBelop(raw);
       if (belopMatch[2]) {
         const valutaRenset = belopMatch[2].toUpperCase().replace("KR", "NOK");
         setValuta(valutaRenset);
@@ -90,6 +92,29 @@ export default function AutoUtfyllKvitteringSmart() {
 
     if (!tittel && fil) setTittel(fil.name.replace(/\.[^/.]+$/, ""));
   }, [tekst]);
+
+  useEffect(() => {
+    const hentKurs = async () => {
+      if (!dato || !valuta || valuta === "NOK" || !belopOriginal) return;
+      const datoIso = new Date(dato).toISOString().split("T")[0];
+      try {
+        const res = await fetch(`https://api.frankfurter.app/${datoIso}?from=${valuta}&to=NOK`);
+        const json = await res.json();
+        const kurs = json.rates?.NOK;
+        if (kurs) {
+          const omregnet = (parseFloat(belopOriginal) * kurs).toFixed(2);
+          setBelop(omregnet);
+        } else {
+          setBelop(belopOriginal);
+        }
+      } catch (err) {
+        console.error("Feil ved valutahenting:", err);
+        setBelop(belopOriginal);
+      }
+    };
+
+    hentKurs();
+  }, [valuta, dato, belopOriginal]);
 
   const lagreKvittering = async () => {
     if (!fil || !user) return;
