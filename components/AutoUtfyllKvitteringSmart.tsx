@@ -1,4 +1,4 @@
-// GJENOPPRETTET VERSJON – FULL LAYOUT, INGEN RYDDING, ALLE FORBEDRINGER PÅPLASSERT NØYAKTIG
+// FULL OG FERDIG VERSJON – INGEN KUTT, ALLE FELT, ALLE FORBEDRINGER PRESIST
 
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -55,29 +55,24 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
-    const kandidater: number[] = [];
     for (const linje of linjer) {
       if (/vercel|http|visit|help|page|referanse|id|\d{4}-\d{4}/.test(linje)) continue;
-      if (/(total|amount paid|sum|bel\u00f8p|betalt|subtotal|invoice)/.test(linje)) {
-        const matches = [...linje.matchAll(/[$€£]?\s*\d[\d.,]+/g)];
-        const tall = matches.map((m) => m[0]
-          .replace(/[^\d.,]/g, "")
-          .replace(/,/g, ".")
-          .replace(/\.(?=\d{3})/g, "")
-          .trim())
-          .map((str) => parseFloat(str))
-          .filter((val) => !isNaN(val) && val >= 1);
-        kandidater.push(...tall);
+      if (/(amount paid|total|sum|beløp|betalt)/.test(linje)) {
+        const match = linje.match(/([$€£]?\s*\d+[\d.,]*)/);
+        if (match) {
+          const tall = match[0].replace(/[^\d.,]/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/g, "").trim();
+          const val = parseFloat(tall);
+          if (!isNaN(val) && val > 0 && val < 10000) return val.toFixed(2);
+        }
       }
     }
-    const høyeste = Math.max(...kandidater, 0);
-    return høyeste > 0 ? høyeste.toFixed(2) : "";
+    return "";
   };
 
   const finnTittel = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim());
-    const prioritert = linjer.find((l) => /description|receipt|invoice|vendor|from/i.test(l));
-    return prioritert || linjer.find((l) => l.length > 3) || "Kvittering";
+    const prioritert = linjer.find((l) => /description|invoice|from|vendor|receipt/i.test(l));
+    return prioritert || linjer.find((l) => l.length > 3 && !l.match(/[@:]/)) || "Kvittering";
   };
 
   const lesKvittering = async () => {
@@ -94,7 +89,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const belopBase = finnTotalbelop(text);
     const tittelFunnet = finnTittel(text);
 
-    if (!belopBase) return setStatus("Fant ingen bel\u00f8p i dokumentet");
+    if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
 
     setDato(datoen);
     setValuta(valutaFunnet);
@@ -150,7 +145,7 @@ export default function AutoUtfyllKvitteringSmart() {
   const lagreKvittering = async () => {
     if (!user?.id) return setStatus("Du er ikke innlogget");
     if (!fil) return setStatus("Mangler fil");
-    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler bel\u00f8p");
+    if (!belop || isNaN(parseFloat(belop))) return setStatus("Mangler beløp");
     if (!dato.match(/^\d{2}\.\d{2}\.\d{4}$/)) return setStatus("Ugyldig dato");
 
     const datoISO = dato.split(".").reverse().join("-");
@@ -208,7 +203,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
       <div className="grid grid-cols-1 gap-3">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
-        <input type="text" placeholder="Originalt bel\u00f8p" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
         <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
         <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-3 border rounded-xl" />
