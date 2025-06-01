@@ -1,5 +1,3 @@
-// AutoUtfyllKvitteringSmart.tsx – komplett med valutafiks og full struktur
-
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -81,6 +79,7 @@ export default function AutoUtfyllKvitteringSmart() {
     if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return 0;
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
     const data = await res.json();
+    if (data.date !== iso) return 0;
     return data.rates?.[til] || 0;
   };
 
@@ -108,8 +107,13 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(belopBase);
     } else {
       const kurs = await hentKurs(valutaFunnet, "NOK", datoen);
-      const omregnet = parseFloat(belopBase) * kurs;
-      setBelop(omregnet.toFixed(2));
+      if (kurs === 0) {
+        setStatus("Fant ikke valutakurs for valgt dato");
+        setBelop(belopBase);
+      } else {
+        const omregnet = parseFloat(belopBase) * kurs;
+        setBelop(omregnet.toFixed(2));
+      }
     }
 
     setStatus("Ferdig");
