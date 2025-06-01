@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – oppdatert med riktig valutakurs og uten kvitteringsliste
+// AutoUtfyllKvitteringSmart.tsx – riktig valutakurs + ingen visning av slettede kvitteringer
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -76,12 +76,15 @@ export default function AutoUtfyllKvitteringSmart() {
     return "";
   };
 
-  const hentKurs = async (fra: string, til: string, dato: string): Promise<number> => {
+  const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
     const iso = dato.split(".").reverse().join("-");
-    if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return 0;
+    if (!iso.match(/^\d{4}-\d{2}-\d{2}$/)) return { rate: 0, faktiskDato: "" };
     const res = await fetch(`https://api.frankfurter.app/${iso}?from=${fra}&to=${til}`);
     const data = await res.json();
-    return data?.rates?.[til] || 0;
+    return {
+      rate: data?.rates?.[til] || 0,
+      faktiskDato: data?.date || iso,
+    };
   };
 
   const lesKvittering = async () => {
@@ -107,17 +110,17 @@ export default function AutoUtfyllKvitteringSmart() {
     if (valutaFunnet === "NOK" || valutaFunnet === "" || !datoen) {
       setBelop(belopBase);
     } else {
-      const kurs = await hentKurs(valutaFunnet, "NOK", datoen);
-      if (kurs === 0) {
+      const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
+      if (rate === 0) {
         setStatus("Fant ikke valutakurs for valgt dato");
         setBelop(belopBase);
       } else {
-        const omregnet = parseFloat(belopBase) * kurs;
+        const omregnet = parseFloat(belopBase) * rate;
+        const bruktDato = faktiskDato !== datoen.split(".").reverse().join("-") ? ` (kurs fra ${faktiskDato})` : "";
+        setStatus(`Ferdig${bruktDato}`);
         setBelop(omregnet.toFixed(2));
       }
     }
-
-    setStatus("Ferdig");
   };
 
   const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
