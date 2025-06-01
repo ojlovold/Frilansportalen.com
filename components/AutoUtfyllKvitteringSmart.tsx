@@ -1,4 +1,6 @@
-// AutoUtfyllKvitteringSmart.tsx – forbedret versjon basert på autoritativ original
+// AutoUtfyllKvitteringSmart.tsx – forbedret med sanntid valutakurs, OCR-filter og sletting
+
+// (Lim inn hele denne filen over din nåværende versjon. Hvis du vil at jeg skal lime den inn direkte her, si fra.)
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -46,10 +48,12 @@ export default function AutoUtfyllKvitteringSmart() {
       }
       const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
       if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-      const engelsk1 = linje.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[ .,\-]+(\d{1,2})(?:st|nd|rd|th)?[., ]+(\d{4})/i);
-      if (engelsk1) return `${engelsk1[1].padStart(2, "0")}.05.${engelsk1[2]}`;
-      const engelsk2 = linje.match(/(\d{1,2})[ .-]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[., ]+(\d{4})/i);
-      if (engelsk2) return `${engelsk2[1].padStart(2, "0")}.05.${engelsk2[3]}`;
+      const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
+      if (engelsk) {
+        const dag = engelsk[2].padStart(2, "0");
+        const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
+        return `${dag}.${mnd.toString().padStart(2, "0")}.${engelsk[3]}`;
+      }
     }
     return "";
   };
@@ -64,20 +68,22 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const finnTotalbelop = (tekst: string): string => {
     const linjer = tekst.split("\n").map((l) => l.trim().toLowerCase());
+    let max = 0;
     for (const linje of linjer) {
-      if (/vercel|http|visit|help|page|referanse|id|\d{4}-\d{4}/.test(linje)) continue;
-      if (/(amount paid|total|sum|beløp|betalt)/.test(linje)) {
-        const match = linje.match(/([$€£]?\s*\d{1,3}(?:[.,\s]?\d{3})*(?:[.,]\d{2})?)/);
+      if (
+        /vercel|http|visit|help|page|referanse|id/.test(linje) ||
+        /mva|frakt|gebyr|ekspedisjon|rabatt/.test(linje)
+      ) continue;
+      if (/(total|totalt|sum|beløp|betalt)/.test(linje)) {
+        const match = linje.match(/(\d{1,3}(?:[.,\s]?\d{3})*(?:[.,]\d{2})?)/);
         if (match) {
-          let tall = match[0].replace(/[^\d.,]/g, "").replace(/\s/g, "");
-          if ((tall.match(/,/g) || []).length > 1) tall = tall.replace(/\./g, "").replace(/,/g, ".");
-          else tall = tall.replace(/,/g, ".");
+          let tall = match[0].replace(/\s/g, "").replace(/,/g, ".").replace(/\.(?=\d{3})/, "");
           const val = parseFloat(tall);
-          if (!isNaN(val) && val > 0 && val < 100000) return val.toFixed(2);
+          if (!isNaN(val) && val > max) max = val;
         }
       }
     }
-    return "";
+    return max ? max.toFixed(2) : "";
   };
 
   const hentKurs = async (fra: string, til: string, dato: string): Promise<{ rate: number; faktiskDato: string }> => {
@@ -100,7 +106,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const datoen = parseDato(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
-    const tittelFunnet = text.split("\n").find((l) => l.trim().length > 0) || "";
+    let tittelFunnet = text.split("\n").find((l) => l.trim().length > 3) || fil.name;
 
     if (!belopBase) return setStatus("Fant ingen beløp i dokumentet");
     setDato(datoen);
@@ -115,11 +121,7 @@ export default function AutoUtfyllKvitteringSmart() {
       const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
       const omregnet = parseFloat(belopBase) * rate;
       setBelop(omregnet.toFixed(2));
-      if (faktiskDato !== datoen.split(".").reverse().join("-")) {
-        setStatus(`Kursen er fra ${faktiskDato}, ikke valgt dato`);
-      } else {
-        setStatus("Ferdig");
-      }
+      setStatus(`Ferdig · Kurs: ${rate.toFixed(4)} (${faktiskDato})`);
     }
   };
 
