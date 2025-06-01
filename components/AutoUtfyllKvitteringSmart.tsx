@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med forbedret dato-parser, tittel kun manuelt, alt annet urørt
+// AutoUtfyllKvitteringSmart.tsx – nå med parseAlleDatoer(): finner første gyldige dato i hele teksten
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -36,27 +36,33 @@ export default function AutoUtfyllKvitteringSmart() {
     ctx.putImageData(imgData, 0, 0);
   };
 
-  const parseDato = (tekst: string): string => {
-    const linjer = tekst.split("\n");
-    for (const linje of linjer) {
-      const r1 = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-      if (r1) {
-        const yyyy = r1[3].length === 2 ? `20${r1[3]}` : r1[3];
-        return `${r1[1]}.${r1[2]}.${yyyy}`;
-      }
-      const r2 = linje.match(/(\d{4})[./-](\d{2})[./-](\d{2})/);
-      if (r2) return `${r2[3]}.${r2[2]}.${r2[1]}`;
-      const r3 = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
-      if (r3) {
-        const dag = r3[2].padStart(2, "0");
-        const mnd = new Date(`${r3[1]} 1, 2000`).getMonth() + 1;
-        return `${dag}.${mnd.toString().padStart(2, "0")}.${r3[3]}`;
-      }
-      const r4 = linje.match(/(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/);
-      if (r4) {
-        const dag = r4[1].padStart(2, "0");
-        const mnd = new Date(`${r4[2]} 1, 2000`).getMonth() + 1;
-        return `${dag}.${mnd.toString().padStart(2, "0")}.${r4[3]}`;
+  const parseAlleDatoer = (tekst: string): string => {
+    const mønstre = [
+      /(\d{2})[./-](\d{2})[./-](\d{2,4})/g, // 25.04.2025
+      /(\d{4})[./-](\d{2})[./-](\d{2})/g,   // 2025-04-25
+      /([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/g, // April 25, 2025
+      /(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/g  // 25 April 2025
+    ];
+    for (const regex of mønstre) {
+      let match;
+      while ((match = regex.exec(tekst)) !== null) {
+        if (regex === mønstre[0]) {
+          const yyyy = match[3].length === 2 ? `20${match[3]}` : match[3];
+          return `${match[1]}.${match[2]}.${yyyy}`;
+        }
+        if (regex === mønstre[1]) {
+          return `${match[3]}.${match[2]}.${match[1]}`;
+        }
+        if (regex === mønstre[2]) {
+          const dag = match[2].padStart(2, "0");
+          const mnd = new Date(`${match[1]} 1, 2000`).getMonth() + 1;
+          return `${dag}.${mnd.toString().padStart(2, "0")}.${match[3]}`;
+        }
+        if (regex === mønstre[3]) {
+          const dag = match[1].padStart(2, "0");
+          const mnd = new Date(`${match[2]} 1, 2000`).getMonth() + 1;
+          return `${dag}.${mnd.toString().padStart(2, "0")}.${match[3]}`;
+        }
       }
     }
     return "";
@@ -104,7 +110,7 @@ export default function AutoUtfyllKvitteringSmart() {
     const text = await Tesseract.recognize(canvas, "eng+nor", { logger: () => {} }).then((r) => r.data.text || "");
     setTekst(text);
 
-    const datoen = parseDato(text);
+    const datoen = parseAlleDatoer(text);
     const valutaFunnet = finnValuta(text);
     const belopBase = finnTotalbelop(text);
 
