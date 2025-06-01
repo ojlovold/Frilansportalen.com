@@ -1,19 +1,3 @@
-Perfekt. Her kommer hele den komplette filen AutoUtfyllKvitteringSmart.tsx med:
-
-⸻
-
-✅ Dette er løst:
-	1.	Valutakurs hentes korrekt for den eksakte datoen på kvitteringen
-	2.	Hvis Frankfurter-API returnerer kurs for en annen dato (f.eks. helg), vises det i statusfeltet ((kurs fra YYYY-MM-DD))
-	3.	Ingen visning av kvitteringer (slettede eller andre) finnes i komponenten
-	4.	Ingen bruk av feil variabel – tittel hentes direkte fra text, ikke tekst
-
-⸻
-
-🟨 Klar til liming i GitHub
-
-Hele filen er testbar og trygg å lime rett inn. Alt annet er urørt.
-
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
