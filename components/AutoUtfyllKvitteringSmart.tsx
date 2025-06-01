@@ -188,8 +188,15 @@ export default function AutoUtfyllKvitteringSmart() {
   return (
     <div className="bg-white p-4 rounded shadow max-w-xl space-y-3">
       <h2 className="text-xl font-semibold">Autoutfyll kvittering</h2>
-      <input type="file" accept=".pdf,image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} />
-      <button onClick={lesKvittering} className="bg-black text-white px-3 py-2 rounded">Les kvittering</button>
+      <input
+        type="file"
+        accept=".pdf,image/*"
+        onChange={(e) => {
+          const valgtFil = e.target.files?.[0] || null;
+          setFil(valgtFil);
+          if (valgtFil) lesKvittering();
+        }}
+      />
       <pre className="bg-gray-100 p-3 text-sm whitespace-pre-wrap rounded">{tekst || "Ingen tekst funnet."}</pre>
       <div className="space-y-2">
         <input type="text" placeholder="Tittel" value={tittel} onChange={(e) => setTittel(e.target.value)} className="w-full p-2 border rounded" />
