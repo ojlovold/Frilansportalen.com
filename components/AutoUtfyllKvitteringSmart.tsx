@@ -11,7 +11,7 @@ function generateUUID() {
   return crypto.randomUUID();
 }
 
-export default function AutoUtfyllKvitteringSmart({ rolle }: { rolle: "admin" | "bruker" }) {
+export default function AutoUtfyllKvitteringSmart() {
   const [fil, setFil] = useState<File | null>(null);
   const [tekst, setTekst] = useState("");
   const [tittel, setTittel] = useState("");
