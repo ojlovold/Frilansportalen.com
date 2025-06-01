@@ -67,12 +67,12 @@ export default function AutoUtfyllKvitteringSmart() {
   const finnValuta = (tekst: string): string => {
     const lower = tekst.toLowerCase();
     const teller = (val: string) => (lower.match(new RegExp(val, "g")) || []).length;
-    const score = [
+    const score: [string, number][] = [
       ["USD", teller("usd") + teller("\\$")],
       ["EUR", teller("eur")],
       ["NOK", teller("nok")],
     ];
-    score.sort((a, b) => b[1] - a[1]);
+    score.sort(([, a], [, b]) => b - a);
     return score[0][1] > 0 ? score[0][0] : "NOK";
   };
 
