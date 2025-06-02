@@ -198,4 +198,3 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
     </div>
   );
 }
-```
