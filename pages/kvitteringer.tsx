@@ -1,3 +1,5 @@
+// kvitteringer.tsx – viser belop_original + valuta og omregnet nok
+
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -45,7 +47,7 @@ export default function Kvitteringer() {
       k.dato,
       `"${k.tittel}"`,
       k.valuta,
-      k.belop,
+      k.belop_original ?? k.belop,
       k.nok ?? "",
       k.fil_url,
     ]);
@@ -65,7 +67,7 @@ export default function Kvitteringer() {
     doc.text("Kvitteringsrapport", 10, 10);
     let y = 20;
     kvitteringer.filter((k) => valgte.includes(k.id)).forEach((k) => {
-      doc.text(`• ${k.dato} – ${k.tittel} – ${k.belop} ${k.valuta} – ${k.fil_url}`, 10, y);
+      doc.text(`• ${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – ${k.fil_url}`, 10, y);
       y += 10;
     });
     doc.save("kvitteringer-lenker.pdf");
@@ -85,7 +87,7 @@ export default function Kvitteringer() {
     const utvalgte = kvitteringer.filter((k) => valgte.includes(k.id));
     for (let i = 0; i < utvalgte.length; i++) {
       const k = utvalgte[i];
-      doc.text(`${k.dato} – ${k.tittel} – ${k.belop} ${k.valuta}`, 10, 10);
+      doc.text(`${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta}`, 10, 10);
       try {
         const res = await fetch(k.fil_url);
         const blob = await res.blob();
@@ -176,7 +178,7 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
               </td>
               <td className="p-2 border">{k.dato}</td>
               <td className="p-2 border">{k.tittel}</td>
-              <td className="p-2 border">{k.belop} {k.valuta}</td>
+              <td className="p-2 border">{k.belop_original ?? k.belop} {k.valuta}</td>
               <td className="p-2 border">{k.valuta}</td>
               <td className="p-2 border">{k.valuta !== "NOK" ? k.nok : ""}</td>
               <td className="p-2 border">
@@ -196,3 +198,4 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
     </div>
   );
 }
+```
