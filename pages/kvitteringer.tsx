@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import jsPDF from "jspdf";
-// @ts-ignore: Mangler typer for qrcode
+// @ts-ignore
 import QRCode from "qrcode";
 
 export default function Kvitteringer() {
@@ -52,8 +52,14 @@ export default function Kvitteringer() {
 
   const eksporterPDFmedVedlegg = async () => {
     const { PDFDocument } = await import("pdf-lib");
+
     const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
     const samledoc = await PDFDocument.create();
+
+    const logoRes = await fetch("/logo_transparent.png");
+    const logoBlob = await logoRes.blob();
+    const logoBytes = await logoBlob.arrayBuffer();
+    const logoDoc = await samledoc.embedPng(logoBytes);
 
     let totalNOK = 0;
     let totalOriginal = 0;
@@ -72,7 +78,6 @@ export default function Kvitteringer() {
         side.drawText(`Valuta: ${k.valuta}`, { x: 50, y: 760 });
         side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y: 745 });
         side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y: 730 });
-        side.drawLine({ start: { x: 45, y: 720 }, end: { x: 550, y: 720 }, thickness: 0.5 });
 
         if (blob.type === "application/pdf") {
           const doc = await PDFDocument.load(buffer);
@@ -93,7 +98,7 @@ export default function Kvitteringer() {
         side.drawImage(qrimg, { x: 450, y: 730, width: 80, height: 80 });
 
         side.drawText(`Revisjons-ID: ${k.id.slice(0, 8)}`, { x: 50, y: 50 });
-        side.drawText(`Side ${i + 1} av ${utvalgte.length + 1}`, { x: 450, y: 30 });
+        side.drawImage(logoDoc, { x: 230, y: 10, width: 130, height: 40 });
 
         totalNOK += parseFloat(k.nok ?? (k.valuta === "NOK" ? k.belop : 0));
         totalOriginal += parseFloat(k.belop_original ?? k.belop ?? 0);
@@ -108,7 +113,7 @@ export default function Kvitteringer() {
     siste.drawText(`Totalt originalbeløp: ${totalOriginal.toFixed(2)}`, { x: 50, y: 780 });
     siste.drawText(`Totalt NOK: ${totalNOK.toFixed(2)}`, { x: 50, y: 760 });
     siste.drawText(`Dato: ${new Date().toISOString().split("T")[0]}`, { x: 50, y: 740 });
-    siste.drawText("Sidefot: Frilansportalen", { x: 50, y: 30 });
+    siste.drawImage(logoDoc, { x: 230, y: 10, width: 130, height: 40 });
 
     const bytes = await samledoc.save();
     const blob = new Blob([bytes], { type: "application/pdf" });
