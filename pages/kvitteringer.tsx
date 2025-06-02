@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import jsPDF from "jspdf";
+// @ts-ignore: Mangler typer for qrcode
 import QRCode from "qrcode";
 
 export default function Kvitteringer() {
@@ -41,7 +42,8 @@ export default function Kvitteringer() {
       reader.readAsDataURL(blob);
     });
   };
-    const eksporterPDFmedVedlegg = async () => {
+
+  const eksporterPDFmedVedlegg = async () => {
     const { PDFDocument } = await import("pdf-lib");
     const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
     const samledoc = await PDFDocument.create();
@@ -100,8 +102,18 @@ export default function Kvitteringer() {
     siste.drawText(`Totalt NOK: ${totalNOK.toFixed(2)}`, { x: 50, y: 760 });
     siste.drawText(`Dato: ${new Date().toISOString().split("T")[0]}`, { x: 50, y: 740 });
     siste.drawText("Sidefot: Frilansportalen", { x: 50, y: 30 });
+
+    const bytes = await samledoc.save();
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "kvitteringer-med-vedlegg.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
-    const eksporterCSV = () => {
+
+  const eksporterCSV = () => {
     const header = ["Dato", "Tittel", "Valuta", "Beløp", "NOK", "Fil-URL"];
     const rows = kvitteringer.map((k) => [
       k.dato,
@@ -198,9 +210,7 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
               <td className="p-2 border">{k.tittel}</td>
               <td className="p-2 border">{k.belop_original ?? k.belop} {k.valuta}</td>
               <td className="p-2 border">{k.valuta}</td>
-              <td className="p-2 border">
-                {(k.nok ?? (k.valuta === "NOK" ? k.belop : "")).toFixed?.(2)}
-              </td>
+              <td className="p-2 border">{(k.nok ?? (k.valuta === "NOK" ? k.belop : "")).toFixed?.(2)}</td>
               <td className="p-2 border">
                 <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                   Åpne
