@@ -1,5 +1,3 @@
-// pages/admin/regnskap.tsx
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -13,7 +11,10 @@ export default function AdminRegnskap() {
   useEffect(() => {
     const hent = async () => {
       const { data: inntekter } = await supabase.from("transaksjoner").select("*");
-      const { data: utgifter } = await supabase.from("bruker_utgifter").select("*");
+      const { data: utgifter } = await supabase
+        .from("kvitteringer")
+        .select("*")
+        .eq("slettet", false); // <- kun aktive
       setInntekter(inntekter || []);
       setUtgifter(utgifter || []);
       const sum = inntekter?.reduce((acc, curr) => acc + (curr.belop || 0), 0) || 0;
@@ -67,9 +68,9 @@ export default function AdminRegnskap() {
                     <tr key={u.id} className="border-b">
                       <td className="p-2">{u.dato}</td>
                       <td className="p-2">{u.tittel}</td>
-                      <td className="p-2">{u.belop}</td>
+                      <td className="p-2">{u.belop_original ?? u.belop} {u.valuta}</td>
                       <td className="p-2">{u.valuta}</td>
-                      <td className="p-2">{u.nok?.toFixed(2)}</td>
+                      <td className="p-2">{u.valuta !== "NOK" ? u.nok?.toFixed(2) : ""}</td>
                       <td className="p-2">
                         {u.fil_url ? (
                           <a
