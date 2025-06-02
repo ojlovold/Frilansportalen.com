@@ -51,10 +51,11 @@ export default function Kvitteringer() {
   };
 
   const eksporterPDFmedVedlegg = async () => {
-    const { PDFDocument } = await import("pdf-lib");
+    const { PDFDocument, StandardFonts } = await import("pdf-lib");
 
     const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
     const samledoc = await PDFDocument.create();
+    const font = await samledoc.embedFont(StandardFonts.Helvetica);
 
     const logoRes = await fetch("/logo_transparent.png");
     const logoBlob = await logoRes.blob();
@@ -74,17 +75,17 @@ export default function Kvitteringer() {
         const side = samledoc.addPage([595.28, 841.89]);
 
         let y = 810;
-        side.drawText("Frilansportalen – Kvittering", { x: 50, y, size: 12 });
+        side.drawText("Frilansportalen – Kvittering", { x: 50, y, font, size: 12 });
         y -= 20;
-        side.drawText(`Tittel: ${k.tittel}`, { x: 50, y, size: 10 });
+        side.drawText(`Tittel: ${k.tittel}`, { x: 50, y, font, size: 10 });
         y -= 15;
-        side.drawText(`Dato: ${k.dato}`, { x: 50, y, size: 10 });
+        side.drawText(`Dato: ${k.dato}`, { x: 50, y, font, size: 10 });
         y -= 15;
-        side.drawText(`Valuta: ${k.valuta}`, { x: 50, y, size: 10 });
+        side.drawText(`Valuta: ${k.valuta}`, { x: 50, y, font, size: 10 });
         y -= 15;
-        side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y, size: 10 });
+        side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y, font, size: 10 });
         y -= 15;
-        side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y, size: 10 });
+        side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y, font, size: 10 });
 
         if (blob.type === "application/pdf") {
           const doc = await PDFDocument.load(buffer);
@@ -104,22 +105,22 @@ export default function Kvitteringer() {
         const qrimg = await samledoc.embedPng(qr.split(",")[1]);
         side.drawImage(qrimg, { x: 450, y: 730, width: 80, height: 80 });
 
-        side.drawText(`Revisjons-ID: ${k.id.slice(0, 8)}`, { x: 50, y: 50 });
+        side.drawText(`Revisjons-ID: ${k.id.slice(0, 8)}`, { x: 50, y: 50, font, size: 10 });
         side.drawImage(logoDoc, { x: 230, y: 10, width: 130, height: 40 });
 
         totalNOK += parseFloat(k.nok ?? (k.valuta === "NOK" ? k.belop : 0));
         totalOriginal += parseFloat(k.belop_original ?? k.belop ?? 0);
       } catch {
         const side = samledoc.addPage([595.28, 841.89]);
-        side.drawText("Feil ved henting av kvittering", { x: 50, y: 800 });
+        side.drawText("Feil ved henting av kvittering", { x: 50, y: 800, font, size: 12 });
       }
     }
 
     const siste = samledoc.addPage([595.28, 841.89]);
-    siste.drawText("Frilansportalen – Summering", { x: 50, y: 810, size: 14 });
-    siste.drawText(`Totalt originalbeløp: ${totalOriginal.toFixed(2)}`, { x: 50, y: 780 });
-    siste.drawText(`Totalt NOK: ${totalNOK.toFixed(2)}`, { x: 50, y: 760 });
-    siste.drawText(`Dato: ${new Date().toISOString().split("T")[0]}`, { x: 50, y: 740 });
+    siste.drawText("Frilansportalen – Summering", { x: 50, y: 810, font, size: 14 });
+    siste.drawText(`Totalt originalbeløp: ${totalOriginal.toFixed(2)}`, { x: 50, y: 780, font, size: 10 });
+    siste.drawText(`Totalt NOK: ${totalNOK.toFixed(2)}`, { x: 50, y: 760, font, size: 10 });
+    siste.drawText(`Dato: ${new Date().toISOString().split("T")[0]}`, { x: 50, y: 740, font, size: 10 });
     siste.drawImage(logoDoc, { x: 230, y: 10, width: 130, height: 40 });
 
     const bytes = await samledoc.save();
