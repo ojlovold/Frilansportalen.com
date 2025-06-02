@@ -176,7 +176,7 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
               </td>
               <td className="p-2 border">{k.dato}</td>
               <td className="p-2 border">{k.tittel}</td>
-              <td className="p-2 border">{k.valuta !== "NOK" ? `${k.belop} ${k.valuta}` : k.belop}</td>
+              <td className="p-2 border">{k.belop} {k.valuta}</td>
               <td className="p-2 border">{k.valuta}</td>
               <td className="p-2 border">{k.valuta !== "NOK" ? k.nok : ""}</td>
               <td className="p-2 border">
