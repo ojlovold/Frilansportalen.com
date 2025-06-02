@@ -1,5 +1,3 @@
-// kvitteringer.tsx – viser belop_original + valuta og omregnet nok
-
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
