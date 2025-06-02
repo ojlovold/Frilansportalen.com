@@ -1,5 +1,3 @@
-// kvitteringer.tsx – med korrekt bruk av arkivert-felt
-
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -178,9 +176,9 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
               </td>
               <td className="p-2 border">{k.dato}</td>
               <td className="p-2 border">{k.tittel}</td>
-              <td className="p-2 border">{k.belop}</td>
+              <td className="p-2 border">{k.valuta !== "NOK" ? `${k.belop} ${k.valuta}` : k.belop}</td>
               <td className="p-2 border">{k.valuta}</td>
-              <td className="p-2 border">{k.nok}</td>
+              <td className="p-2 border">{k.valuta !== "NOK" ? k.nok : ""}</td>
               <td className="p-2 border">
                 <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                   Åpne
@@ -198,4 +196,3 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
     </div>
   );
 }
-```
