@@ -1,5 +1,3 @@
-// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med robust dato-parser og manuell tittel
-
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -36,26 +34,32 @@ export default function AutoUtfyllKvitteringSmart() {
     ctx.putImageData(imgData, 0, 0);
   };
 
+  const erGyldigDato = (dag: number, mnd: number, år: number): boolean => {
+    const d = new Date(år, mnd - 1, dag);
+    return d.getDate() === dag && d.getMonth() === mnd - 1 && d.getFullYear() === år;
+  };
+
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
     for (const linje of linjer) {
-      const lower = linje.toLowerCase();
-      const erDatoRelevant = /fakturadato|dato|invoice|issued|date/.test(lower);
-
-      if (erDatoRelevant || true) {
-        const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
-        if (norsk) {
-          const yyyy = norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3];
-          return `${norsk[1]}.${norsk[2]}.${yyyy}`;
-        }
-        const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
-        if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-        const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/);
-        if (engelsk) {
-          const dag = engelsk[2].padStart(2, "0");
-          const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
-          return `${dag}.${mnd.toString().padStart(2, "0")}.${engelsk[3]}`;
-        }
+      const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
+      if (norsk) {
+        const dag = parseInt(norsk[1]);
+        const mnd = parseInt(norsk[2]);
+        const år = parseInt(norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3]);
+        if (erGyldigDato(dag, mnd, år)) return `${norsk[1]}.${norsk[2]}.${år}`;
+      }
+      const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) {
+        const år = parseInt(iso[1]), mnd = parseInt(iso[2]), dag = parseInt(iso[3]);
+        if (erGyldigDato(dag, mnd, år)) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+      }
+      const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2})(?:,)?\s(\d{4})/);
+      if (engelsk) {
+        const dag = parseInt(engelsk[2]);
+        const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
+        const år = parseInt(engelsk[3]);
+        if (erGyldigDato(dag, mnd, år)) return `${dag.toString().padStart(2, "0")}.${mnd.toString().padStart(2, "0")}.${år}`;
       }
     }
     return "";
