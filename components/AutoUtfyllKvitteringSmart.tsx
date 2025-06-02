@@ -47,9 +47,9 @@ export default function AutoUtfyllKvitteringSmart() {
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
 
-    // 1: Forsøk fakturadato
     for (const linje of linjer) {
       if (!erFakturaDato(linje)) continue;
+
       const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
       if (norsk) {
         const dag = parseInt(norsk[1]);
@@ -57,6 +57,7 @@ export default function AutoUtfyllKvitteringSmart() {
         const år = parseInt(norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3]);
         if (erGyldigDato(dag, mnd, år)) return `${norsk[1]}.${norsk[2]}.${år}`;
       }
+
       const engelsk = linje.match(/([A-Z][a-z]+) (\d{1,2})(?:,)? (\d{4})/);
       if (engelsk) {
         const dag = parseInt(engelsk[2]);
@@ -66,7 +67,6 @@ export default function AutoUtfyllKvitteringSmart() {
       }
     }
 
-    // 2: Fallback – første gyldige dato hvor som helst
     for (const linje of linjer) {
       const fallback = linje.match(/([A-Z][a-z]+) (\d{1,2})(?:,)? (\d{4})/);
       if (fallback) {
@@ -202,7 +202,6 @@ export default function AutoUtfyllKvitteringSmart() {
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
         opprettet: new Date().toISOString(),
-        slettet: false,
         arkivert: new Date(datoISO).getFullYear() < new Date().getFullYear(),
       },
     ]);
