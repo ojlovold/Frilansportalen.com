@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 
 export default function Kvitteringer() {
   const supabase = useSupabaseClient();
@@ -32,14 +33,75 @@ export default function Kvitteringer() {
     hent();
   }, [user]);
 
-  const slett = async (id: string, fil_url: string) => {
-    const path = fil_url.split("/").slice(7).join("/");
-    await supabase.storage.from("kvitteringer").remove([path]);
-    await supabase.from("kvitteringer").update({ slettet: true }).eq("id", id);
-    setKvitteringer((prev) => prev.filter((k) => k.id !== id));
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
+    const eksporterPDFmedVedlegg = async () => {
+    const { PDFDocument } = await import("pdf-lib");
+    const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
+    const samledoc = await PDFDocument.create();
 
-  const eksporterCSV = () => {
+    let totalNOK = 0;
+    let totalOriginal = 0;
+
+    for (let i = 0; i < utvalgte.length; i++) {
+      const k = utvalgte[i];
+      try {
+        const res = await fetch(k.fil_url);
+        const blob = await res.blob();
+        const buffer = await blob.arrayBuffer();
+
+        const side = samledoc.addPage([595.28, 841.89]);
+        side.drawText("Frilansportalen – Kvittering", { x: 50, y: 810, size: 12 });
+        side.drawText(`Tittel: ${k.tittel}`, { x: 50, y: 790 });
+        side.drawText(`Dato: ${k.dato}`, { x: 50, y: 775 });
+        side.drawText(`Valuta: ${k.valuta}`, { x: 50, y: 760 });
+        side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y: 745 });
+        side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y: 730 });
+        side.drawLine({ start: { x: 45, y: 720 }, end: { x: 550, y: 720 }, thickness: 0.5 });
+
+        if (blob.type === "application/pdf") {
+          const doc = await PDFDocument.load(buffer);
+          const pages = await samledoc.copyPages(doc, doc.getPageIndices());
+          pages.forEach((p) => samledoc.addPage(p));
+        } else {
+          const img = new Uint8Array(buffer);
+          const embed =
+            blob.type.includes("png")
+              ? await samledoc.embedPng(img)
+              : await samledoc.embedJpg(img);
+          const { width, height } = embed.scale(0.7);
+          side.drawImage(embed, { x: 50, y: 700 - height, width, height });
+        }
+
+        const qr = await QRCode.toDataURL(k.fil_url);
+        const qrimg = await samledoc.embedPng(qr.split(",")[1]);
+        side.drawImage(qrimg, { x: 450, y: 730, width: 80, height: 80 });
+
+        side.drawText(`Revisjons-ID: ${k.id.slice(0, 8)}`, { x: 50, y: 50 });
+        side.drawText(`Side ${i + 1} av ${utvalgte.length + 1}`, { x: 450, y: 30 });
+
+        totalNOK += parseFloat(k.nok ?? (k.valuta === "NOK" ? k.belop : 0));
+        totalOriginal += parseFloat(k.belop_original ?? k.belop ?? 0);
+      } catch {
+        const side = samledoc.addPage([595.28, 841.89]);
+        side.drawText("Feil ved henting av kvittering", { x: 50, y: 800 });
+      }
+    }
+
+    const siste = samledoc.addPage([595.28, 841.89]);
+    siste.drawText("Frilansportalen – Summering", { x: 50, y: 810, size: 14 });
+    siste.drawText(`Totalt originalbeløp: ${totalOriginal.toFixed(2)}`, { x: 50, y: 780 });
+    siste.drawText(`Totalt NOK: ${totalNOK.toFixed(2)}`, { x: 50, y: 760 });
+    siste.drawText(`Dato: ${new Date().toISOString().split("T")[0]}`, { x: 50, y: 740 });
+    siste.drawText("Sidefot: Frilansportalen", { x: 50, y: 30 });
+  };
+    const eksporterCSV = () => {
     const header = ["Dato", "Tittel", "Valuta", "Beløp", "NOK", "Fil-URL"];
     const rows = kvitteringer.map((k) => [
       k.dato,
@@ -60,73 +122,10 @@ export default function Kvitteringer() {
     document.body.removeChild(link);
   };
 
-  const eksporterPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Kvitteringsrapport", 10, 10);
-    let y = 20;
-    const utvalg = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
-    utvalg.forEach((k) => {
-      doc.text(
-        `• ${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
-          k.nok ?? (k.valuta === "NOK" ? k.belop : "")
-        } – ${k.fil_url}`,
-        10,
-        y
-      );
-      y += 10;
-    });
-    doc.save("kvitteringer-lenker.pdf");
-  };
-
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-    const eksporterPDFmedVedlegg = async () => {
-    const { PDFDocument } = await import("pdf-lib");
-    const doc = new jsPDF();
-    const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
-
-    for (let i = 0; i < utvalgte.length; i++) {
-      const k = utvalgte[i];
-      doc.text(
-        `${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
-          k.nok ?? (k.valuta === "NOK" ? k.belop : "")
-        }`,
-        10,
-        10
-      );
-
-      try {
-        const res = await fetch(k.fil_url);
-        const blob = await res.blob();
-
-        if (blob.type === "application/pdf") {
-          const arrayBuffer = await blob.arrayBuffer();
-          const pdfDoc = await PDFDocument.load(arrayBuffer);
-          const copiedPages = await doc.doc.save(); // Just skip adding into jsPDF, since merging is not native
-          doc.text("PDF-vedlegg kan ikke forhåndsvises her.", 10, 30);
-        } else {
-          const imgData = await blobToBase64(blob);
-          doc.addImage(imgData, "JPEG", 10, 20, 180, 200);
-        }
-      } catch {
-        doc.text("Kunne ikke hente fil", 10, 30);
-      }
-
-      if (i < utvalgte.length - 1) doc.addPage();
-    }
-
-    doc.save("kvitteringer-med-bilder.pdf");
-  };
-
   const aktive = kvitteringer.filter((k) => k.arkivert === false || k.arkivert === null);
   const arkiv = kvitteringer.filter((k) => k.arkivert === true);
-    return (
+
+  return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <button
@@ -141,9 +140,6 @@ export default function Kvitteringer() {
         <div className="flex flex-wrap gap-2 mb-4">
           <button onClick={eksporterCSV} className="bg-blue-700 text-white px-4 py-2 rounded shadow">
             Eksporter som CSV
-          </button>
-          <button onClick={eksporterPDF} className="bg-black text-white px-4 py-2 rounded shadow">
-            Eksporter rapport (PDF med lenker)
           </button>
           <button onClick={eksporterPDFmedVedlegg} className="bg-black text-white px-4 py-2 rounded shadow">
             Eksporter bilder (PDF med vedlegg)
