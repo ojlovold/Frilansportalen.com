@@ -39,9 +39,16 @@ export default function AutoUtfyllKvitteringSmart() {
     return d.getDate() === dag && d.getMonth() === mnd - 1 && d.getFullYear() === år;
   };
 
+  const erFakturaDato = (linje: string): boolean => {
+    const l = linje.toLowerCase();
+    return /fakturadato|invoice date|issued/.test(l) && !/forfallsdato|due/.test(l);
+  };
+
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
     for (const linje of linjer) {
+      if (!erFakturaDato(linje)) continue;
+
       const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
       if (norsk) {
         const dag = parseInt(norsk[1]);
@@ -49,11 +56,13 @@ export default function AutoUtfyllKvitteringSmart() {
         const år = parseInt(norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3]);
         if (erGyldigDato(dag, mnd, år)) return `${norsk[1]}.${norsk[2]}.${år}`;
       }
+
       const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
       if (iso) {
         const år = parseInt(iso[1]), mnd = parseInt(iso[2]), dag = parseInt(iso[3]);
         if (erGyldigDato(dag, mnd, år)) return `${iso[3]}.${iso[2]}.${iso[1]}`;
       }
+
       const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2})(?:,)?\s(\d{4})/);
       if (engelsk) {
         const dag = parseInt(engelsk[2]);
