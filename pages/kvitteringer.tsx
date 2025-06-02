@@ -72,12 +72,19 @@ export default function Kvitteringer() {
         const buffer = await blob.arrayBuffer();
 
         const side = samledoc.addPage([595.28, 841.89]);
-        side.drawText("Frilansportalen – Kvittering", { x: 50, y: 810, size: 12 });
-        side.drawText(`Tittel: ${k.tittel}`, { x: 50, y: 790 });
-        side.drawText(`Dato: ${k.dato}`, { x: 50, y: 775 });
-        side.drawText(`Valuta: ${k.valuta}`, { x: 50, y: 760 });
-        side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y: 745 });
-        side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y: 730 });
+
+        let y = 810;
+        side.drawText("Frilansportalen – Kvittering", { x: 50, y, size: 12 });
+        y -= 20;
+        side.drawText(`Tittel: ${k.tittel}`, { x: 50, y, size: 10 });
+        y -= 15;
+        side.drawText(`Dato: ${k.dato}`, { x: 50, y, size: 10 });
+        y -= 15;
+        side.drawText(`Valuta: ${k.valuta}`, { x: 50, y, size: 10 });
+        y -= 15;
+        side.drawText(`Beløp: ${k.belop_original ?? k.belop}`, { x: 50, y, size: 10 });
+        y -= 15;
+        side.drawText(`NOK: ${k.nok ?? (k.valuta === "NOK" ? k.belop : "")}`, { x: 50, y, size: 10 });
 
         if (blob.type === "application/pdf") {
           const doc = await PDFDocument.load(buffer);
@@ -90,7 +97,7 @@ export default function Kvitteringer() {
               ? await samledoc.embedPng(img)
               : await samledoc.embedJpg(img);
           const { width, height } = embed.scale(0.7);
-          side.drawImage(embed, { x: 50, y: 700 - height, width, height });
+          side.drawImage(embed, { x: 50, y: y - height - 20, width, height });
         }
 
         const qr = await QRCode.toDataURL(k.fil_url);
