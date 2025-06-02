@@ -1,3 +1,5 @@
+// kvitteringer.tsx – med korrekt bruk av arkivert-felt
+
 import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -99,9 +101,8 @@ export default function Kvitteringer() {
     doc.save("kvitteringer-med-bilder.pdf");
   };
 
-  const inneværendeÅr = new Date().getFullYear();
-  const aktive = kvitteringer.filter(k => parseInt(k.dato?.split("-")[0]) === inneværendeÅr);
-  const arkiv = kvitteringer.filter(k => parseInt(k.dato?.split("-")[0]) < inneværendeÅr);
+  const aktive = kvitteringer.filter(k => k.arkivert === false || k.arkivert === null);
+  const arkiv = kvitteringer.filter(k => k.arkivert === true);
 
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
@@ -197,3 +198,4 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
     </div>
   );
 }
+```
