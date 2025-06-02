@@ -86,12 +86,13 @@ export default function Kvitteringer() {
       reader.readAsDataURL(blob);
     });
   };
-
-  const eksporterPDFmedVedlegg = async () => {
+    const eksporterPDFmedVedlegg = async () => {
+    const { PDFDocument } = await import("pdf-lib");
     const doc = new jsPDF();
-    const utvalg = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
-    for (let i = 0; i < utvalg.length; i++) {
-      const k = utvalg[i];
+    const utvalgte = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
+
+    for (let i = 0; i < utvalgte.length; i++) {
+      const k = utvalgte[i];
       doc.text(
         `${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
           k.nok ?? (k.valuta === "NOK" ? k.belop : "")
@@ -99,23 +100,33 @@ export default function Kvitteringer() {
         10,
         10
       );
+
       try {
         const res = await fetch(k.fil_url);
         const blob = await res.blob();
-        const imgData = await blobToBase64(blob);
-        doc.addImage(imgData, "JPEG", 10, 20, 180, 200);
+
+        if (blob.type === "application/pdf") {
+          const arrayBuffer = await blob.arrayBuffer();
+          const pdfDoc = await PDFDocument.load(arrayBuffer);
+          const copiedPages = await doc.doc.save(); // Just skip adding into jsPDF, since merging is not native
+          doc.text("PDF-vedlegg kan ikke forhåndsvises her.", 10, 30);
+        } else {
+          const imgData = await blobToBase64(blob);
+          doc.addImage(imgData, "JPEG", 10, 20, 180, 200);
+        }
       } catch {
-        doc.text("Kunne ikke hente bilde", 10, 30);
+        doc.text("Kunne ikke hente fil", 10, 30);
       }
-      if (i < utvalg.length - 1) doc.addPage();
+
+      if (i < utvalgte.length - 1) doc.addPage();
     }
+
     doc.save("kvitteringer-med-bilder.pdf");
   };
 
   const aktive = kvitteringer.filter((k) => k.arkivert === false || k.arkivert === null);
   const arkiv = kvitteringer.filter((k) => k.arkivert === true);
-
-  return (
+    return (
     <div className="min-h-screen bg-yellow-300 p-4">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
         <button
