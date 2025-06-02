@@ -64,7 +64,8 @@ export default function Kvitteringer() {
     const doc = new jsPDF();
     doc.text("Kvitteringsrapport", 10, 10);
     let y = 20;
-    kvitteringer.filter((k) => valgte.includes(k.id)).forEach((k) => {
+    const utvalg = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
+    utvalg.forEach((k) => {
       doc.text(
         `• ${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
           k.nok ?? (k.valuta === "NOK" ? k.belop : "")
@@ -88,9 +89,9 @@ export default function Kvitteringer() {
 
   const eksporterPDFmedVedlegg = async () => {
     const doc = new jsPDF();
-    const utvalgte = kvitteringer.filter((k) => valgte.includes(k.id));
-    for (let i = 0; i < utvalgte.length; i++) {
-      const k = utvalgte[i];
+    const utvalg = valgte.length > 0 ? kvitteringer.filter((k) => valgte.includes(k.id)) : kvitteringer;
+    for (let i = 0; i < utvalg.length; i++) {
+      const k = utvalg[i];
       doc.text(
         `${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
           k.nok ?? (k.valuta === "NOK" ? k.belop : "")
@@ -106,7 +107,7 @@ export default function Kvitteringer() {
       } catch {
         doc.text("Kunne ikke hente bilde", 10, 30);
       }
-      if (i < utvalgte.length - 1) doc.addPage();
+      if (i < utvalg.length - 1) doc.addPage();
     }
     doc.save("kvitteringer-med-bilder.pdf");
   };
