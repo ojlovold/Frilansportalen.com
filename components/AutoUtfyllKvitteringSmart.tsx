@@ -46,9 +46,10 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
+
+    // 1: Forsøk fakturadato
     for (const linje of linjer) {
       if (!erFakturaDato(linje)) continue;
-
       const norsk = linje.match(/(\d{2})[./-](\d{2})[./-](\d{2,4})/);
       if (norsk) {
         const dag = parseInt(norsk[1]);
@@ -56,14 +57,7 @@ export default function AutoUtfyllKvitteringSmart() {
         const år = parseInt(norsk[3].length === 2 ? `20${norsk[3]}` : norsk[3]);
         if (erGyldigDato(dag, mnd, år)) return `${norsk[1]}.${norsk[2]}.${år}`;
       }
-
-      const iso = linje.match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (iso) {
-        const år = parseInt(iso[1]), mnd = parseInt(iso[2]), dag = parseInt(iso[3]);
-        if (erGyldigDato(dag, mnd, år)) return `${iso[3]}.${iso[2]}.${iso[1]}`;
-      }
-
-      const engelsk = linje.match(/([A-Z][a-z]+)\s(\d{1,2})(?:,)?\s(\d{4})/);
+      const engelsk = linje.match(/([A-Z][a-z]+) (\d{1,2})(?:,)? (\d{4})/);
       if (engelsk) {
         const dag = parseInt(engelsk[2]);
         const mnd = new Date(`${engelsk[1]} 1, 2000`).getMonth() + 1;
@@ -71,6 +65,18 @@ export default function AutoUtfyllKvitteringSmart() {
         if (erGyldigDato(dag, mnd, år)) return `${dag.toString().padStart(2, "0")}.${mnd.toString().padStart(2, "0")}.${år}`;
       }
     }
+
+    // 2: Fallback – første gyldige dato hvor som helst
+    for (const linje of linjer) {
+      const fallback = linje.match(/([A-Z][a-z]+) (\d{1,2})(?:,)? (\d{4})/);
+      if (fallback) {
+        const dag = parseInt(fallback[2]);
+        const mnd = new Date(`${fallback[1]} 1, 2000`).getMonth() + 1;
+        const år = parseInt(fallback[3]);
+        if (erGyldigDato(dag, mnd, år)) return `${dag.toString().padStart(2, "0")}.${mnd.toString().padStart(2, "0")}.${år}`;
+      }
+    }
+
     return "";
   };
 
