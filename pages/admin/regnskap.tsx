@@ -1,3 +1,5 @@
+// pages/admin/regnskap.tsx – vis NOK også for norske beløp i NOK-kolonnen
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -11,10 +13,7 @@ export default function AdminRegnskap() {
   useEffect(() => {
     const hent = async () => {
       const { data: inntekter } = await supabase.from("transaksjoner").select("*");
-      const { data: utgifter } = await supabase
-        .from("kvitteringer")
-        .select("*")
-        .eq("slettet", false); // <- kun aktive
+      const { data: utgifter } = await supabase.from("kvitteringer").select("*").eq("slettet", false);
       setInntekter(inntekter || []);
       setUtgifter(utgifter || []);
       const sum = inntekter?.reduce((acc, curr) => acc + (curr.belop || 0), 0) || 0;
@@ -23,7 +22,10 @@ export default function AdminRegnskap() {
     hent();
   }, []);
 
-  const totalUtgiftNOK = utgifter.reduce((acc, u) => acc + (u.nok || 0), 0);
+  const totalUtgiftNOK = utgifter.reduce(
+    (acc, u) => acc + (u.nok ?? (u.valuta === "NOK" ? u.belop : 0)),
+    0
+  );
   const netto = sumInntekt - totalUtgiftNOK;
 
   return (
@@ -70,7 +72,9 @@ export default function AdminRegnskap() {
                       <td className="p-2">{u.tittel}</td>
                       <td className="p-2">{u.belop_original ?? u.belop} {u.valuta}</td>
                       <td className="p-2">{u.valuta}</td>
-                      <td className="p-2">{u.valuta !== "NOK" ? u.nok?.toFixed(2) : ""}</td>
+                      <td className="p-2">
+                        {(u.nok ?? (u.valuta === "NOK" ? u.belop : ""))?.toFixed(2)}
+                      </td>
                       <td className="p-2">
                         {u.fil_url ? (
                           <a
@@ -96,3 +100,4 @@ export default function AdminRegnskap() {
     </AdminLayout>
   );
 }
+```
