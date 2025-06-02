@@ -34,6 +34,13 @@ export default function Kvitteringer() {
     hent();
   }, [user]);
 
+  const slett = async (id: string, fil_url: string) => {
+    const path = fil_url.split("/").slice(7).join("/");
+    await supabase.storage.from("kvitteringer").remove([path]);
+    await supabase.from("kvitteringer").update({ slettet: true }).eq("id", id);
+    setKvitteringer((prev) => prev.filter((k) => k.id !== id));
+  };
+
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
