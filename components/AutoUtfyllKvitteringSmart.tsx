@@ -1,4 +1,3 @@
-// (filstart og import-bevarte seksjoner)
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
@@ -47,6 +46,7 @@ export default function AutoUtfyllKvitteringSmart() {
 
   const parseDato = (tekst: string): string => {
     const linjer = tekst.split("\n");
+
     for (const linje of linjer) {
       if (!erFakturaDato(linje)) continue;
 
@@ -197,7 +197,8 @@ export default function AutoUtfyllKvitteringSmart() {
       {
         bruker_id: user.id,
         tittel,
-        belop: parseFloat(belopOriginal),
+        belop: parseFloat(belop),
+        belop_original: parseFloat(belopOriginal),
         valuta,
         dato: datoISO,
         fil_url: urlData?.publicUrl || null,
