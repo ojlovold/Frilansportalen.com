@@ -1,4 +1,4 @@
-// AutoUtfyllKvitteringSmart.tsx – med feiltolerant dato-parser (OCR-rettinger før søk)
+// AutoUtfyllKvitteringSmart.tsx – fullstendig versjon med alt: robust dato-parser, OCR, valuta, lagring og komplett UI
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -42,12 +42,12 @@ export default function AutoUtfyllKvitteringSmart() {
       .replace(/O/g, "0")
       .replace(/l/g, "1")
       .replace(/–|—/g, "-")
-      .replace(/\s+/g, " ");
+      .replace(/\s{2,}/g, " ");
 
     const mønstre = [
-      /(\d{2})[./ -](\d{2})[./ -](\d{2,4})/g,
-      /(\d{4})[./ -](\d{2})[./ -](\d{2})/g,
-      /([A-Z][a-z]+)\s(\d{1,2}),\s(\d{4})/g,
+      /(\d{2})[./-](\d{2})[./-](\d{2,4})/g,
+      /(\d{4})[./-](\d{2})[./-](\d{2})/g,
+      /([A-Z][a-z]+)\s(\d{1,2})(?:,)?\s(\d{4})/g,
       /(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})/g
     ];
 
@@ -129,24 +129,15 @@ export default function AutoUtfyllKvitteringSmart() {
       setBelop(belopBase);
       setStatus("Ferdig (ingen valutaomregning)");
     } else {
-      const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
-      const omregnet = parseFloat(belopBase) * rate;
-      setBelop(omregnet.toFixed(2));
-      setStatus(`Ferdig · Kurs: ${rate.toFixed(4)} (${faktiskDato})`);
+      try {
+        const { rate, faktiskDato } = await hentKurs(valutaFunnet, "NOK", datoen);
+        const omregnet = parseFloat(belopBase) * rate;
+        setBelop(omregnet.toFixed(2));
+        setStatus(`Ferdig · Kurs: ${rate.toFixed(4)} (${faktiskDato})`);
+      } catch (err) {
+        setStatus("Valutahenting feilet, men data lest");
+      }
     }
-  };
-
-  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
-    const buffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 3 });
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
-    forbedreKontrast(canvas);
-    return canvas;
   };
 
   const bildeTilCanvas = async (fil: File): Promise<HTMLCanvasElement> => {
@@ -162,6 +153,19 @@ export default function AutoUtfyllKvitteringSmart() {
         resolve(canvas);
       };
     });
+  };
+
+  const pdfTilBilde = async (pdfFile: File): Promise<HTMLCanvasElement> => {
+    const buffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 3 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+    forbedreKontrast(canvas);
+    return canvas;
   };
 
   const lagreKvittering = async () => {
@@ -218,15 +222,15 @@ export default function AutoUtfyllKvitteringSmart() {
         className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
         onChange={(e) => setFil(e.target.files?.[0] || null)}
       />
-      <pre className="bg-gray-50 p-3 text-sm rounded-xl whitespace-pre-wrap text-gray-600">
+      <pre className="bg-gray-50 p-4 text-base rounded-xl whitespace-pre-wrap text-gray-800">
         {tekst || "Ingen tekst funnet."}
       </pre>
       <div className="grid grid-cols-1 gap-3">
-        <input type="text" placeholder="Tittel (skriv selv)" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-3 border rounded-xl" />
-        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-3 border rounded-xl bg-gray-100" />
-        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-3 border rounded-xl" />
-        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-3 border rounded-xl" />
-        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-3 border rounded-xl" />
+        <input type="text" placeholder="Tittel (skriv selv)" value={tittel} onChange={(e) => setTittel(e.target.value)} className="p-4 border rounded-xl" />
+        <input type="text" placeholder="Originalt beløp" value={belopOriginal} readOnly className="p-4 border rounded-xl bg-gray-100" />
+        <input type="text" placeholder="Valuta" value={valuta} onChange={(e) => setValuta(e.target.value)} className="p-4 border rounded-xl" />
+        <input type="text" placeholder="Omregnet til NOK" value={belop} onChange={(e) => setBelop(e.target.value)} className="p-4 border rounded-xl" />
+        <input type="text" placeholder="Dato (dd.mm.yyyy)" value={dato} onChange={(e) => setDato(e.target.value)} className="p-4 border rounded-xl" />
       </div>
       <button onClick={lagreKvittering} className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl w-full">
         Lagre kvittering
