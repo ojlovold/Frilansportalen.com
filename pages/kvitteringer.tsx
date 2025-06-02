@@ -18,6 +18,7 @@ export default function Kvitteringer() {
         .from("kvitteringer")
         .select("*")
         .eq("bruker_id", user.id)
+        .eq("slettet", false)
         .order("dato", { ascending: false });
 
       const unike = Object.values(
@@ -34,8 +35,7 @@ export default function Kvitteringer() {
   const slett = async (id: string, fil_url: string) => {
     const path = fil_url.split("/").slice(7).join("/");
     await supabase.storage.from("kvitteringer").remove([path]);
-    await supabase.from("kvitteringer").delete().eq("id", id);
-    await supabase.from("bruker_utgifter").delete().eq("fil_url", fil_url);
+    await supabase.from("kvitteringer").update({ slettet: true }).eq("id", id);
     setKvitteringer((prev) => prev.filter((k) => k.id !== id));
   };
 
@@ -46,7 +46,7 @@ export default function Kvitteringer() {
       `"${k.tittel}"`,
       k.valuta,
       k.belop_original ?? k.belop,
-      k.nok ?? "",
+      k.nok ?? (k.valuta === "NOK" ? k.belop : ""),
       k.fil_url,
     ]);
     const csvContent = [header, ...rows].map((row) => row.join(";")).join("\n");
@@ -65,7 +65,13 @@ export default function Kvitteringer() {
     doc.text("Kvitteringsrapport", 10, 10);
     let y = 20;
     kvitteringer.filter((k) => valgte.includes(k.id)).forEach((k) => {
-      doc.text(`• ${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – ${k.fil_url}`, 10, y);
+      doc.text(
+        `• ${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
+          k.nok ?? (k.valuta === "NOK" ? k.belop : "")
+        } – ${k.fil_url}`,
+        10,
+        y
+      );
       y += 10;
     });
     doc.save("kvitteringer-lenker.pdf");
@@ -85,13 +91,19 @@ export default function Kvitteringer() {
     const utvalgte = kvitteringer.filter((k) => valgte.includes(k.id));
     for (let i = 0; i < utvalgte.length; i++) {
       const k = utvalgte[i];
-      doc.text(`${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta}`, 10, 10);
+      doc.text(
+        `${k.dato} – ${k.tittel} – ${k.belop_original ?? k.belop} ${k.valuta} – NOK: ${
+          k.nok ?? (k.valuta === "NOK" ? k.belop : "")
+        }`,
+        10,
+        10
+      );
       try {
         const res = await fetch(k.fil_url);
         const blob = await res.blob();
         const imgData = await blobToBase64(blob);
         doc.addImage(imgData, "JPEG", 10, 20, 180, 200);
-      } catch (err) {
+      } catch {
         doc.text("Kunne ikke hente bilde", 10, 30);
       }
       if (i < utvalgte.length - 1) doc.addPage();
@@ -99,8 +111,8 @@ export default function Kvitteringer() {
     doc.save("kvitteringer-med-bilder.pdf");
   };
 
-  const aktive = kvitteringer.filter(k => k.arkivert === false || k.arkivert === null);
-  const arkiv = kvitteringer.filter(k => k.arkivert === true);
+  const aktive = kvitteringer.filter((k) => k.arkivert === false || k.arkivert === null);
+  const arkiv = kvitteringer.filter((k) => k.arkivert === true);
 
   return (
     <div className="min-h-screen bg-yellow-300 p-4">
@@ -178,7 +190,9 @@ function Kvitteringstabell({ liste, slett, valgte, setValgte }: any) {
               <td className="p-2 border">{k.tittel}</td>
               <td className="p-2 border">{k.belop_original ?? k.belop} {k.valuta}</td>
               <td className="p-2 border">{k.valuta}</td>
-              <td className="p-2 border">{k.valuta !== "NOK" ? k.nok : ""}</td>
+              <td className="p-2 border">
+                {(k.nok ?? (k.valuta === "NOK" ? k.belop : "")).toFixed?.(2)}
+              </td>
               <td className="p-2 border">
                 <a href={k.fil_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                   Åpne
