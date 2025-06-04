@@ -8,8 +8,8 @@ export default function HomePage() {
   const kort = [
     { href: "/registrer-arbeidsgiver", label: "Arbeidsgiver", icon: "/arbeidsgiver.png" },
     { href: "/frilanser", label: "Frilanser", icon: "/frilanser.png" },
-    { href: "/jobbsoker", label: "Jobbsøker", icon: "/jobbsoker.png" },
-    { href: "/tjenestetilbyder", label: "Tjenestetilbyder", icon: "/tjeneste.png" },
+    { href: "/jobbsoker", label: "Jobbsøker", icon: "/lommelykt_gjennomsiktig.png" },
+    { href: "/tjenestetilbyder", label: "Tjenestetilbyder", icon: "/hammer_gjennomsiktig.png" },
     { href: "/dugnadsportalen", label: "Dugnadsportalen", icon: "/dugnad.png" },
     { href: "/gjenbruksportalen", label: "Gjenbruksportalen", icon: "/gjenbruk.png" },
     { href: "/tips", label: "Tips og triks", icon: "/tips.png" },
