@@ -3,20 +3,17 @@
 import BølgeBakgrunn from "@/components/BølgeBakgrunn";
 import LogoHeader from "@/components/LogoHeader";
 import RolleKort from "@/components/RolleKort";
-import {
-  HardHat, User, Search, Hammer, Store, Globe
-} from "lucide-react";
 
 export default function HomePage() {
   const kort = [
-    { href: "/registrer-arbeidsgiver", label: "Arbeidsgiver", icon: <HardHat />, color: "#FF9130" },
-    { href: "/frilanser", label: "Frilanser", icon: <User />, color: "#FF5C8D" },
-    { href: "/jobbsoker", label: "Jobbsøker", icon: <Search />, color: "#4BA3FF" },
-    { href: "/tjenestetilbyder", label: "Tjenestetilbyder", icon: <Hammer />, color: "#24C486" },
-    { href: "/dugnadsportalen", label: "Dugnadsportalen", icon: <Hammer />, color: "#FFD93D" },
-    { href: "/gjenbruksportalen", label: "Gjenbruksportalen", icon: <Store />, color: "#FF6F61" },
-    { href: "/tips", label: "Tips og triks", icon: <Globe />, color: "#8A79FF" },
-    { href: "/fagshoppen", label: "Fagshoppen", icon: <Store />, color: "#F26D85" },
+    { href: "/registrer-arbeidsgiver", label: "Arbeidsgiver", icon: "/arbeidsgiver.png" },
+    { href: "/frilanser", label: "Frilanser", icon: "/frilanser.png" },
+    { href: "/jobbsoker", label: "Jobbsøker", icon: "/jobbsoker.png" },
+    { href: "/tjenestetilbyder", label: "Tjenestetilbyder", icon: "/tjeneste.png" },
+    { href: "/dugnadsportalen", label: "Dugnadsportalen", icon: "/dugnad.png" },
+    { href: "/gjenbruksportalen", label: "Gjenbruksportalen", icon: "/gjenbruk.png" },
+    { href: "/tips", label: "Tips og triks", icon: "/tips.png" },
+    { href: "/fagshoppen", label: "Fagshoppen", icon: "/fagshop.png" },
   ];
 
   return (
