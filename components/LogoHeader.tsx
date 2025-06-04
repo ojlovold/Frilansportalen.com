@@ -1,4 +1,4 @@
-// components/LogoHeader.tsx – Dynamisk logo basert på språkvalg
+// components/LogoHeader.tsx – bruker dynamisk logo fra språk
 import DynamicLogo from "@/components/DynamicLogo";
 
 export default function LogoHeader() {
