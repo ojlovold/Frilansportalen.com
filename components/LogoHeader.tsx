@@ -1,18 +1,11 @@
-// components/LogoHeader.tsx – Stor, hvit logo nøyaktig som mockup
-import Image from "next/image";
+// components/LogoHeader.tsx – Dynamisk logo basert på språkvalg
+import DynamicLogo from "@/components/DynamicLogo";
 
 export default function LogoHeader() {
   return (
     <div className="relative z-10 flex flex-col items-center justify-center text-center pt-20 pb-10">
-      <Image
-        src="/logo_white.svg"
-        alt="Frilansportalen logo"
-        width={160}
-        height={160}
-        className="drop-shadow-2xl"
-        priority
-      />
-      <h1 className="text-4xl font-extrabold text-white drop-shadow-lg tracking-wide mt-6 uppercase">
+      <DynamicLogo className="w-auto h-24 drop-shadow-2xl mb-6" />
+      <h1 className="text-4xl font-extrabold text-white drop-shadow-lg tracking-wide uppercase">
         Velkommen
       </h1>
     </div>
