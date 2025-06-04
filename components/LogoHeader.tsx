@@ -1,24 +1,13 @@
-// components/RolleKort.tsx – forbedret skygge, lys ovenfra til venstre
-import Link from "next/link";
-import Image from "next/image";
+// components/LogoHeader.tsx – maks skygge på alt
+import DynamicLogo from "@/components/DynamicLogo";
 
-export default function RolleKort({ href, label, icon }: {
-  href: string;
-  label: string;
-  icon: string;
-}) {
+export default function LogoHeader() {
   return (
-    <Link href={href} legacyBehavior>
-      <a className="relative bg-white/10 backdrop-blur-xl px-4 py-6 rounded-3xl flex flex-col items-center justify-center text-sm font-semibold text-white shadow-[8px_12px_24px_-2px_rgba(0,0,0,0.6)] border border-white/10 hover:scale-[1.03] transition">
-        <Image
-          src={icon}
-          alt={label}
-          width={64}
-          height={64}
-          className="drop-shadow-[4px_6px_12px_rgba(0,0,0,0.7)] object-contain mb-3"
-        />
-        {label}
-      </a>
-    </Link>
+    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-0 pb-8">
+      <DynamicLogo className="w-auto h-64 mb-4 drop-shadow-2xl" />
+      <h1 className="text-xl font-medium text-white drop-shadow-2xl tracking-normal">
+        Bli med og bygg en ny arbeidsverden.
+      </h1>
+    </div>
   );
 }
