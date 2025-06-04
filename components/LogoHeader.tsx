@@ -1,12 +1,12 @@
-// components/LogoHeader.tsx – høyere plassering på siden
+// components/LogoHeader.tsx – catchy intro og høyere logo
 import DynamicLogo from "@/components/DynamicLogo";
 
 export default function LogoHeader() {
   return (
-    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-8 pb-10">
+    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-4 pb-8">
       <DynamicLogo className="w-auto h-64 drop-shadow-2xl mb-6" />
       <h1 className="text-4xl font-extrabold text-white drop-shadow-lg tracking-wide uppercase">
-        Velkommen
+        Hvor vil du begynne?
       </h1>
     </div>
   );
