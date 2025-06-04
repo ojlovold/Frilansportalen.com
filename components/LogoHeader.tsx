@@ -1,13 +1,24 @@
-// components/LogoHeader.tsx – med dempet, skyggelagt slagord
-import DynamicLogo from "@/components/DynamicLogo";
+// components/RolleKort.tsx – skygge på hele kortet og ikon
+import Link from "next/link";
+import Image from "next/image";
 
-export default function LogoHeader() {
+export default function RolleKort({ href, label, icon }: {
+  href: string;
+  label: string;
+  icon: string;
+}) {
   return (
-    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-4 pb-8">
-      <DynamicLogo className="w-auto h-64 drop-shadow-2xl mb-6" />
-      <h1 className="text-xl font-medium text-white drop-shadow-xl tracking-normal">
-        Bli med og bygg en ny arbeidsverden.
-      </h1>
-    </div>
+    <Link href={href} legacyBehavior>
+      <a className="relative bg-white/10 backdrop-blur-xl px-4 py-6 rounded-3xl flex flex-col items-center justify-center text-sm font-semibold text-white shadow-2xl border border-white/10 hover:scale-[1.03] transition">
+        <Image
+          src={icon}
+          alt={label}
+          width={64}
+          height={64}
+          className="drop-shadow-2xl object-contain mb-3"
+        />
+        {label}
+      </a>
+    </Link>
   );
 }
