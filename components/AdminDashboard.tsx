@@ -1,4 +1,9 @@
+// Frilansportalen – Fullbygg: Kombinert admin-dashboard med konfigurasjon, publisering og oversikt
+
 import { useEffect, useState } from "react";
+import { useUser } from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,30 +11,49 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminDashboard() {
+  const user = useUser();
+  const router = useRouter();
+
+  const [stats, setStats] = useState<any>({});
   const [vippsKey, setVippsKey] = useState("");
   const [altinnKey, setAltinnKey] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#FFD700");
   const [secondaryColor, setSecondaryColor] = useState("#000000");
   const [logoUrl, setLogoUrl] = useState("");
   const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      const { data } = await supabase.from("admin_config").select("*").single();
-      if (data) {
-        setVippsKey(data.vippsApiKey || "");
-        setAltinnKey(data.altinnApiKey || "");
-        setPrimaryColor(data.primaryColor || "#FFD700");
-        setSecondaryColor(data.secondaryColor || "#000000");
-        setLogoUrl(data.logoUrl || "");
+    if (!user) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      const { data: inntekter } = await supabase.rpc("hent_admininntekter");
+      const { data: brukere } = await supabase.from("profiler").select("id");
+      const { data: lansert } = await supabase.from("innstillinger").select("publisert").single();
+      const { data: config } = await supabase.from("admin_config").select("*").single();
+
+      setStats({
+        inntekter: inntekter ?? 0,
+        brukere: brukere?.length ?? 0,
+        publisert: lansert?.publisert ?? false,
+      });
+
+      if (config) {
+        setVippsKey(config.vippsApiKey || "");
+        setAltinnKey(config.altinnApiKey || "");
+        setPrimaryColor(config.primaryColor || "#FFD700");
+        setSecondaryColor(config.secondaryColor || "#000000");
+        setLogoUrl(config.logoUrl || "");
       }
+      setLoading(false);
     };
-    fetchConfig();
-  }, []);
+
+    fetchData();
+  }, [user]);
 
   const handleSave = async () => {
     let uploadedLogoUrl = logoUrl;
-
     if (selectedLogo) {
       const { data, error } = await supabase.storage
         .from("logos")
@@ -39,9 +63,7 @@ export default function AdminDashboard() {
         });
 
       if (data) {
-        const { data: urlData } = supabase.storage
-          .from("logos")
-          .getPublicUrl(data.path);
+        const { data: urlData } = supabase.storage.from("logos").getPublicUrl(data.path);
         if (urlData?.publicUrl) {
           uploadedLogoUrl = urlData.publicUrl;
           setLogoUrl(urlData.publicUrl);
@@ -63,44 +85,53 @@ export default function AdminDashboard() {
     alert("Endringer lagret");
   };
 
+  const toggleLansering = async () => {
+    const nyStatus = !stats.publisert;
+    await supabase.from("innstillinger").update({ publisert: nyStatus }).eq("id", 1);
+    setStats((s: any) => ({ ...s, publisert: nyStatus }));
+  };
+
+  if (!user) return <p>Logger inn...</p>;
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-6">Adminpanel</h1>
+    <div className="min-h-screen bg-gray-100 p-6 space-y-6">
+      <h1 className="text-3xl font-bold">Adminpanel</h1>
+
+      <Card>
+        <CardContent className="space-y-2 p-4">
+          <p>Totale inntekter: {stats.inntekter} kr</p>
+          <p>Antall brukere: {stats.brukere}</p>
+          <Button onClick={toggleLansering}>
+            {stats.publisert ? "Stopp lansering" : "Publiser Frilansportalen"}
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Vipps-konfigurasjon</h2>
             <Label htmlFor="vipps">API-nøkkel</Label>
-            <Input
-              id="vipps"
-              value={vippsKey}
-              onChange={(e) => setVippsKey(e.target.value)}
-            />
+            <Input id="vipps" value={vippsKey} onChange={(e) => setVippsKey(e.target.value)} />
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Altinn-konfigurasjon</h2>
             <Label htmlFor="altinn">API-nøkkel</Label>
-            <Input
-              id="altinn"
-              value={altinnKey}
-              onChange={(e) => setAltinnKey(e.target.value)}
-            />
+            <Input id="altinn" value={altinnKey} onChange={(e) => setAltinnKey(e.target.value)} />
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Endre logo</h2>
-            {logoUrl && (
-              <img src={logoUrl} alt="Nåværende logo" className="h-16" />
-            )}
-            <Input
-              type="file"
-              onChange={(e) => setSelectedLogo(e.target.files?.[0] || null)}
-            />
+            {logoUrl && <img src={logoUrl} alt="Nåværende logo" className="h-16" />}
+            <Input type="file" onChange={(e) => setSelectedLogo(e.target.files?.[0] || null)} />
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold">Designfarger</h2>
@@ -121,6 +152,16 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h2 className="font-semibold">Hurtigtilgang</h2>
+          <Link href="/admin/systemstatus"><Button variant="outline">Systemstatus</Button></Link>
+          <Link href="/regnskap"><Button variant="outline">Regnskap</Button></Link>
+          <Link href="/bruker_dashboard"><Button variant="outline">Gå til Brukervisning</Button></Link>
+        </CardContent>
+      </Card>
+
       <div className="mt-6">
         <Button onClick={handleSave}>Lagre endringer</Button>
       </div>
