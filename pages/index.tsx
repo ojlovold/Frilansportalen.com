@@ -19,44 +19,46 @@ export default function HomePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-6 py-12 font-sans relative overflow-hidden">
-      {/* Visuell bakgrunnseffekt */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_20%,rgba(255,255,255,0.05)_0%,transparent_60%)] z-0"></div>
+    <main className="min-h-screen bg-gradient-to-br from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
+      {/* Dekor bakgrunnsmønster */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(255,255,255,0.07),_transparent_70%)]"></div>
+      </div>
 
       {/* Logo og heading */}
       <div className="relative z-10 text-center mb-10">
         <Image
           src="/logo_transparent.png"
           alt="Frilansportalen"
-          width={64}
-          height={64}
+          width={120}
+          height={120}
           priority
-          className="mx-auto mb-4 drop-shadow-md"
+          className="mx-auto mb-4 drop-shadow-xl"
         />
-        <h1 className="text-4xl font-extrabold drop-shadow-md text-white tracking-wide uppercase">
+        <h1 className="text-4xl font-extrabold drop-shadow-xl text-white tracking-wide uppercase">
           Frilansportalen
         </h1>
-        <p className="mt-3 text-lg font-medium max-w-lg mx-auto text-white/90">
+        <p className="mt-4 text-lg font-medium max-w-xl mx-auto text-white/90">
           Her starter samarbeidet som forandrer hverdagen — for frilansere, arbeidsgivere og tjenestetilbydere over hele landet.
         </p>
       </div>
 
-      {/* Rutenett med kort */}
+      {/* Rutenett med knapper */}
       <section className="relative z-10 max-w-md mx-auto grid grid-cols-2 gap-4">
         {knapper.map(({ href, label, icon }, i) => (
           <Link key={i} href={href} legacyBehavior>
-            <a className="bg-white/25 backdrop-blur-2xl text-white px-4 py-6 rounded-3xl flex flex-col items-center justify-center text-sm font-semibold shadow-2xl hover:scale-[1.03] transition-transform border border-white/10">
-              <div className="mb-2 text-xl">{icon}</div>
+            <a className="bg-white/10 hover:bg-white/20 backdrop-blur-lg text-white px-4 py-6 rounded-3xl flex flex-col items-center justify-center text-sm font-semibold shadow-2xl border border-white/10 transition-all">
+              <div className="mb-2 text-2xl text-white drop-shadow-md">{icon}</div>
               {label}
             </a>
           </Link>
         ))}
       </section>
 
-      {/* Kom i gang-knapp */}
-      <div className="relative z-10 text-center mt-14">
+      {/* CTA-knapp */}
+      <div className="relative z-10 text-center mt-12">
         <Link href="/registrer" legacyBehavior>
-          <a className="inline-block bg-gradient-to-r from-[#8A4FFF] to-[#C97BFF] text-white font-bold px-10 py-3 rounded-full shadow-xl hover:brightness-110 transition-transform">
+          <a className="inline-block bg-gradient-to-r from-[#7B3EFF] to-[#B983FF] text-white font-bold px-10 py-3 rounded-full shadow-xl hover:scale-[1.02] hover:brightness-110 transition">
             Kom i gang
           </a>
         </Link>
