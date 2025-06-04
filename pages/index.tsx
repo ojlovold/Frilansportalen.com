@@ -6,24 +6,25 @@ import {
   Search,
   Hammer,
   Store,
-  Globe,
-  Volume2,
   LogIn,
 } from "lucide-react";
 
-import TaleHjelp from "@/components/TaleHjelp";
-import Sprakvelger from "@/components/Sprakvelger";
+import AccessibilityPanel from "@/components/AccessibilityPanel";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-yellow-400 via-yellow-300 to-yellow-200 text-black p-4 relative overflow-hidden">
       {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <Sprakvelger />
-        <TaleHjelp />
-        <span className="cursor-pointer" title="Logg inn">
-          <LogIn />
-        </span>
+        <Link href="/login"><LogIn /></Link>
+      </div>
+
+      {/* Accessibility knappen flytende nede til høyre */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <details className="bg-white/90 border border-black rounded-xl shadow max-w-xs overflow-hidden">
+          <summary className="cursor-pointer px-4 py-2 text-sm font-medium">Tilgjengelighet</summary>
+          <AccessibilityPanel tekst={typeof window !== "undefined" ? document.body.innerText : ""} />
+        </details>
       </div>
 
       {/* Logo */}
