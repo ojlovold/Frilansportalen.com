@@ -1,18 +1,18 @@
-// components/LogoHeader.tsx – Eksakt mockup-plassering og størrelse
+// components/LogoHeader.tsx – Stor, hvit logo nøyaktig som mockup
 import Image from "next/image";
 
 export default function LogoHeader() {
   return (
-    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-16 pb-10">
+    <div className="relative z-10 flex flex-col items-center justify-center text-center pt-20 pb-10">
       <Image
-        src="/logo_transparent.png"
+        src="/logo_white.svg"
         alt="Frilansportalen logo"
-        width={96}
-        height={96}
-        className="drop-shadow-xl mb-4"
+        width={160}
+        height={160}
+        className="drop-shadow-2xl"
         priority
       />
-      <h1 className="text-4xl font-extrabold text-white drop-shadow-xl tracking-wide uppercase">
+      <h1 className="text-4xl font-extrabold text-white drop-shadow-lg tracking-wide mt-6 uppercase">
         Velkommen
       </h1>
     </div>
