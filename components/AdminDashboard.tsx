@@ -1,5 +1,3 @@
-// Frilansportalen – Fullbygg: Kombinert admin-dashboard med konfigurasjon, publisering og oversikt
-
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
@@ -8,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminDashboard() {
@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [secondaryColor, setSecondaryColor] = useState("#000000");
   const [logoUrl, setLogoUrl] = useState("");
   const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [modules, setModules] = useState<any>({});
+  const [adminMessage, setAdminMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +34,8 @@ export default function AdminDashboard() {
       const { data: brukere } = await supabase.from("profiler").select("id");
       const { data: lansert } = await supabase.from("innstillinger").select("publisert").single();
       const { data: config } = await supabase.from("admin_config").select("*").single();
+      const { data: moduler } = await supabase.from("modul_toggle").select("*").single();
+      const { data: adminVarsel } = await supabase.from("admin_meldinger").select("*").single();
 
       setStats({
         inntekter: inntekter ?? 0,
@@ -46,14 +50,32 @@ export default function AdminDashboard() {
         setSecondaryColor(config.secondaryColor || "#000000");
         setLogoUrl(config.logoUrl || "");
       }
+
+      if (moduler) setModules(moduler);
+      if (adminVarsel?.melding) setAdminMessage(adminVarsel.melding);
+
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
 
+  const toggleLansering = async () => {
+    const nyStatus = !stats.publisert;
+    await supabase.from("innstillinger").update({ publisert: nyStatus }).eq("id", 1);
+    setStats((s: any) => ({ ...s, publisert: nyStatus }));
+  };
+
+  const toggleModule = async (key: string) => {
+    const newValue = !modules[key];
+    const newModules = { ...modules, [key]: newValue };
+    setModules(newModules);
+    await supabase.from("modul_toggle").update(newModules).eq("id", 1);
+  };
+
   const handleSave = async () => {
     let uploadedLogoUrl = logoUrl;
+
     if (selectedLogo) {
       const { data, error } = await supabase.storage
         .from("logos")
@@ -82,13 +104,12 @@ export default function AdminDashboard() {
       logoUrl: uploadedLogoUrl,
     });
 
-    alert("Endringer lagret");
-  };
+    await supabase.from("admin_meldinger").upsert({
+      id: 1,
+      melding: adminMessage,
+    });
 
-  const toggleLansering = async () => {
-    const nyStatus = !stats.publisert;
-    await supabase.from("innstillinger").update({ publisert: nyStatus }).eq("id", 1);
-    setStats((s: any) => ({ ...s, publisert: nyStatus }));
+    alert("Endringer lagret");
   };
 
   if (!user) return <p>Logger inn...</p>;
@@ -104,6 +125,25 @@ export default function AdminDashboard() {
           <Button onClick={toggleLansering}>
             {stats.publisert ? "Stopp lansering" : "Publiser Frilansportalen"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <h2 className="text-xl font-semibold">Modulkontroll</h2>
+          {["ocr", "ai", "kart", "booking", "betaling", "altinn", "pdf"].map((modul) => (
+            <div key={modul} className="flex items-center justify-between">
+              <Label>{modul.toUpperCase()}</Label>
+              <Switch checked={modules[modul]} onCheckedChange={() => toggleModule(modul)} />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <h2 className="text-xl font-semibold">Vis varsler til brukere</h2>
+          <Textarea value={adminMessage} onChange={(e) => setAdminMessage(e.target.value)} />
         </CardContent>
       </Card>
 
