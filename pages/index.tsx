@@ -11,75 +11,93 @@ import {
   LogIn,
 } from "lucide-react";
 
+import TaleHjelp from "@/components/TaleHjelp";
+import Sprakvelger from "@/components/Sprakvelger";
+
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-yellow-300 text-black p-4 relative">
+    <main className="min-h-screen bg-gradient-to-b from-yellow-400 via-yellow-300 to-yellow-200 text-black p-4 relative overflow-hidden">
       {/* Ikoner oppe til høyre */}
       <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <span className="cursor-pointer" title="Velg språk">
-          <Globe />
-        </span>
-        <span className="cursor-pointer" title="Tekst til tale">
-          <Volume2 />
-        </span>
+        <Sprakvelger />
+        <TaleHjelp />
         <span className="cursor-pointer" title="Logg inn">
           <LogIn />
         </span>
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mt-8 sm:mt-0 mb-8">
+      <div className="flex justify-center mt-8 sm:mt-0 mb-6">
         <Image
           src="/logo_transparent.png"
           alt="Frilansportalen logo"
-          width={500}
-          height={125}
+          width={320}
+          height={80}
         />
       </div>
 
       {/* Velkomsttekst */}
-      <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold">Velkommen til Frilansportalen</h1>
-        <p className="text-lg mt-2">
+      <div className="text-center mb-10 px-4">
+        <h1 className="text-3xl font-bold drop-shadow-sm">Velkommen til Frilansportalen</h1>
+        <p className="text-lg mt-2 text-neutral-800 max-w-xl mx-auto">
           Her starter samarbeidet som forandrer hverdagen – for frilansere, arbeidsgivere og tjenestetilbydere over hele landet.
         </p>
       </div>
 
-      {/* Navigasjonsbokser */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
-        <Link href="/registrer-arbeidsgiver" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Briefcase className="text-2xl" /> Arbeidsgiver
-          </a>
-        </Link>
-        <Link href="/frilanser" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <User className="text-2xl" /> Frilanser
-          </a>
-        </Link>
-        <Link href="/jobbsoker" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Search className="text-2xl" /> Jobbsøker
-          </a>
-        </Link>
-        <Link href="/tjenestetilbyder" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Hammer className="text-2xl" /> Tjenestetilbyder
-          </a>
-        </Link>
-        <Link href="/dugnadsportalen" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Hammer className="text-2xl" /> Dugnadsportalen
-          </a>
-        </Link>
-        <Link href="/gjenbruksportalen" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Store className="text-2xl" /> Gjenbruksportalen
-          </a>
-        </Link>
-        <Link href="/fagshoppen" legacyBehavior>
-          <a className="bg-[#e5e5e5] rounded-2xl shadow p-6 flex items-center gap-4 text-lg">
-            <Store className="text-2xl" /> Fagshoppen
+      {/* Rollevalg */}
+      <section className="bg-white/40 backdrop-blur-md rounded-3xl p-6 max-w-2xl mx-auto shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Velg rolle</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link href="/registrer-arbeidsgiver" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Briefcase /> Arbeidsgiver
+            </a>
+          </Link>
+          <Link href="/frilanser" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <User /> Frilanser
+            </a>
+          </Link>
+          <Link href="/jobbsoker" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Search /> Jobbsøker
+            </a>
+          </Link>
+          <Link href="/tjenestetilbyder" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Hammer /> Tjenestetilbyder
+            </a>
+          </Link>
+        </div>
+      </section>
+
+      {/* Utforsk portaler */}
+      <section className="bg-white/40 backdrop-blur-md rounded-3xl p-6 max-w-2xl mx-auto mt-10 shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Utforsk portaler</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link href="/dugnadsportalen" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Hammer /> Dugnadsportalen
+            </a>
+          </Link>
+          <Link href="/gjenbruksportalen" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Store /> Gjenbruksportalen
+            </a>
+          </Link>
+          <Link href="/fagshoppen" legacyBehavior>
+            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
+              <Store /> Fagshoppen
+            </a>
+          </Link>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <div className="text-center mt-12">
+        <Link href="/registrer" legacyBehavior>
+          <a className="inline-block bg-black text-yellow-300 text-lg font-semibold px-6 py-3 rounded-full shadow hover:bg-neutral-900">
+            Kom i gang
           </a>
         </Link>
       </div>
