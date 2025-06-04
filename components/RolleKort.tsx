@@ -1,4 +1,4 @@
-// components/RolleKort.tsx – med bindestrek og to-linjers støtte
+// components/RolleKort.tsx – forbedret tekstlayout uten unødvendig orddeling
 import Link from "next/link";
 import Image from "next/image";
 
@@ -17,7 +17,7 @@ export default function RolleKort({ href, label, icon }: {
           height={48}
           className="drop-shadow-lg object-contain"
         />
-        <span className="leading-tight break-words hyphens-auto max-w-[120px]">
+        <span className="leading-tight break-keep whitespace-normal text-center max-w-[140px]">
           {label}
         </span>
       </a>
