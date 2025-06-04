@@ -13,13 +13,8 @@ import AccessibilityPanel from "@/components/AccessibilityPanel";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-yellow-400 via-yellow-300 to-yellow-200 text-black p-4 relative overflow-hidden">
-      {/* Ikoner oppe til høyre */}
-      <div className="absolute top-4 right-4 flex gap-4 text-xl">
-        <Link href="/login"><LogIn /></Link>
-      </div>
-
-      {/* Accessibility knappen flytende nede til høyre */}
+    <main className="min-h-screen bg-gradient-to-b from-yellow-300 via-yellow-200 to-yellow-100 text-black p-4 relative overflow-hidden font-sans">
+      {/* Flytende tilgjengelighetsknapp */}
       <div className="fixed bottom-4 right-4 z-50">
         <details className="bg-white/90 border border-black rounded-xl shadow max-w-xs overflow-hidden">
           <summary className="cursor-pointer px-4 py-2 text-sm font-medium">Tilgjengelighet</summary>
@@ -28,77 +23,68 @@ export default function HomePage() {
       </div>
 
       {/* Logo */}
-      <div className="flex justify-center mt-8 sm:mt-0 mb-6">
+      <div className="flex justify-center mt-6 mb-10">
         <Image
           src="/logo_transparent.png"
           alt="Frilansportalen logo"
-          width={320}
+          width={260}
           height={80}
+          priority
         />
       </div>
 
       {/* Velkomsttekst */}
-      <div className="text-center mb-10 px-4">
-        <h1 className="text-3xl font-bold drop-shadow-sm">Velkommen til Frilansportalen</h1>
-        <p className="text-lg mt-2 text-neutral-800 max-w-xl mx-auto">
-          Her starter samarbeidet som forandrer hverdagen – for frilansere, arbeidsgivere og tjenestetilbydere over hele landet.
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-md">Velkommen til Frilansportalen</h1>
+        <p className="text-lg mt-3 max-w-2xl mx-auto text-neutral-700">
+          For deg som søker jobb, tilbyr tjenester eller ser etter flinke folk.
         </p>
       </div>
 
-      {/* Rollevalg */}
-      <section className="bg-white/40 backdrop-blur-md rounded-3xl p-6 max-w-2xl mx-auto shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Velg rolle</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link href="/registrer-arbeidsgiver" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Briefcase /> Arbeidsgiver
+      {/* Kortseksjoner med glass-effekt og hover-animasjon */}
+      <section className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+        {[ 
+          { href: "/registrer-arbeidsgiver", icon: <Briefcase />, label: "Arbeidsgiver" },
+          { href: "/frilanser", icon: <User />, label: "Frilanser" },
+          { href: "/jobbsoker", icon: <Search />, label: "Jobbsøker" },
+          { href: "/tjenestetilbyder", icon: <Hammer />, label: "Tjenestetilbyder" },
+        ].map(({ href, icon, label }, i) => (
+          <Link key={i} href={href} legacyBehavior>
+            <a className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 shadow-xl flex items-center gap-4 text-lg hover:scale-[1.03] hover:shadow-2xl transition-transform">
+              <span className="text-yellow-600 text-2xl">{icon}</span> {label}
             </a>
           </Link>
-          <Link href="/frilanser" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <User /> Frilanser
-            </a>
-          </Link>
-          <Link href="/jobbsoker" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Search /> Jobbsøker
-            </a>
-          </Link>
-          <Link href="/tjenestetilbyder" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Hammer /> Tjenestetilbyder
-            </a>
-          </Link>
-        </div>
+        ))}
       </section>
 
-      {/* Utforsk portaler */}
-      <section className="bg-white/40 backdrop-blur-md rounded-3xl p-6 max-w-2xl mx-auto mt-10 shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Utforsk portaler</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link href="/dugnadsportalen" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Hammer /> Dugnadsportalen
+      <section className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16">
+        {[ 
+          { href: "/dugnadsportalen", icon: <Hammer />, label: "Dugnadsportalen" },
+          { href: "/gjenbruksportalen", icon: <Store />, label: "Gjenbruksportalen" },
+          { href: "/fagshoppen", icon: <Store />, label: "Fagshoppen" },
+        ].map(({ href, icon, label }, i) => (
+          <Link key={i} href={href} legacyBehavior>
+            <a className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 shadow-xl flex items-center gap-4 text-lg hover:scale-[1.03] hover:shadow-2xl transition-transform">
+              <span className="text-yellow-600 text-2xl">{icon}</span> {label}
             </a>
           </Link>
-          <Link href="/gjenbruksportalen" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Store /> Gjenbruksportalen
-            </a>
-          </Link>
-          <Link href="/fagshoppen" legacyBehavior>
-            <a className="bg-yellow-100 hover:bg-yellow-200 rounded-2xl p-5 flex items-center gap-4 font-medium shadow">
-              <Store /> Fagshoppen
-            </a>
-          </Link>
-        </div>
+        ))}
       </section>
 
-      {/* CTA */}
-      <div className="text-center mt-12">
+      {/* CTA-knapp */}
+      <div className="text-center">
         <Link href="/registrer" legacyBehavior>
-          <a className="inline-block bg-black text-yellow-300 text-lg font-semibold px-6 py-3 rounded-full shadow hover:bg-neutral-900">
+          <a className="inline-block bg-black text-yellow-300 text-lg font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-neutral-800 transition">
             Kom i gang
+          </a>
+        </Link>
+      </div>
+
+      {/* Innloggingsikon */}
+      <div className="absolute top-4 right-4">
+        <Link href="/login" legacyBehavior>
+          <a className="text-black hover:text-yellow-700">
+            <LogIn className="w-6 h-6" />
           </a>
         </Link>
       </div>
