@@ -1,19 +1,18 @@
-// components/RolleKort.tsx – Mockup-stil kort med individuell farge og glød
+// components/RolleKort.tsx – Mockup-presis kortdesign med glød og ikon
 import Link from "next/link";
+import Image from "next/image";
 
-export default function RolleKort({ href, label, icon, color }: {
+export default function RolleKort({ href, label, icon }: {
   href: string;
   label: string;
-  icon: React.ReactNode;
-  color: string;
+  icon: string;
 }) {
   return (
     <Link href={href} legacyBehavior>
-      <a
-        className={`flex flex-col items-center justify-center text-sm font-semibold px-4 py-6 rounded-2xl shadow-xl transition-transform hover:scale-[1.03] text-white drop-shadow-md border border-white/10 backdrop-blur-xl bg-[${color}]`}
-        style={{ background: `linear-gradient(145deg, ${color}, ${color}dd)` }}
-      >
-        <div className="mb-2 text-2xl">{icon}</div>
+      <a className="relative bg-white/10 backdrop-blur-xl px-4 py-6 rounded-3xl flex flex-col items-center justify-center text-sm font-semibold text-white shadow-2xl border border-white/10 hover:scale-[1.03] transition">
+        <div className="mb-3">
+          <Image src={icon} alt="" width={48} height={48} className="drop-shadow-xl" />
+        </div>
         {label}
       </a>
     </Link>
