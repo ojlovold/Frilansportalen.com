@@ -1,4 +1,3 @@
-// pages/fullfor-registrering.tsx
 "use client";
 
 import { useRouter } from "next/router";
@@ -37,6 +36,7 @@ export default function FullforRegistrering() {
       password: passord,
       options: {
         data: { navn },
+        emailRedirectTo: "https://frilansportalen.com/velkommen",
       },
     });
 
