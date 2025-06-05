@@ -6,11 +6,11 @@ import TilbakeKnapp from "@/components/TilbakeKnapp";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Ikke vis layout på admin-login
-  if (router.pathname === "/admin/logginn") return <>{children}</>;
+  // Skjul layout på admin login-siden
+  if (router.asPath === "/admin/logginn") return <>{children}</>;
 
-  // Skjul knapp på disse
-  const visTilbake = !["/", "/dashboard"].includes(router.pathname);
+  // Skjul piler på forsiden og dashboard
+  const visPiler = !["/", "/dashboard"].includes(router.asPath);
 
   return (
     <div className="min-h-screen bg-gray-50 text-black relative">
@@ -18,10 +18,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* ✅ Tilbakeknapp – uavhengig posisjon, alltid øverst til venstre */}
-      {visTilbake && (
+      {/* VENSTRE PIL – tilbake */}
+      {visPiler && (
         <div className="absolute top-6 left-6 z-50">
-          <TilbakeKnapp className="w-12 h-12" />
+          <TilbakeKnapp retning="venstre" className="w-12 h-12" />
+        </div>
+      )}
+
+      {/* HØYRE PIL – fremover */}
+      {visPiler && (
+        <div className="absolute top-6 right-6 z-50">
+          <TilbakeKnapp retning="høyre" className="w-12 h-12" />
         </div>
       )}
 
