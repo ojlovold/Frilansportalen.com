@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { ReactNode } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import AccessibilityPanel from "@/components/AccessibilityPanel";
+import Link from "next/link";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -16,6 +17,14 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
+      {/* Logg inn-knapp øverst til høyre */}
+      <Link
+        href="/login"
+        className="absolute top-4 right-4 z-50 text-sm text-white underline bg-black/70 rounded-full px-4 py-1 shadow hover:bg-black"
+      >
+        Logg inn
+      </Link>
+
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
