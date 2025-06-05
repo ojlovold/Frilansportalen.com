@@ -1,38 +1,69 @@
+// components/Layout.tsx
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
+
+const getFlagg = (lang: string) => {
+  const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
+  return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+};
+
+const unikeSpråk = () => {
+  const sett = new Set<string>();
+  return window.speechSynthesis.getVoices()
+    .filter((v) => {
+      if (sett.has(v.lang)) return false;
+      sett.add(v.lang);
+      return true;
+    })
+    .map((v) => ({ kode: v.lang, navn: `${getFlagg(v.lang)} ${v.name} (${v.lang})` }))
+    .sort((a, b) => a.navn.localeCompare(b.navn));
+};
 
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [visSprak, setVisSprak] = useState(false);
   const [visTale, setVisTale] = useState(false);
   const [sprak, setSprak] = useState("no");
-  const [stemmer, setStemmer] = useState<SpeechSynthesisVoice[]>([]);
+  const [leser, setLeser] = useState(false);
 
   useEffect(() => {
     const lagret = localStorage.getItem("sprak");
     if (lagret) setSprak(lagret);
-
-    const updateVoices = () => setStemmer(window.speechSynthesis.getVoices());
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      updateVoices();
-      window.speechSynthesis.onvoiceschanged = updateVoices;
-    }
   }, []);
 
   const byttSprak = (kode: string) => {
     localStorage.setItem("sprak", kode);
     setSprak(kode);
     router.push(router.pathname, router.asPath, { locale: kode });
+    setVisSprak(false);
   };
 
   const lesOpp = () => {
+    const synth = window.speechSynthesis;
+    synth.cancel();
     const uttale = new SpeechSynthesisUtterance(document.body.innerText);
-    uttale.lang = sprak;
-    const valgt = stemmer.find((v) => v.lang === sprak);
-    if (valgt) uttale.voice = valgt;
-    window.speechSynthesis.speak(uttale);
+    uttale.lang = språkTilLangkode(sprak);
+    synth.speak(uttale);
+    setLeser(true);
+    uttale.onend = () => setLeser(false);
+  };
+
+  const stoppLesing = () => {
+    window.speechSynthesis.cancel();
+    setLeser(false);
+  };
+
+  const språkTilLangkode = (kode: string) => {
+    switch (kode) {
+      case "en": return "en-US";
+      case "sv": return "sv-SE";
+      case "da": return "da-DK";
+      case "de": return "de-DE";
+      case "fr": return "fr-FR";
+      default: return "no-NO";
+    }
   };
 
   const visPiler =
@@ -51,11 +82,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <button
-          title="Talehjelp"
-          onClick={() => setVisTale((v) => !v)}
-          className="hover:opacity-80"
-        >
+        <button title="Talehjelp" onClick={() => setVisTale((v) => !v)} className="hover:opacity-80">
           <img
             src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
             alt="Talehjelp"
@@ -63,11 +90,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </button>
 
-        <button
-          title="Språkvalg"
-          onClick={() => setVisSprak((v) => !v)}
-          className="hover:opacity-80"
-        >
+        <button title="Språkvalg" onClick={() => setVisSprak((v) => !v)} className="hover:opacity-80">
           <img
             src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
             alt="Språk"
@@ -76,31 +99,32 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Språkvelger */}
       {visSprak && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[60vh] overflow-y-auto space-y-1">
+        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
-          {stemmer.map((v) => (
+          {unikeSpråk().map((s) => (
             <button
-              key={v.lang + v.name}
-              onClick={() => byttSprak(v.lang)}
+              key={s.kode}
+              onClick={() => byttSprak(s.kode)}
               className="block text-left w-full hover:text-yellow-100"
             >
-              {v.name} ({v.lang})
+              {s.navn}
             </button>
           ))}
         </div>
       )}
 
-      {/* Talehjelp */}
       {visTale && (
         <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
-          <button onClick={lesOpp}>🔊 Les opp</button>
+          {leser ? (
+            <button onClick={stoppLesing}>⏹️ Stopp</button>
+          ) : (
+            <button onClick={lesOpp}>🔊 Les opp</button>
+          )}
         </div>
       )}
 
-      {/* Navigasjonspiler */}
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
@@ -113,7 +137,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Innhold */}
       <main className="p-4 max-w-5xl mx-auto">{children}</main>
     </div>
   );
