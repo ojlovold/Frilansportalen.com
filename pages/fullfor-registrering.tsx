@@ -32,8 +32,7 @@ export default function FullforRegistrering() {
       return;
     }
 
-    // 1. Opprett bruker i Supabase Auth
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: epost,
       password: passord,
       options: {
@@ -41,30 +40,12 @@ export default function FullforRegistrering() {
       },
     });
 
-    if (signUpError || !signUpData.user) {
-      setFeil(signUpError?.message || "Feil ved registrering.");
+    if (error) {
+      setFeil(error.message || "En feil oppstod ved registrering.");
       return;
     }
 
-    const bruker_id = signUpData.user.id;
-
-    // 2. Lagre profil og roller i Supabase-database
-    const { error: profilError } = await supabase.from("profiler").insert([
-      {
-        id: bruker_id,
-        navn,
-        epost,
-        roller,
-      },
-    ]);
-
-    if (profilError) {
-      setFeil("Kunne ikke lagre profil: " + profilError.message);
-      return;
-    }
-
-    // 3. Ferdig – send til velkomstside eller dashboard
-    router.push("/velkommen");
+    router.push("/mail-bekreftelse");
   };
 
   return (
