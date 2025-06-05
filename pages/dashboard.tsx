@@ -38,7 +38,7 @@ export default function Dashboard() {
         const premiumverdi = profil.har_premium ?? false;
         setHarPremium(overridePremium || premiumverdi);
       } else {
-        setHarPremium(overridePremium); // fallback for testbruker
+        setHarPremium(overridePremium);
       }
 
       const { data: fakturaData } = await supabase
