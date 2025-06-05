@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
+import TilbakeKnapp from "@/components/TilbakeKnapp";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -28,10 +29,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
 
-      <main className="p-4 max-w-5xl mx-auto">
+      <main className="relative p-4 max-w-5xl mx-auto">
         {visTilbake && (
           <div className="mb-4">
-            <Link href="/" className="text-sm text-blue-600 hover:underline">← Tilbake</Link>
+            <TilbakeKnapp className="w-10 h-10" />
           </div>
         )}
         {children}
