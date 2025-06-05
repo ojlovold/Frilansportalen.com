@@ -18,12 +18,29 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       {/* Logg inn-knapp øverst til høyre */}
-      <Link
-        href="/login"
-        className="absolute top-4 right-4 z-50 text-sm text-white underline bg-black/70 rounded-full px-4 py-1 shadow hover:bg-black"
-      >
-        Logg inn
-      </Link>
+      <div className="absolute top-4 right-24 z-50 flex items-center gap-4">
+  <Link href="/login" className="hover:opacity-80">
+    <img
+      src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
+      alt="Logg inn"
+      className="h-8 w-auto"
+    />
+  </Link>
+  <button title="Talehjelp" className="hover:opacity-80">
+    <img
+      src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
+      alt="Talehjelp"
+      className="h-8 w-auto"
+    />
+  </button>
+  <button title="Språkvalg" className="hover:opacity-80">
+    <img
+      src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
+      alt="Språk"
+      className="h-8 w-auto"
+    />
+  </button>
+</div>
 
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
@@ -37,7 +54,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <AccessibilityPanel />
+      
 
       <main className="p-4 max-w-5xl mx-auto">{children}</main>
     </div>
