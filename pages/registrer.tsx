@@ -1,4 +1,4 @@
-// pages/registrer.tsx – med tilbakeknapp i logostil
+// pages/registrer.tsx – med TilbakeKnapp i logostil
 "use client";
 
 import { useState } from "react";
@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 import BølgeBakgrunn from "@/components/BølgeBakgrunn";
 import LogoHeader from "@/components/LogoHeader";
 import RolleKort from "@/components/RolleKort";
-import { ChevronLeft } from "lucide-react";
+import TilbakeKnapp from "@/components/TilbakeKnapp";
 
 export default function Registrer() {
   const router = useRouter();
@@ -36,13 +36,8 @@ export default function Registrer() {
     <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
       <BølgeBakgrunn />
 
-      <button
-        onClick={() => router.back()}
-        className="absolute top-4 left-4 text-white p-2 rounded-full hover:bg-white/10 transition"
-        title="Tilbake"
-      >
-        <ChevronLeft className="w-6 h-6 drop-shadow-lg" />
-      </button>
+      {/* 🔁 Tilbake-knapp i visuell 3D-stil */}
+      <TilbakeKnapp retning="venstre" className="absolute top-4 left-4 z-50 w-12 h-12" />
 
       <LogoHeader />
 
