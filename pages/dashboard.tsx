@@ -15,7 +15,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [navn, setNavn] = useState("");
-  const [harPremium, setHarPremium] = useState(false);
+  const [harPremium, setHarPremium] = useState<boolean | null>(null);
   const [fakturaer, setFakturaer] = useState<any[]>([]);
   const [rapporter, setRapporter] = useState<any[]>([]);
   const [kjorebok, setKjorebok] = useState<any[]>([]);
@@ -24,11 +24,8 @@ export default function Dashboard() {
     if (!user) return;
 
     const hentData = async () => {
-      // Gi akkurat denne brukeren premium midlertidig
       const userId = user.id;
-      if (userId === "890ebf4a-bbdc-4424-be87-341c0b34972e") {
-        setHarPremium(true);
-      }
+      const overridePremium = userId === "890ebf4a-bbdc-4424-be87-341c0b34972e";
 
       const { data: profil } = await supabase
         .from("profiler")
@@ -38,9 +35,9 @@ export default function Dashboard() {
 
       if (profil) {
         setNavn(profil.navn);
-        if (user.id !== "890ebf4a-bbdc-4424-be87-341c0b34972e") {
-          setHarPremium(profil.har_premium ?? false);
-        }
+        setHarPremium(overridePremium || profil.har_premium ?? false);
+      } else {
+        setHarPremium(overridePremium); // fallback for testbruker
       }
 
       const { data: fakturaData } = await supabase
@@ -65,7 +62,7 @@ export default function Dashboard() {
     hentData();
   }, [user, supabase]);
 
-  if (!user) return <div className="p-8">Laster brukerdata...</div>;
+  if (!user || harPremium === null) return <div className="p-8">Laster brukerdata...</div>;
 
   return (
     <>
@@ -76,8 +73,6 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-1">Hei {navn} 👋</h1>
           <p className="text-sm text-black/70 mb-6">Velkommen tilbake til Frilansportalen</p>
-
-          {!harPremium && <PremiumBox />}
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-xl">
@@ -97,7 +92,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {harPremium && (
+          {harPremium ? (
             <section className="mt-10 space-y-4">
               <AutoPDFKnapp
                 tittel="Fakturaoversikt"
@@ -120,6 +115,10 @@ export default function Dashboard() {
                 rader={kjorebok.map((k) => [k.dato, k.fra, k.til, `${k.kilometer} km`])}
               />
             </section>
+          ) : (
+            <div className="mt-10">
+              <PremiumBox />
+            </div>
           )}
         </div>
       </main>
