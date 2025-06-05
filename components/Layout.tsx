@@ -6,9 +6,10 @@ import TilbakeKnapp from "@/components/TilbakeKnapp";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Skjul hele layout for admin login-siden
+  // Ikke vis layout på admin-login
   if (router.pathname === "/admin/logginn") return <>{children}</>;
 
+  // Ikke vis tilbakeknapp på disse
   const visTilbake = !["/", "/dashboard"].includes(router.pathname);
 
   return (
