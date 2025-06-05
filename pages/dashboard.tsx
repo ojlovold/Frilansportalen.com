@@ -118,7 +118,9 @@ export default function Dashboard() {
                 />
               </>
             ) : (
-              <PremiumBox />
+              <div className="max-w-xl mx-auto">
+                <PremiumBox />
+              </div>
             )}
           </section>
         </div>
