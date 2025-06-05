@@ -1,4 +1,3 @@
-// components/Layout.tsx
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
@@ -17,7 +16,10 @@ const unikeSpråk = () => {
       sett.add(v.lang);
       return true;
     })
-    .map((v) => ({ kode: v.lang, navn: `${getFlagg(v.lang)} ${v.name} (${v.lang})` }))
+    .map((v) => ({
+      kode: v.lang,
+      navn: `${getFlagg(v.lang)} ${v.lang}`
+    }))
     .sort((a, b) => a.navn.localeCompare(b.navn));
 };
 
@@ -40,21 +42,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     setVisSprak(false);
   };
 
-  const lesOpp = () => {
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const uttale = new SpeechSynthesisUtterance(document.body.innerText);
-    uttale.lang = språkTilLangkode(sprak);
-    synth.speak(uttale);
-    setLeser(true);
-    uttale.onend = () => setLeser(false);
-  };
-
-  const stoppLesing = () => {
-    window.speechSynthesis.cancel();
-    setLeser(false);
-  };
-
   const språkTilLangkode = (kode: string) => {
     switch (kode) {
       case "en": return "en-US";
@@ -64,6 +51,20 @@ export default function Layout({ children }: { children: ReactNode }) {
       case "fr": return "fr-FR";
       default: return "no-NO";
     }
+  };
+
+  const lesOpp = () => {
+    const uttale = new SpeechSynthesisUtterance(document.body.innerText);
+    uttale.lang = språkTilLangkode(sprak);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(uttale);
+    setLeser(true);
+    uttale.onend = () => setLeser(false);
+  };
+
+  const stoppLesing = () => {
+    window.speechSynthesis.cancel();
+    setLeser(false);
   };
 
   const visPiler =
@@ -99,8 +100,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
+      {/* Språkvelger */}
       {visSprak && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-1">
+        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
           {unikeSpråk().map((s) => (
             <button
@@ -114,6 +116,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
+      {/* Talehjelp */}
       {visTale && (
         <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
@@ -125,6 +128,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
+      {/* Piler */}
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
