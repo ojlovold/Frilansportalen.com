@@ -24,6 +24,12 @@ export default function Dashboard() {
     if (!user) return;
 
     const hentData = async () => {
+      // Gi akkurat denne brukeren premium midlertidig
+      const userId = user.id;
+      if (userId === "890ebf4a-bbdc-4424-be87-341c0b34972e") {
+        setHarPremium(true);
+      }
+
       const { data: profil } = await supabase
         .from("profiler")
         .select("navn, har_premium")
@@ -32,7 +38,9 @@ export default function Dashboard() {
 
       if (profil) {
         setNavn(profil.navn);
-        setHarPremium(profil.har_premium ?? false);
+        if (user.id !== "890ebf4a-bbdc-4424-be87-341c0b34972e") {
+          setHarPremium(profil.har_premium ?? false);
+        }
       }
 
       const { data: fakturaData } = await supabase
@@ -65,25 +73,25 @@ export default function Dashboard() {
         <title>Dashboard | Frilansportalen</title>
       </Head>
       <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-black p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Hei {navn} 👋</h1>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-1">Hei {navn} 👋</h1>
           <p className="text-sm text-black/70 mb-6">Velkommen tilbake til Frilansportalen</p>
 
           {!harPremium && <PremiumBox />}
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white rounded-xl p-4 shadow">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-xl">
               <h2 className="font-semibold text-lg mb-2">Fakturaer</h2>
               <p className="text-sm mb-2">Du har {fakturaer.length} fakturaer</p>
               <Link href="/faktura" className="underline text-blue-600">Send ny faktura</Link>
             </div>
 
-            <div className="bg-white rounded-xl p-4 shadow">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-xl">
               <h2 className="font-semibold text-lg mb-2">Rapporter</h2>
               <p className="text-sm mb-2">Totalt: {rapporter.length}</p>
             </div>
 
-            <div className="bg-white rounded-xl p-4 shadow">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-xl">
               <h2 className="font-semibold text-lg mb-2">Kjørebok</h2>
               <p className="text-sm mb-2">Totalt: {kjorebok.length} turer</p>
             </div>
