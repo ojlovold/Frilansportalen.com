@@ -68,7 +68,7 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Dashboard | Frilansportalen</title>
+        <title>Min profil | Frilansportalen</title>
       </Head>
       <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-black p-6">
         <div className="max-w-6xl mx-auto">
@@ -93,34 +93,34 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {harPremium ? (
-            <section className="mt-10 space-y-4">
-              <AutoPDFKnapp
-                tittel="Fakturaoversikt"
-                filnavn="fakturaer"
-                kolonner={["Dato", "Beskrivelse", "Beløp"]}
-                rader={fakturaer.map((f) => [f.dato, f.beskrivelse, `${f.belop} kr`])}
-              />
+          <section className="mt-10 space-y-4">
+            {harPremium ? (
+              <>
+                <AutoPDFKnapp
+                  tittel="Fakturaoversikt"
+                  filnavn="fakturaer"
+                  kolonner={["Dato", "Beskrivelse", "Beløp"]}
+                  rader={fakturaer.map((f) => [f.dato, f.beskrivelse, `${f.belop} kr`])}
+                />
 
-              <AutoPDFKnapp
-                tittel="Rapportoversikt"
-                filnavn="rapporter"
-                kolonner={["Dato", "Innhold"]}
-                rader={rapporter.map((r) => [r.dato, r.innhold])}
-              />
+                <AutoPDFKnapp
+                  tittel="Rapportoversikt"
+                  filnavn="rapporter"
+                  kolonner={["Dato", "Innhold"]}
+                  rader={rapporter.map((r) => [r.dato, r.innhold])}
+                />
 
-              <AutoPDFKnapp
-                tittel="Kjørebok"
-                filnavn="kjorebok"
-                kolonner={["Dato", "Fra", "Til", "Kilometer"]}
-                rader={kjorebok.map((k) => [k.dato, k.fra, k.til, `${k.kilometer} km`])}
-              />
-            </section>
-          ) : (
-            <div className="mt-10">
+                <AutoPDFKnapp
+                  tittel="Kjørebok"
+                  filnavn="kjorebok"
+                  kolonner={["Dato", "Fra", "Til", "Kilometer"]}
+                  rader={kjorebok.map((k) => [k.dato, k.fra, k.til, `${k.kilometer} km`])}
+                />
+              </>
+            ) : (
               <PremiumBox />
-            </div>
-          )}
+            )}
+          </section>
         </div>
       </main>
     </>
