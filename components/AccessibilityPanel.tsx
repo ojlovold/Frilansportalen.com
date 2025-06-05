@@ -3,15 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function AccessibilityPanel() {
+interface AccessibilityPanelProps {
+  tekst?: string;
+  onDiktert?: (verdi: string) => void;
+}
+
+export default function AccessibilityPanel({ tekst, onDiktert }: AccessibilityPanelProps) {
   const [leser, setLeser] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [kontrast, setKontrast] = useState(false);
 
   const lesOpp = () => {
     const synth = window.speechSynthesis;
-    const tekst = document.body.innerText;
-    const utterance = new SpeechSynthesisUtterance(tekst);
+    const t = tekst || document.body.innerText;
+    const utterance = new SpeechSynthesisUtterance(t);
     synth.cancel();
     synth.speak(utterance);
     setLeser(true);
