@@ -12,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     !["/", "/dashboard"].includes(window.location.pathname);
 
   return (
-    <div className="min-h-screen text-black relative bg-yellow-400">
+    <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
