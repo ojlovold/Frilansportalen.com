@@ -37,7 +37,7 @@ export default function Dashboard() {
         setNavn(profil.navn);
         setHarPremium(overridePremium || (profil.har_premium ?? false));
       } else {
-        setHarPremium(overridePremium); // fallback for testbruker
+        setHarPremium(overridePremium || (profil.har_premium ?? false)); // fallback for testbruker
       }
 
       const { data: fakturaData } = await supabase
@@ -75,7 +75,7 @@ export default function Dashboard() {
           <p className="text-sm text-black/70 mb-6">Velkommen tilbake til Frilansportalen</p>
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-xl">
+            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-[6px_8px_18px_rgba(0,0,0,0.4)] border border-white/10 rounded-xl p-6 shadow-xl">
               <h2 className="font-semibold text-lg mb-2">Fakturaer</h2>
               <p className="text-sm mb-2">Du har {fakturaer.length} fakturaer</p>
               <Link href="/faktura" className="underline text-blue-600">Send ny faktura</Link>
