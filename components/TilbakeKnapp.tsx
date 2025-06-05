@@ -2,7 +2,13 @@ import { useRouter } from "next/router";
 
 type Retning = "venstre" | "høyre";
 
-export default function TilbakeKnapp({ retning = "venstre", className = "" }: { retning?: Retning; className?: string }) {
+export default function TilbakeKnapp({
+  retning = "venstre",
+  className = "",
+}: {
+  retning?: Retning;
+  className?: string;
+}) {
   const router = useRouter();
 
   const bildeSrc =
