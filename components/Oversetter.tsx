@@ -20,16 +20,29 @@ export function AutoOversett({ children }: { children: ReactNode }) {
 }
 
 interface AutoInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  placeholder: string;
+  placeholder?: string;
+  title?: string;
+  "aria-label"?: string;
 }
 
 export function AutoInput(props: AutoInputProps) {
   const språk = typeof window !== "undefined" ? localStorage.getItem("sprak") || "no" : "no";
-  const [oversatt, setOversatt] = useState(props.placeholder);
+  const [placeholder, setPlaceholder] = useState(props.placeholder);
+  const [title, setTitle] = useState(props.title);
+  const [ariaLabel, setAriaLabel] = useState(props["aria-label"]);
 
   useEffect(() => {
-    translateTekst(props.placeholder, språk).then(setOversatt);
-  }, [props.placeholder, språk]);
+    if (props.placeholder) translateTekst(props.placeholder, språk).then(setPlaceholder);
+    if (props.title) translateTekst(props.title, språk).then(setTitle);
+    if (props["aria-label"]) translateTekst(props["aria-label"], språk).then(setAriaLabel);
+  }, [props.placeholder, props.title, props["aria-label"], språk]);
 
-  return <input {...props} placeholder={oversatt} />;
+  return (
+    <input
+      {...props}
+      placeholder={placeholder}
+      title={title}
+      aria-label={ariaLabel}
+    />
+  );
 }
