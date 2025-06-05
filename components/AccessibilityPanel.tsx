@@ -1,100 +1,78 @@
+// components/AccessibilityPanel.tsx
+
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}
-
-export default function AccessibilityPanel({
-  tekst,
-  onDiktert,
-}: {
-  tekst: string;
-  onDiktert?: (verdi: string) => void;
-}) {
-  const [språk, setSpråk] = useState("no-NO");
-  const [stemmer, setStemmer] = useState<SpeechSynthesisVoice[]>([]);
-  const [lytter, setLytter] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    const oppdater = () => setStemmer(window.speechSynthesis.getVoices());
-    oppdater();
-    window.speechSynthesis.onvoiceschanged = oppdater;
-  }, []);
+export default function AccessibilityPanel() {
+  const [leser, setLeser] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const [kontrast, setKontrast] = useState(false);
 
   const lesOpp = () => {
-    const uttale = new SpeechSynthesisUtterance(tekst);
-    uttale.lang = språk;
-    const valgt = stemmer.find((s) => s.lang === språk);
-    if (valgt) uttale.voice = valgt;
-    speechSynthesis.speak(uttale);
+    const synth = window.speechSynthesis;
+    const tekst = document.body.innerText;
+    const utterance = new SpeechSynthesisUtterance(tekst);
+    synth.cancel();
+    synth.speak(utterance);
+    setLeser(true);
   };
 
-  const startDiktering = () => {
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) {
-      alert("Talegjenkjenning støttes ikke i nettleseren.");
-      return;
-    }
+  const stoppLesing = () => {
+    window.speechSynthesis.cancel();
+    setLeser(false);
+  };
 
-    const recognition = new Recognition();
-    recognition.lang = språk;
-    recognition.continuous = false;
-    recognition.interimResults = false;
+  const toggleZoom = () => {
+    document.documentElement.style.fontSize = zoom ? "100%" : "125%";
+    setZoom(!zoom);
+  };
 
-    recognition.onresult = (e: any) => {
-      const inn = e.results[0][0].transcript;
-      if (onDiktert) onDiktert(inn);
-      setLytter(false);
-    };
-
-    recognition.onerror = () => {
-      alert("Feil under talegjenkjenning.");
-      setLytter(false);
-    };
-
-    recognition.onend = () => setLytter(false);
-    setLytter(true);
-    recognition.start();
+  const toggleKontrast = () => {
+    document.body.classList.toggle("kontrastmodus");
+    setKontrast(!kontrast);
   };
 
   return (
-    <div className="border border-black bg-gray-50 rounded p-4 text-sm space-y-2 max-w-xl">
-      <div>
-        <label className="block text-xs font-semibold mb-1">Språk:</label>
-        <select
-          value={språk}
-          onChange={(e) => setSpråk(e.target.value)}
-          className="border p-1 rounded w-full"
-        >
-          <option value="no-NO">Norsk</option>
-          <option value="en-US">Engelsk (US)</option>
-          <option value="en-GB">Engelsk (UK)</option>
-          <option value="sv-SE">Svensk</option>
-          <option value="da-DK">Dansk</option>
-          <option value="de-DE">Tysk</option>
-          <option value="fr-FR">Fransk</option>
-        </select>
-      </div>
-
-      <div className="flex gap-4 mt-2">
-        <button
-          onClick={lesOpp}
-          className="bg-black text-white px-4 py-1 rounded text-xs hover:bg-gray-800"
-        >
-          Les opp
-        </button>
-        <button
-          onClick={startDiktering}
-          disabled={lytter}
-          className="bg-gray-700 text-white px-4 py-1 rounded text-xs hover:bg-gray-900"
-        >
-          {lytter ? "Lytter..." : "Start diktering"}
-        </button>
-      </div>
+    <div className="fixed bottom-4 right-4 z-50 bg-black/90 text-yellow-200 shadow-lg rounded-xl p-4 text-sm max-w-xs border border-yellow-300">
+      <h2 className="font-bold mb-2 text-yellow-100">Tilgjengelighet</h2>
+      <ul className="space-y-2">
+        <li>
+          <Link href="/reset-passord" className="text-yellow-400 underline">
+            Glemt passord?
+          </Link>
+        </li>
+        <li>
+          {leser ? (
+            <button onClick={stoppLesing} className="underline text-yellow-300">
+              Stopp opplesning
+            </button>
+          ) : (
+            <button onClick={lesOpp} className="underline text-yellow-300">
+              Les opp siden
+            </button>
+          )}
+        </li>
+        <li>
+          <button onClick={toggleZoom} className="underline text-yellow-300">
+            {zoom ? "Normal tekststørrelse" : "Større tekst"}
+          </button>
+        </li>
+        <li>
+          <button onClick={toggleKontrast} className="underline text-yellow-300">
+            {kontrast ? "Standard kontrast" : "Høy kontrast"}
+          </button>
+        </li>
+        <li>
+          <a
+            href="https://meet.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-yellow-300"
+          >
+            Trenger hjelp i møte
+          </a>
+        </li>
+      </ul>
     </div>
   );
 }
