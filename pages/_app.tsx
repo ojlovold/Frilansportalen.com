@@ -14,19 +14,12 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   const isAdmin = router.pathname.startsWith("/admin");
-  const isForside = router.pathname === "/";
-
   const content = <Component {...pageProps} />;
 
   return (
-    <SessionContextProvider
-      supabaseClient={supabaseClient}
-      initialSession={pageProps.initialSession}
-    >
+    <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
       {isAdmin ? (
         <AdminLayout>{content}</AdminLayout>
-      ) : isForside ? (
-        content
       ) : (
         <Layout>{content}</Layout>
       )}
