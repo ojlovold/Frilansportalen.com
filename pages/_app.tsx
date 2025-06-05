@@ -1,3 +1,4 @@
+// pages/_app.tsx
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
@@ -18,7 +19,10 @@ export default function App({ Component, pageProps }: AppProps) {
   const content = <Component {...pageProps} />;
 
   return (
-    <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
+    <SessionContextProvider
+      supabaseClient={supabaseClient}
+      initialSession={pageProps.initialSession}
+    >
       {isAdmin ? (
         <AdminLayout>{content}</AdminLayout>
       ) : isForside ? (
@@ -29,3 +33,16 @@ export default function App({ Component, pageProps }: AppProps) {
     </SessionContextProvider>
   );
 }
+
+App.getInitialProps = async () => {
+  const supabase = createBrowserSupabaseClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return {
+    pageProps: {
+      initialSession: session,
+    },
+  };
+};
