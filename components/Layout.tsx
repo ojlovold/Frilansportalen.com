@@ -18,26 +18,36 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       {/* Logg inn-knapp øverst til høyre */}
-      <div className="absolute top-4 right-24 z-50 flex items-center gap-4">
+      <div className="fixed top-4 right-6 z-50 flex flex-row-reverse items-center gap-4">
   <Link href="/login" className="hover:opacity-80">
     <img
       src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
       alt="Logg inn"
-      className="h-8 w-auto"
+      className="h-10 max-w-[48px] object-contain"
     />
   </Link>
-  <button title="Talehjelp" className="hover:opacity-80">
+
+  <button
+    title="Talehjelp"
+    onClick={() => alert("Talehjelp-popup kommer her")}
+    className="hover:opacity-80"
+  >
     <img
       src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
       alt="Talehjelp"
-      className="h-8 w-auto"
+      className="h-8 max-w-[40px] object-contain"
     />
   </button>
-  <button title="Språkvalg" className="hover:opacity-80">
+
+  <button
+    title="Språkvalg"
+    onClick={() => alert("Språkvelger-popup kommer her")}
+    className="hover:opacity-80"
+  >
     <img
       src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
       alt="Språk"
-      className="h-8 w-auto"
+      className="h-8 max-w-[40px] object-contain"
     />
   </button>
 </div>
