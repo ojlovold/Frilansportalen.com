@@ -21,25 +21,25 @@ export default function Login() {
       setStatus("Feil: " + error.message);
     } else {
       setStatus("Innlogging vellykket!");
-      setTimeout(() => router.push("/"), 1000);
+      setTimeout(() => router.push("/dashboard"), 1000);
     }
   };
 
   return (
-    <main className="min-h-screen bg-yellow-300 text-black p-6">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-black p-6">
       <Head>
         <title>Logg inn | Frilansportalen</title>
       </Head>
 
-      <div className="max-w-md mx-auto bg-gray-200 p-6 rounded-2xl shadow">
-        <h1 className="text-2xl font-bold mb-4">Logg inn</h1>
+      <div className="bg-white/80 backdrop-blur-lg p-6 rounded-xl shadow-xl w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-4 text-center">Logg inn</h1>
 
         <label className="block font-semibold mb-1">E-post</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 rounded border"
+          className="w-full p-3 rounded border border-gray-300 mb-4"
         />
 
         <label className="block font-semibold mb-1">Passord</label>
@@ -47,16 +47,23 @@ export default function Login() {
           type="password"
           value={passord}
           onChange={(e) => setPassord(e.target.value)}
-          className="w-full p-2 mb-4 rounded border"
+          className="w-full p-3 rounded border border-gray-300 mb-2"
         />
 
-        <button onClick={handleLogin} className="bg-black text-white px-4 py-2 rounded">
+        <Link href="/reset-passord" className="text-sm text-blue-600 underline mb-4 inline-block">
+          Glemt passord?
+        </Link>
+
+        <button
+          onClick={handleLogin}
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+        >
           Logg inn
         </button>
 
-        {status && <p className="mt-4 text-sm">{status}</p>}
+        {status && <p className="text-center text-sm mt-4">{status}</p>}
 
-        <Link href="/" className="block text-sm text-blue-600 underline mt-6">
+        <Link href="/" className="block text-center text-sm text-blue-600 underline mt-6">
           Tilbake til forsiden
         </Link>
       </div>
