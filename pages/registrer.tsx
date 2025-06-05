@@ -1,4 +1,4 @@
-// pages/registrer.tsx – velg én eller flere roller ved registrering
+// pages/registrer.tsx – med tilbakeknapp i logostil
 "use client";
 
 import { useState } from "react";
@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import BølgeBakgrunn from "@/components/BølgeBakgrunn";
 import LogoHeader from "@/components/LogoHeader";
 import RolleKort from "@/components/RolleKort";
+import { ChevronLeft } from "lucide-react";
 
 export default function Registrer() {
   const router = useRouter();
@@ -28,13 +29,21 @@ export default function Registrer() {
 
   const handleNeste = () => {
     if (valgteRoller.length === 0) return;
-    // Gå videre til neste steg (f.eks. skjema)
     router.push("/fullfor-registrering?roller=" + valgteRoller.join(","));
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
       <BølgeBakgrunn />
+
+      <button
+        onClick={() => router.back()}
+        className="absolute top-4 left-4 text-white p-2 rounded-full hover:bg-white/10 transition"
+        title="Tilbake"
+      >
+        <ChevronLeft className="w-6 h-6 drop-shadow-lg" />
+      </button>
+
       <LogoHeader />
 
       <div className="relative z-10 max-w-xl mx-auto text-center mt-4 mb-8">
