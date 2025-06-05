@@ -1,12 +1,10 @@
-// pages/registrer.tsx – med TilbakeKnapp i logostil
+// pages/registrer.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/router";
 import BølgeBakgrunn from "@/components/BølgeBakgrunn";
 import LogoHeader from "@/components/LogoHeader";
-import RolleKort from "@/components/RolleKort";
-import TilbakeKnapp from "@/components/TilbakeKnapp";
 
 export default function Registrer() {
   const router = useRouter();
@@ -33,12 +31,8 @@ export default function Registrer() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
+    <main className="min-h-screen text-white px-4 py-10 font-sans relative overflow-hidden">
       <BølgeBakgrunn />
-
-      {/* 🔁 Tilbake-knapp i visuell 3D-stil */}
-      <TilbakeKnapp retning="venstre" className="absolute top-4 left-4 z-50 w-12 h-12" />
-
       <LogoHeader />
 
       <div className="relative z-10 max-w-xl mx-auto text-center mt-4 mb-8">
