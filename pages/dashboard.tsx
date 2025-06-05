@@ -35,7 +35,7 @@ export default function Dashboard() {
 
       if (profil) {
         setNavn(profil.navn);
-        setHarPremium(overridePremium || profil.har_premium ?? false);
+        setHarPremium(overridePremium || (profil.har_premium ?? false));
       } else {
         setHarPremium(overridePremium); // fallback for testbruker
       }
