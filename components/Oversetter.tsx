@@ -46,3 +46,33 @@ export function AutoInput(props: AutoInputProps) {
     />
   );
 }
+
+interface AutoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: string;
+}
+
+export function AutoButton({ children, ...rest }: AutoButtonProps) {
+  const språk = typeof window !== "undefined" ? localStorage.getItem("sprak") || "no" : "no";
+  const [oversatt, setOversatt] = useState(children);
+
+  useEffect(() => {
+    translateTekst(children, språk).then(setOversatt);
+  }, [children, språk]);
+
+  return <button {...rest}>{oversatt}</button>;
+}
+
+interface AutoTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  placeholder?: string;
+}
+
+export function AutoTextarea(props: AutoTextareaProps) {
+  const språk = typeof window !== "undefined" ? localStorage.getItem("sprak") || "no" : "no";
+  const [placeholder, setPlaceholder] = useState(props.placeholder);
+
+  useEffect(() => {
+    if (props.placeholder) translateTekst(props.placeholder, språk).then(setPlaceholder);
+  }, [props.placeholder, språk]);
+
+  return <textarea {...props} placeholder={placeholder} />;
+}
