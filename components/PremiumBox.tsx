@@ -1,19 +1,15 @@
-import Link from "next/link";
+// components/PremiumBox.tsx
 
 export default function PremiumBox() {
   return (
-    <div className="bg-yellow-200 border-2 border-black p-4 rounded-xl shadow mb-6">
-      <h2 className="text-xl font-bold mb-2">Denne funksjonen krever Premium</h2>
-      <p className="mb-3">
-        Du trenger Premium-abonnement for å bruke denne funksjonen. Det koster kun 100 kr per år,
-        og gir tilgang til AI, PDF-eksport, Altinn, lagring og mer.
+    <div className="relative bg-gradient-to-br from-[#FFD700] to-[#FFAA00] text-yellow-950 border-4 border-yellow-300 shadow-[0_0_30px_rgba(255,215,0,0.8)] rounded-2xl p-6 max-w-xl mx-auto text-center animate-pulse">
+      <h2 className="text-2xl font-extrabold mb-2 tracking-wide">Din gullbillett venter!</h2>
+      <p className="text-sm mb-4 text-yellow-900">
+        Få tilgang til alt Frilansportalen tilbyr: AI-assistenter, eksport, ekstra funksjoner og premiumprioritet.
       </p>
-      <Link
-        href="/premium"
-        className="inline-block bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-      >
+      <button className="mt-4 bg-yellow-800 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-full transition">
         Oppgrader til Premium
-      </Link>
+      </button>
     </div>
   );
 }
