@@ -5,7 +5,6 @@ import TilbakeKnapp from "@/components/TilbakeKnapp";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Ikke vis layout på admin login
   if (router.asPath === "/admin/logginn") return <>{children}</>;
 
   const visPiler =
