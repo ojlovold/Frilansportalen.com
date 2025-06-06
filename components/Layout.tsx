@@ -82,7 +82,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       {/* Øvre ikonrekke */}
-      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6 bg-transparent">
+      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6 bg-green-500 border-4 border-black">
         <Link href="/login" className="hover:opacity-80">
           <img
             src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
