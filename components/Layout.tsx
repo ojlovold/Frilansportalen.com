@@ -155,7 +155,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="p-4 max-w-5xl mx-auto bg-red-500 bg-opacity-50">{children}</main>
+      <main className="p-4 max-w-5xl mx-auto z-0 relative">{children}</main>
     </div>
   );
 }
