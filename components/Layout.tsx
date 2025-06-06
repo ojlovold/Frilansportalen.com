@@ -95,16 +95,57 @@ export default function Layout({ children }: { children: ReactNode }) {
           src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
           alt="Talehjelp"
           className="h-12 max-w-[60px] object-contain cursor-pointer"
-          onClick={() => alert("Klikk på Talehjelp virker")}
+          onClick={() => setVisTale((v) => !v)}
         />
 
         <img
           src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
           alt="Språkvalg"
           className="h-12 max-w-[60px] object-contain cursor-pointer"
-          onClick={() => alert("Klikk på Språkvalg virker")}
+          onClick={() => setVisSprak((v) => !v)}
         />
       </div>
+
+      {/* Språkvelger */}
+      {visSprak && (
+        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
+          <p className="font-bold mb-2">Velg språk:</p>
+          {unikeSpråk().map((s) => (
+            <button
+              key={s.kode}
+              onClick={() => byttSprak(s.kode)}
+              className="block text-left w-full hover:text-yellow-100"
+            >
+              {s.navn}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Talehjelp */}
+      {visTale && (
+        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
+          <p className="font-bold mb-2">Talehjelp:</p>
+          {leser ? (
+            <button onClick={stoppLesing}>⏹️ Stopp</button>
+          ) : (
+            <button onClick={lesOpp}>🔊 Les opp</button>
+          )}
+        </div>
+      )}
+
+      {/* Piler */}
+      {visPiler && (
+        <div className="absolute top-6 left-6 z-50">
+          <TilbakeKnapp retning="venstre" className="w-12 h-12" />
+        </div>
+      )}
+
+      {visPiler && (
+        <div className="absolute top-6 right-6 z-50">
+          <TilbakeKnapp retning="høyre" className="w-12 h-12" />
+        </div>
+      )}
 
       <main className="p-4 max-w-5xl mx-auto">{children}</main>
     </div>
