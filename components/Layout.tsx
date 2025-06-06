@@ -83,37 +83,37 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       {/* Øvre ikonrekke */}
-      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6 bg-transparent">
-        <Link href="/login" className="hover:opacity-80">
-          <img
-            src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
-            alt="Logg inn"
-            className="h-12 max-w-[60px] object-contain"
-          />
-        </Link>
-
-        <button
-          onClick={() => setVisTale((v) => !v)}
-          className="cursor-pointer focus:outline-none z-[9999]"
-        >
-          <img
-            src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
-            alt="Talehjelp"
-            className="h-12 max-w-[60px] object-contain"
-          />
-        </button>
-
-        <button
-          onClick={() => setVisSprak((v) => !v)}
-          className="cursor-pointer focus:outline-none z-[9999]"
-        >
-          <img
-            src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
-            alt="Språkvalg"
-            className="h-12 max-w-[60px] object-contain"
-          />
-        </button>
-      </div>
+      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6">
+  <Link href="/login" className="hover:opacity-80">
+    <img
+      src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
+      alt="Logg inn"
+      className="h-12 w-12 object-contain"
+    />
+  </Link>
+  <button
+    onClick={() => setVisTale(v => !v)}
+    className="hover:opacity-80"
+    aria-label="Talehjelp"
+  >
+    <img
+      src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
+      alt="Talehjelp"
+      className="h-12 w-12 object-contain"
+    />
+  </button>
+  <button
+    onClick={() => setVisSprak(v => !v)}
+    className="hover:opacity-80"
+    aria-label="Språkvalg"
+  >
+    <img
+      src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
+      alt="Språkvalg"
+      className="h-12 w-12 object-contain"
+    />
+  </button>
+</div>
 
       {/* Språkvelger */}
       {visSprak && (
