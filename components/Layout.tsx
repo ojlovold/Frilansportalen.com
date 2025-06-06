@@ -82,7 +82,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       {/* Øvre ikonrekke */}
-      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6 bg-green-500 border-4 border-black">
+      <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6 bg-transparent">
         <Link href="/login" className="hover:opacity-80">
           <img
             src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
@@ -155,21 +155,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <button
-  style={{
-    position: "fixed",
-    top: "1rem",
-    right: "1rem",
-    zIndex: 999999,
-    background: "blue",
-    color: "white",
-    padding: "0.5rem",
-    fontSize: "0.75rem"
-  }}
-  onClick={() => alert("Testknapp fungerer")}
->
-  TEST
-</button>
+      
 
 <button
   style={{
@@ -187,7 +173,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   TEST
 </button>
 
-<main className="p-4 max-w-5xl mx-auto z-0 relative bg-red-500 bg-opacity-50">
+<main className="p-4 max-w-5xl mx-auto">
   {children}
 </main>
     </div>
