@@ -155,23 +155,21 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      
+      <script dangerouslySetInnerHTML={{ __html: `
+        setTimeout(() => {
+          document.querySelectorAll('*').forEach(el => {
+            el.style.outline = '1px solid red';
+            const z = getComputedStyle(el).zIndex || 'z0';
+            const pos = getComputedStyle(el).position;
+            const pe = getComputedStyle(el).pointerEvents;
+            el.setAttribute('data-debug', 'z:' + z + ' pos:' + pos + ' pe:' + pe);
+          });
+        }, 500);
+      ` }} />
 
-<script dangerouslySetInnerHTML={{ __html: `
-  setTimeout(() => {
-    document.querySelectorAll('*').forEach(el => {
-      el.style.outline = '1px solid red';
-      const z = getComputedStyle(el).zIndex || 'z0';
-      const pos = getComputedStyle(el).position;
-      const pe = getComputedStyle(el).pointerEvents;
-      el.setAttribute('data-debug', `z:${z} pos:${pos} pe:${pe}`);
-    });
-  }, 500);
-` }} />
-
-$1"p-4 max-w-5xl mx-auto">
-  {children}
-</main>
+      <main className="p-4 max-w-5xl mx-auto">
+        {children}
+      </main>
     </div>
   );
 }
