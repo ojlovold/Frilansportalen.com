@@ -157,9 +157,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       
 
-<style>{`html, body, #__next { outline: 2px solid red !important; pointer-events: auto !important; position: relative !important; z-index: 0 !important; }`}</style>
-
-$1"p-4 max-w-5xl mx-auto">
+<main className="p-4 max-w-5xl mx-auto">
   {children}
 </main>
     </div>
