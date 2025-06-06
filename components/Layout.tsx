@@ -91,17 +91,19 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <button
-          title="Test"
-          onClick={() => alert("Klikk fungerer")}
-          className="hover:opacity-80 focus:outline-none cursor-pointer"
-        >
-          <img
-            src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
-            alt="Test"
-            className="h-12 max-w-[60px] object-contain pointer-events-none"
-          />
-        </button>
+        <img
+          src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
+          alt="Talehjelp"
+          className="h-12 max-w-[60px] object-contain cursor-pointer"
+          onClick={() => alert("Klikk på Talehjelp virker")}
+        />
+
+        <img
+          src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
+          alt="Språkvalg"
+          className="h-12 max-w-[60px] object-contain cursor-pointer"
+          onClick={() => alert("Klikk på Språkvalg virker")}
+        />
       </div>
 
       <main className="p-4 max-w-5xl mx-auto">{children}</main>
