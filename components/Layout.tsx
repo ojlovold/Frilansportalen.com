@@ -117,7 +117,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Språkvelger */}
       {visSprak && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
+        <div className="fixed top-20 right-6 z-[9999] bg-red-500 bg-opacity-80 border border-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
           {unikeSpråk().map((s) => (
             <button
@@ -133,7 +133,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Talehjelp */}
       {visTale && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
+        <div className="fixed top-20 right-6 z-[9999] bg-red-500 bg-opacity-80 border border-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
           {leser ? (
             <button onClick={stoppLesing}>⏹️ Stopp</button>
