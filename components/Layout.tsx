@@ -83,19 +83,27 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </Link>
 
-        <button title="Talehjelp" onClick={() => setVisTale((v) => !v)} className="hover:opacity-80">
+        <button
+          title="Talehjelp"
+          onClick={() => setVisTale((v) => !v)}
+          className="hover:opacity-80 focus:outline-none cursor-pointer"
+        >
           <img
             src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
             alt="Talehjelp"
-            className="h-12 max-w-[60px] object-contain"
+            className="h-12 max-w-[60px] object-contain pointer-events-none"
           />
         </button>
 
-        <button title="Språkvalg" onClick={() => setVisSprak((v) => !v)} className="hover:opacity-80">
+        <button
+          title="Språkvalg"
+          onClick={() => setVisSprak((v) => !v)}
+          className="hover:opacity-80 focus:outline-none cursor-pointer"
+        >
           <img
             src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
             alt="Språk"
-            className="h-12 max-w-[60px] object-contain"
+            className="h-12 max-w-[60px] object-contain pointer-events-none"
           />
         </button>
       </div>
