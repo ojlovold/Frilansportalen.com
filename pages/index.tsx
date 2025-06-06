@@ -18,15 +18,23 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
-      <BølgeBakgrunn />
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <BølgeBakgrunn />
+      </div>
+
       <LogoHeader />
+
       <section className="relative z-10 max-w-md mx-auto grid grid-cols-2 gap-4">
         {kort.map((k, i) => (
           <RolleKort key={i} {...k} />
         ))}
       </section>
+
       <div className="relative z-10 text-center mt-12">
-        <a href="/registrer" className="inline-block bg-gradient-to-r from-[#8352FF] to-[#C89AFE] text-white font-bold px-10 py-3 rounded-full shadow-xl hover:scale-[1.02] hover:brightness-110 transition">
+        <a
+          href="/registrer"
+          className="inline-block bg-gradient-to-r from-[#8352FF] to-[#C89AFE] text-white font-bold px-10 py-3 rounded-full shadow-xl hover:scale-[1.02] hover:brightness-110 transition"
+        >
           Kom i gang
         </a>
       </div>
