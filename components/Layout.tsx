@@ -157,7 +157,19 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       
 
-<main className="p-4 max-w-5xl mx-auto">
+<script dangerouslySetInnerHTML={{ __html: `
+  setTimeout(() => {
+    document.querySelectorAll('*').forEach(el => {
+      el.style.outline = '1px solid red';
+      const z = getComputedStyle(el).zIndex || 'z0';
+      const pos = getComputedStyle(el).position;
+      const pe = getComputedStyle(el).pointerEvents;
+      el.setAttribute('data-debug', `z:${z} pos:${pos} pe:${pe}`);
+    });
+  }, 500);
+` }} />
+
+$1"p-4 max-w-5xl mx-auto">
   {children}
 </main>
     </div>
