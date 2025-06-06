@@ -171,7 +171,25 @@ export default function Layout({ children }: { children: ReactNode }) {
   TEST
 </button>
 
-<main className={children}</main>
+<button
+  style={{
+    position: "fixed",
+    top: "1rem",
+    right: "1rem",
+    zIndex: 999999,
+    background: "blue",
+    color: "white",
+    padding: "0.5rem",
+    fontSize: "0.75rem"
+  }}
+  onClick={() => alert("Testknapp fungerer")}
+>
+  TEST
+</button>
+
+<main className="p-4 max-w-5xl mx-auto z-0 relative bg-red-500 bg-opacity-50">
+  {children}
+</main>
     </div>
   );
 }
