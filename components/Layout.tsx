@@ -10,17 +10,19 @@ const getFlagg = (lang: string) => {
 
 const unikeSpråk = () => {
   const sett = new Set<string>();
-  return window.speechSynthesis.getVoices()
-    .filter((v) => {
-      if (sett.has(v.lang)) return false;
-      sett.add(v.lang);
-      return true;
-    })
-    .map((v) => ({
-      kode: v.lang,
-      navn: `${getFlagg(v.lang)} ${v.lang}`
-    }))
-    .sort((a, b) => a.navn.localeCompare(b.navn));
+  return typeof window !== "undefined"
+    ? window.speechSynthesis.getVoices()
+        .filter((v) => {
+          if (sett.has(v.lang)) return false;
+          sett.add(v.lang);
+          return true;
+        })
+        .map((v) => ({
+          kode: v.lang,
+          navn: `${getFlagg(v.lang)} ${v.lang}`
+        }))
+        .sort((a, b) => a.navn.localeCompare(b.navn))
+    : [];
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -31,8 +33,10 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [leser, setLeser] = useState(false);
 
   useEffect(() => {
-    const lagret = localStorage.getItem("sprak");
-    if (lagret) setSprak(lagret);
+    if (typeof window !== "undefined") {
+      const lagret = localStorage.getItem("sprak");
+      if (lagret) setSprak(lagret);
+    }
   }, []);
 
   const byttSprak = (kode: string) => {
@@ -54,17 +58,21 @@ export default function Layout({ children }: { children: ReactNode }) {
   };
 
   const lesOpp = () => {
-    const uttale = new SpeechSynthesisUtterance(document.body.innerText);
-    uttale.lang = språkTilLangkode(sprak);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(uttale);
-    setLeser(true);
-    uttale.onend = () => setLeser(false);
+    if (typeof window !== "undefined") {
+      const uttale = new SpeechSynthesisUtterance(document.body.innerText);
+      uttale.lang = språkTilLangkode(sprak);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(uttale);
+      setLeser(true);
+      uttale.onend = () => setLeser(false);
+    }
   };
 
   const stoppLesing = () => {
-    window.speechSynthesis.cancel();
-    setLeser(false);
+    if (typeof window !== "undefined") {
+      window.speechSynthesis.cancel();
+      setLeser(false);
+    }
   };
 
   const visPiler =
@@ -84,70 +92,17 @@ export default function Layout({ children }: { children: ReactNode }) {
         </Link>
 
         <button
-          title="Talehjelp"
-          onClick={() => setVisTale((v) => !v)}
-          className="hover:opacity-80 focus:outline-none cursor-pointer"
-        >
-          <img
-            src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
-            alt="Talehjelp"
-            className="h-12 max-w-[60px] object-contain pointer-events-none"
-          />
-        </button>
-
-        <button
-          title="Språkvalg"
-          onClick={() => setVisSprak((v) => !v)}
+          title="Test"
+          onClick={() => alert("Klikk fungerer")}
           className="hover:opacity-80 focus:outline-none cursor-pointer"
         >
           <img
             src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
-            alt="Språk"
+            alt="Test"
             className="h-12 max-w-[60px] object-contain pointer-events-none"
           />
         </button>
       </div>
-
-      {/* Språkvelger */}
-      {visSprak && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
-          <p className="font-bold mb-2">Velg språk:</p>
-          {unikeSpråk().map((s) => (
-            <button
-              key={s.kode}
-              onClick={() => byttSprak(s.kode)}
-              className="block text-left w-full hover:text-yellow-100"
-            >
-              {s.navn}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Talehjelp */}
-      {visTale && (
-        <div className="fixed top-20 right-6 z-50 bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
-          <p className="font-bold mb-2">Talehjelp:</p>
-          {leser ? (
-            <button onClick={stoppLesing}>⏹️ Stopp</button>
-          ) : (
-            <button onClick={lesOpp}>🔊 Les opp</button>
-          )}
-        </div>
-      )}
-
-      {/* Piler */}
-      {visPiler && (
-        <div className="absolute top-6 left-6 z-50">
-          <TilbakeKnapp retning="venstre" className="w-12 h-12" />
-        </div>
-      )}
-
-      {visPiler && (
-        <div className="absolute top-6 right-6 z-50">
-          <TilbakeKnapp retning="høyre" className="w-12 h-12" />
-        </div>
-      )}
 
       <main className="p-4 max-w-5xl mx-auto">{children}</main>
     </div>
