@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
+import { AutoOversett } from "@/components/Oversetter";
 
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
@@ -155,20 +156,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <script dangerouslySetInnerHTML={{ __html: `
-        setTimeout(() => {
-          document.querySelectorAll('*').forEach(el => {
-            el.style.outline = '1px solid red';
-            const z = getComputedStyle(el).zIndex || 'z0';
-            const pos = getComputedStyle(el).position;
-            const pe = getComputedStyle(el).pointerEvents;
-            el.setAttribute('data-debug', 'z:' + z + ' pos:' + pos + ' pe:' + pe);
-          });
-        }, 500);
-      ` }} />
-
       <main className="p-4 max-w-5xl mx-auto">
-        {children}
+        <AutoOversett>
+          {children}
+        </AutoOversett>
       </main>
     </div>
   );
