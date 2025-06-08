@@ -9,8 +9,10 @@ const getFlagg = (lang: string) => {
 };
 
 const standardSprak = [
-  "no-NO", "en-US", "en-GB", "sv-SE", "da-DK", "de-DE", "fr-FR", "es-ES", "it-IT", "pt-PT",
-  "nl-NL", "fi-FI", "pl-PL", "tr-TR", "cs-CZ", "ja-JP", "ko-KR", "zh-CN"
+  "no-NO", "en-US", "en-GB", "sv-SE", "da-DK", "de-DE", "fr-FR",
+  "es-ES", "it-IT", "pt-PT", "nl-NL", "fi-FI", "pl-PL", "tr-TR",
+  "cs-CZ", "el-GR", "hu-HU", "ro-RO", "sk-SK", "sl-SI", "bg-BG",
+  "ru-RU", "ja-JP", "ko-KR", "zh-CN", "ar-SA", "he-IL", "th-TH"
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
