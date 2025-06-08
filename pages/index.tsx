@@ -18,7 +18,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-white px-4 py-10 font-sans relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className="absolute inset-0 pointer-events-none z-[-10]">
         <BølgeBakgrunn />
       </div>
 
