@@ -1,5 +1,5 @@
 // context/LayoutContext.tsx
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface LayoutContextType {
   visSprak: boolean;
@@ -13,6 +13,10 @@ const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 export function LayoutProvider({ children }: { children: ReactNode }) {
   const [visSprak, setVisSprak] = useState(false);
   const [visTale, setVisTale] = useState(false);
+
+  useEffect(() => {
+    console.log("LayoutContext:", { visTale, visSprak });
+  }, [visTale, visSprak]);
 
   return (
     <LayoutContext.Provider value={{ visSprak, setVisSprak, visTale, setVisTale }}>
