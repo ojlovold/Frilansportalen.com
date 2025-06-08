@@ -3,25 +3,9 @@ import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
 
-// Flagg-emoji fra språkkode
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
   return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
-};
-
-// Språkliste (kun unike lang-koder med flagg)
-const unikeSprak = () => {
-  const sett = new Set<string>();
-  return typeof window !== "undefined"
-    ? window.speechSynthesis.getVoices()
-        .filter((v) => {
-          if (sett.has(v.lang)) return false;
-          sett.add(v.lang);
-          return true;
-        })
-        .map((v) => v.lang)
-        .sort()
-    : [];
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -30,10 +14,28 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [visTale, setVisTale] = useState(false);
   const [sprak, setSprak] = useState("no-NO");
   const [leser, setLeser] = useState(false);
+  const [sprakliste, setSprakliste] = useState<string[]>([]);
 
   useEffect(() => {
     const lagret = localStorage.getItem("sprak");
     if (lagret) setSprak(lagret);
+
+    const oppdaterSprak = () => {
+      const stemmer = window.speechSynthesis.getVoices();
+      const sett = new Set<string>();
+      const unike = stemmer
+        .filter((v) => {
+          if (sett.has(v.lang)) return false;
+          sett.add(v.lang);
+          return true;
+        })
+        .map((v) => v.lang)
+        .sort();
+      setSprakliste(unike);
+    };
+
+    oppdaterSprak();
+    window.speechSynthesis.onvoiceschanged = oppdaterSprak;
   }, []);
 
   const byttSprak = (kode: string) => {
@@ -63,7 +65,6 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
-      {/* Øvre ikonrekke */}
       <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6">
         <Link href="/login">
           <img
@@ -90,11 +91,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Språkvelger */}
       {visSprak && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[50vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
-          {unikeSprak().map((kode) => (
+          {sprakliste.map((kode) => (
             <button
               key={kode}
               onClick={() => byttSprak(kode)}
@@ -106,7 +106,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Talehjelp */}
       {visTale && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
@@ -118,7 +117,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Piler */}
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
