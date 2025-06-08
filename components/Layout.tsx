@@ -3,11 +3,32 @@ import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
 
+// Flaggberegning
+const getFlagg = (lang: string) => {
+  const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
+  return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+};
+
+// Hent alle unike språk
+const alleSprak = () => {
+  const sett = new Set<string>();
+  return typeof window !== "undefined"
+    ? window.speechSynthesis.getVoices()
+        .filter((v) => {
+          if (sett.has(v.lang)) return false;
+          sett.add(v.lang);
+          return true;
+        })
+        .map((v) => v.lang)
+        .sort()
+    : [];
+};
+
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [visSprak, setVisSprak] = useState(false);
   const [visTale, setVisTale] = useState(false);
-  const [sprak, setSprak] = useState("no");
+  const [sprak, setSprak] = useState("no-NO");
   const [leser, setLeser] = useState(false);
 
   useEffect(() => {
@@ -17,21 +38,17 @@ export default function Layout({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const språkTilLangkode = (kode: string) => {
-    switch (kode) {
-      case "en": return "en-US";
-      case "sv": return "sv-SE";
-      case "da": return "da-DK";
-      case "de": return "de-DE";
-      case "fr": return "fr-FR";
-      default: return "no-NO";
-    }
+  const byttSprak = (kode: string) => {
+    localStorage.setItem("sprak", kode);
+    setSprak(kode);
+    router.push(router.pathname, router.asPath, { locale: kode });
+    setVisSprak(false);
   };
 
   const lesOpp = () => {
     if (typeof window !== "undefined") {
       const uttale = new SpeechSynthesisUtterance(document.body.innerText);
-      uttale.lang = språkTilLangkode(sprak);
+      uttale.lang = sprak;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(uttale);
       setLeser(true);
@@ -58,11 +75,15 @@ export default function Layout({ children }: { children: ReactNode }) {
           <img
             src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
             alt="Logg inn"
-            className="h-12 w-12 object-contain"
+            className="h-12 w-12 object-contain transition-transform active:scale-90"
           />
         </Link>
 
-        <button onClick={() => setVisTale((v) => !v)} aria-label="Talehjelp">
+        <button
+          onClick={() => setVisTale((v) => !v)}
+          aria-label="Talehjelp"
+          className="transition-transform active:scale-90"
+        >
           <img
             src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
             alt="Talehjelp"
@@ -70,7 +91,11 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </button>
 
-        <button onClick={() => setVisSprak((v) => !v)} aria-label="Språkvalg">
+        <button
+          onClick={() => setVisSprak((v) => !v)}
+          aria-label="Språkvalg"
+          className="transition-transform active:scale-90"
+        >
           <img
             src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
             alt="Språkvalg"
@@ -79,21 +104,17 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Språkvelger */}
+      {/* Språkvelger med flagg */}
       {visSprak && (
-        <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
+        <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[50vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
-          {["no", "en", "sv", "da", "de", "fr"].map((kode) => (
+          {alleSprak().map((kode) => (
             <button
               key={kode}
-              onClick={() => {
-                localStorage.setItem("sprak", kode);
-                setSprak(kode);
-                setVisSprak(false);
-              }}
+              onClick={() => byttSprak(kode)}
               className="block text-left w-full hover:text-yellow-100"
             >
-              {kode.toUpperCase()}
+              {getFlagg(kode)} {kode}
             </button>
           ))}
         </div>
