@@ -6,15 +6,17 @@ import type { AppProps, AppContext, AppInitialProps } from "next/app";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Layout from "@/components/Layout";
-import GlobalToolbar from "@/components/GlobalToolbar";
+import dynamic from "next/dynamic";
 import { LayoutProvider } from "@/context/LayoutContext";
 import "leaflet/dist/leaflet.css";
 import "../styles/globals.css";
 
+// 🔐 Last inn kun i nettleser – aldri i server-build
+const GlobalToolbar = dynamic(() => import("@/components/GlobalToolbar"), { ssr: false });
+
 export default function App({ Component, pageProps }: AppProps) {
   const [supabaseClient] = useState(() => createBrowserSupabaseClient());
   const router = useRouter();
-
   const isAdmin = router.pathname.startsWith("/admin");
 
   return (
