@@ -23,10 +23,17 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [visTale, setVisTale] = useState(false);
   const [sprak, setSprak] = useState("no-NO");
   const [leser, setLeser] = useState(false);
+  const [stemmer, setStemmer] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
-    const lagret = localStorage.getItem("sprak");
-    if (lagret) setSprak(lagret);
+    if (typeof window !== "undefined") {
+      const lagret = localStorage.getItem("sprak");
+      if (lagret) setSprak(lagret);
+
+      const oppdaterStemmer = () => setStemmer(window.speechSynthesis.getVoices());
+      oppdaterStemmer();
+      window.speechSynthesis.onvoiceschanged = oppdaterStemmer;
+    }
   }, []);
 
   const byttSprak = (kode: string) => {
@@ -39,6 +46,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const lesOpp = () => {
     const uttale = new SpeechSynthesisUtterance(document.body.innerText);
     uttale.lang = sprak;
+    const valgt = stemmer.find((s) => s.lang === sprak);
+    if (valgt) uttale.voice = valgt;
     speechSynthesis.cancel();
     speechSynthesis.speak(uttale);
     setLeser(true);
