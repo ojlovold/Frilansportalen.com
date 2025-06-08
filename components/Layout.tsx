@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
 import { AutoOversett } from "@/components/Oversetter";
+import { useLayout } from "@/context/LayoutContext";
 
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
@@ -28,8 +29,7 @@ const unikeSpråk = () => {
 
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [visSprak, setVisSprak] = useState(false);
-  const [visTale, setVisTale] = useState(false);
+  const { visSprak, setVisSprak, visTale, setVisTale } = useLayout();
   const [sprak, setSprak] = useState("no");
   const [leser, setLeser] = useState(false);
 
@@ -92,7 +92,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </Link>
         <button
-          onClick={() => setVisTale(v => !v)}
+          onClick={() => setVisTale(!visTale)}
           className="hover:opacity-80"
           aria-label="Talehjelp"
         >
@@ -103,7 +103,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </button>
         <button
-          onClick={() => setVisSprak(v => !v)}
+          onClick={() => setVisSprak(!visSprak)}
           className="hover:opacity-80"
           aria-label="Språkvalg"
         >
@@ -115,7 +115,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Popup-vinduer flyttet hit */}
+      {/* Statusindikator */}
+      <div className="fixed top-24 right-6 z-[9999] text-xs text-white bg-black px-2 py-1 rounded">
+        visTale: {visTale ? "JA" : "NEI"} | visSprak: {visSprak ? "JA" : "NEI"}
+      </div>
+
+      {/* Popup-vinduer */}
       {visSprak && (
         <div className="fixed top-20 right-6 z-[9999] bg-red-500 bg-opacity-80 border border-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
@@ -155,11 +160,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <div className="fixed top-24 right-6 z-[9999] text-xs text-white bg-black px-2 py-1 rounded">
-  visTale: {visTale ? "JA" : "NEI"} | visSprak: {visSprak ? "JA" : "NEI"}
-</div>
-
-<main className="p-4 max-w-5xl mx-auto">
+      <main className="p-4 max-w-5xl mx-auto">
         <AutoOversett>
           {children}
         </AutoOversett>
