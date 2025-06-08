@@ -16,13 +16,20 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   const isAdmin = router.pathname.startsWith("/admin");
-  const content = <Component {...pageProps} />;
 
   return (
     <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
       <LayoutProvider>
-        <GlobalToolbar />
-        {isAdmin ? <AdminLayout>{content}</AdminLayout> : <Layout>{content}</Layout>}
+        {isAdmin ? (
+          <AdminLayout>
+            <Component {...pageProps} />
+          </AdminLayout>
+        ) : (
+          <Layout>
+            <GlobalToolbar />
+            <Component {...pageProps} />
+          </Layout>
+        )}
       </LayoutProvider>
     </SessionContextProvider>
   );
