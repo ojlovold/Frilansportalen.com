@@ -2,34 +2,11 @@ import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
-import { AutoOversett } from "@/components/Oversetter";
-import { useLayout } from "@/context/LayoutContext";
-
-const getFlagg = (lang: string) => {
-  const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
-  return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
-};
-
-const unikeSpråk = () => {
-  const sett = new Set<string>();
-  return typeof window !== "undefined"
-    ? window.speechSynthesis.getVoices()
-        .filter((v) => {
-          if (sett.has(v.lang)) return false;
-          sett.add(v.lang);
-          return true;
-        })
-        .map((v) => ({
-          kode: v.lang,
-          navn: `${getFlagg(v.lang)} ${v.lang}`
-        }))
-        .sort((a, b) => a.navn.localeCompare(b.navn))
-    : [];
-};
 
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { visSprak, setVisSprak, visTale, setVisTale } = useLayout();
+  const [visSprak, setVisSprak] = useState(false);
+  const [visTale, setVisTale] = useState(false);
   const [sprak, setSprak] = useState("no");
   const [leser, setLeser] = useState(false);
 
@@ -39,13 +16,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (lagret) setSprak(lagret);
     }
   }, []);
-
-  const byttSprak = (kode: string) => {
-    localStorage.setItem("sprak", kode);
-    setSprak(kode);
-    router.push(router.pathname, router.asPath, { locale: kode });
-    setVisSprak(false);
-  };
 
   const språkTilLangkode = (kode: string) => {
     switch (kode) {
@@ -91,22 +61,16 @@ export default function Layout({ children }: { children: ReactNode }) {
             className="h-12 w-12 object-contain"
           />
         </Link>
-        <button
-          onClick={() => setVisTale(!visTale)}
-          className="hover:opacity-80"
-          aria-label="Talehjelp"
-        >
+
+        <button onClick={() => setVisTale((v) => !v)} aria-label="Talehjelp">
           <img
             src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
             alt="Talehjelp"
             className="h-12 w-12 object-contain"
           />
         </button>
-        <button
-          onClick={() => setVisSprak(!visSprak)}
-          className="hover:opacity-80"
-          aria-label="Språkvalg"
-        >
+
+        <button onClick={() => setVisSprak((v) => !v)} aria-label="Språkvalg">
           <img
             src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
             alt="Språkvalg"
@@ -115,29 +79,29 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Statusindikator */}
-      <div className="fixed top-24 right-6 z-[9999] text-xs text-white bg-black px-2 py-1 rounded">
-        visTale: {visTale ? "JA" : "NEI"} | visSprak: {visSprak ? "JA" : "NEI"}
-      </div>
-
-      {/* Popup-vinduer */}
+      {/* Språkvelger */}
       {visSprak && (
-        <div className="fixed top-20 right-6 z-[9999] bg-red-500 bg-opacity-80 border border-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
+        <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
-          {unikeSpråk().map((s) => (
+          {["no", "en", "sv", "da", "de", "fr"].map((kode) => (
             <button
-              key={s.kode}
-              onClick={() => byttSprak(s.kode)}
+              key={kode}
+              onClick={() => {
+                localStorage.setItem("sprak", kode);
+                setSprak(kode);
+                setVisSprak(false);
+              }}
               className="block text-left w-full hover:text-yellow-100"
             >
-              {s.navn}
+              {kode.toUpperCase()}
             </button>
           ))}
         </div>
       )}
 
+      {/* Talehjelp */}
       {visTale && (
-        <div className="fixed top-20 right-6 z-[9999] bg-red-500 bg-opacity-80 border border-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
+        <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
           {leser ? (
             <button onClick={stoppLesing}>⏹️ Stopp</button>
@@ -161,9 +125,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       )}
 
       <main className="p-4 max-w-5xl mx-auto">
-        <AutoOversett>
-          {children}
-        </AutoOversett>
+        {children}
       </main>
     </div>
   );
