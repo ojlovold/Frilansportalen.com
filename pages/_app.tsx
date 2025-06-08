@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import type { AppProps } from "next/app";
+import type { AppProps, AppContext, AppInitialProps } from "next/app";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Layout from "@/components/Layout";
@@ -35,7 +35,7 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 }
 
-App.getInitialProps = async () => {
+App.getInitialProps = async (appContext: AppContext): Promise<AppInitialProps> => {
   const supabase = createBrowserSupabaseClient();
   const {
     data: { session },
