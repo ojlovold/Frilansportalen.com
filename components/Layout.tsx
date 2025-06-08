@@ -8,34 +8,21 @@ const getFlagg = (lang: string) => {
   return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
 };
 
+const standardSprak = [
+  "no-NO", "en-US", "en-GB", "sv-SE", "da-DK", "de-DE", "fr-FR", "es-ES", "it-IT", "pt-PT",
+  "nl-NL", "fi-FI", "pl-PL", "tr-TR", "cs-CZ", "ja-JP", "ko-KR", "zh-CN"
+];
+
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [visSprak, setVisSprak] = useState(false);
   const [visTale, setVisTale] = useState(false);
   const [sprak, setSprak] = useState("no-NO");
   const [leser, setLeser] = useState(false);
-  const [sprakliste, setSprakliste] = useState<string[]>([]);
 
   useEffect(() => {
     const lagret = localStorage.getItem("sprak");
     if (lagret) setSprak(lagret);
-
-    const oppdaterSprak = () => {
-      const stemmer = window.speechSynthesis.getVoices();
-      const sett = new Set<string>();
-      const unike = stemmer
-        .filter((v) => {
-          if (sett.has(v.lang)) return false;
-          sett.add(v.lang);
-          return true;
-        })
-        .map((v) => v.lang)
-        .sort();
-      setSprakliste(unike);
-    };
-
-    oppdaterSprak();
-    window.speechSynthesis.onvoiceschanged = oppdaterSprak;
   }, []);
 
   const byttSprak = (kode: string) => {
@@ -94,7 +81,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {visSprak && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[50vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
-          {sprakliste.map((kode) => (
+          {standardSprak.map((kode) => (
             <button
               key={kode}
               onClick={() => byttSprak(kode)}
