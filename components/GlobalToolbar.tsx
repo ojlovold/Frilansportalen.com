@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLayout } from "@/context/LayoutContext";
 
+console.log("✅ GlobalToolbar aktiv");
+
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
   return String.fromCodePoint(...[...landkode.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
@@ -83,7 +85,10 @@ export default function GlobalToolbar() {
           />
         </Link>
         <button
-          onClick={() => setVisTale(!visTale)}
+          onClick={() => {
+            console.log("🟡 Klikket tale");
+            setVisTale(!visTale);
+          }}
           className="hover:opacity-80"
           aria-label="Talehjelp"
         >
@@ -94,7 +99,10 @@ export default function GlobalToolbar() {
           />
         </button>
         <button
-          onClick={() => setVisSprak(!visSprak)}
+          onClick={() => {
+            console.log("🔵 Klikket språk");
+            setVisSprak(!visSprak);
+          }}
           className="hover:opacity-80"
           aria-label="Språkvalg"
         >
