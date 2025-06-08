@@ -6,7 +6,6 @@ import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Layout from "@/components/Layout";
-import { AutoOversett } from "@/components/Oversetter"; // ← lagt til
 import "leaflet/dist/leaflet.css";
 import "../styles/globals.css";
 
@@ -18,13 +17,14 @@ export default function App({ Component, pageProps }: AppProps) {
   const content = <Component {...pageProps} />;
 
   return (
-    <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
+    <SessionContextProvider
+      supabaseClient={supabaseClient}
+      initialSession={pageProps.initialSession}
+    >
       {isAdmin ? (
         <AdminLayout>{content}</AdminLayout>
       ) : (
-        <Layout>
-          <AutoOversett>{content}</AutoOversett> {/* Automatisk oversett alt */}
-        </Layout>
+        <Layout>{content}</Layout>
       )}
     </SessionContextProvider>
   );
