@@ -18,17 +18,10 @@ export default function App({ Component, pageProps }: AppProps) {
   const content = <Component {...pageProps} />;
 
   return (
-    <SessionContextProvider
-      supabaseClient={supabaseClient}
-      initialSession={pageProps.initialSession}
-    >
-      {isAdmin ? (
-        <AdminLayout>{content}</AdminLayout>
-      ) : (
-        <LayoutProvider>
-          <Layout>{content}</Layout>
-        </LayoutProvider>
-      )}
+    <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
+      <LayoutProvider>
+        {isAdmin ? <AdminLayout>{content}</AdminLayout> : <Layout>{content}</Layout>}
+      </LayoutProvider>
     </SessionContextProvider>
   );
 }
