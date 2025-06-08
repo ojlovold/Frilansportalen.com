@@ -155,7 +155,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="p-4 max-w-5xl mx-auto">
+      <div className="fixed top-24 right-6 z-[9999] text-xs text-white bg-black px-2 py-1 rounded">
+  visTale: {visTale ? "JA" : "NEI"} | visSprak: {visSprak ? "JA" : "NEI"}
+</div>
+
+<main className="p-4 max-w-5xl mx-auto">
         <AutoOversett>
           {children}
         </AutoOversett>
