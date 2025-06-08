@@ -67,13 +67,13 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
       <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6">
         <Link href="/login" className="hover:opacity-80">
-          <img src="/A_2D_digital_illustration_features_a_raised,_3D-st.png" alt="Logg inn" className="h-12 w-12 object-contain" />
+          <img src="/A_2D_digital_illustration_features_a_raised,_3D-st.png" alt="Logg inn" className="h-12 w-12 object-contain cursor-pointer active:scale-95 transition" />
         </Link>
         <button onClick={() => setVisTale((v) => !v)} aria-label="Talehjelp" className="hover:opacity-80">
-          <img src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png" alt="Talehjelp" className="h-12 w-12 object-contain" />
+          <img src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png" alt="Talehjelp" className="h-12 w-12 object-contain cursor-pointer active:scale-95 transition" />
         </button>
         <button onClick={() => setVisSprak((v) => !v)} aria-label="Språkvalg" className="hover:opacity-80">
-          <img src="/A_2D_digital_image_features_a_three-dimensional_wh.png" alt="Språkvalg" className="h-12 w-12 object-contain" />
+          <img src="/A_2D_digital_image_features_a_three-dimensional_wh.png" alt="Språkvalg" className="h-12 w-12 object-contain cursor-pointer active:scale-95 transition" />
         </button>
       </div>
 
