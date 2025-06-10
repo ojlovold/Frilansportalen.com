@@ -1,8 +1,9 @@
-// components/Layout.tsx – gjenopprettet fungerende versjon med språk og talehjelp
+// components/Layout.tsx – med AutoOversett, språkvalg med flagg og talehjelp koblet til valgt språk
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
+import { AutoOversett } from "@/components/Oversetter";
 
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
@@ -48,14 +49,16 @@ export default function Layout({ children }: { children: ReactNode }) {
   };
 
   const språkTilLangkode = (kode: string) => {
-    switch (kode) {
-      case "en": return "en-US";
-      case "sv": return "sv-SE";
-      case "da": return "da-DK";
-      case "de": return "de-DE";
-      case "fr": return "fr-FR";
-      default: return "no-NO";
-    }
+    const map: Record<string, string> = {
+      en: "en-US",
+      sv: "sv-SE",
+      da: "da-DK",
+      de: "de-DE",
+      fr: "fr-FR",
+      es: "es-ES",
+      no: "no-NO",
+    };
+    return map[kode] || kode;
   };
 
   const lesOpp = () => {
@@ -82,7 +85,6 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
-      {/* Øvre ikonrekke */}
       <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6">
         <Link href="/login" className="hover:opacity-80">
           <img
@@ -145,7 +147,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="p-4 max-w-5xl mx-auto">{children}</main>
+      <main className="p-4 max-w-5xl mx-auto">
+        <AutoOversett>{children}</AutoOversett>
+      </main>
     </div>
   );
 }
