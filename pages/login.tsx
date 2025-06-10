@@ -14,20 +14,32 @@ export default function Login() {
   const handleLogin = async () => {
     setStatus("Logger inn...");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
 
     if (error) {
       setStatus("Feil: " + error.message);
-    } else {
-      // Vent litt, og hard redirect
-      setStatus("Innlogging vellykket!");
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
+      return;
     }
+
+    setStatus("Innlogging fullført, venter på session...");
+
+    let forsøk = 0;
+    const ventOgRedirect = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        window.location.href = "/dashboard";
+      } else if (forsøk < 10) {
+        forsøk++;
+        setTimeout(ventOgRedirect, 300);
+      } else {
+        setStatus("Kunne ikke bekrefte innlogging.");
+      }
+    };
+
+    ventOgRedirect();
   };
 
   return (
