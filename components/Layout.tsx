@@ -1,4 +1,4 @@
-// components/Layout.tsx – FIX: AutoOversett flyttet for å bevare ikonklikk
+// components/Layout.tsx – med aktiv AutoOversett og fungerende ikoner og piler
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
@@ -49,16 +49,14 @@ export default function Layout({ children }: { children: ReactNode }) {
   };
 
   const språkTilLangkode = (kode: string) => {
-    const map: Record<string, string> = {
-      en: "en-US",
-      sv: "sv-SE",
-      da: "da-DK",
-      de: "de-DE",
-      fr: "fr-FR",
-      es: "es-ES",
-      no: "no-NO",
-    };
-    return map[kode] || kode;
+    switch (kode) {
+      case "en": return "en-US";
+      case "sv": return "sv-SE";
+      case "da": return "da-DK";
+      case "de": return "de-DE";
+      case "fr": return "fr-FR";
+      default: return "no-NO";
+    }
   };
 
   const lesOpp = () => {
@@ -79,36 +77,26 @@ export default function Layout({ children }: { children: ReactNode }) {
     }
   };
 
-  const visPiler =
-    typeof window !== "undefined" &&
-    !["/", "/dashboard"].includes(window.location.pathname);
+  const visPiler = typeof window !== "undefined" && !["/", "/dashboard"].includes(window.location.pathname);
 
   return (
     <div className="min-h-screen text-black relative bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8]">
+      {/* Øvre ikonrekke */}
       <div className="fixed top-4 right-28 z-[9999] flex flex-row-reverse items-center gap-6">
         <Link href="/login" className="hover:opacity-80">
-          <img
-            src="/A_2D_digital_illustration_features_a_raised,_3D-st.png"
-            alt="Logg inn"
-            className="h-12 w-12 object-contain cursor-pointer"
-          />
+          <img src="/A_2D_digital_illustration_features_a_raised,_3D-st.png" alt="Logg inn" className="h-12 w-12 object-contain" />
         </Link>
-        <button onClick={() => setVisTale((v) => !v)} className="cursor-pointer">
-          <img
-            src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png"
-            alt="Talehjelp"
-            className="h-12 w-12 object-contain cursor-pointer"
-          />
+        <button onClick={() => setVisTale(v => !v)} className="hover:opacity-80" aria-label="Talehjelp">
+          <img src="/A_3D-rendered_white_icon_in_Norse_or_Viking_style_.png" alt="Talehjelp" className="h-12 w-12 object-contain" />
         </button>
-        <button onClick={() => setVisSprak((v) => !v)} className="cursor-pointer">
-          <img
-            src="/A_2D_digital_image_features_a_three-dimensional_wh.png"
-            alt="Språkvalg"
-            className="h-12 w-12 object-contain cursor-pointer"
-          />
+        <button onClick={() => setVisSprak(v => !v)} className="hover:opacity-80" aria-label="Språkvalg">
+          <img src="/A_2D_digital_image_features_a_three-dimensional_wh.png" alt="Språkvalg" className="h-12 w-12 object-contain" />
         </button>
       </div>
 
+      <AutoOversett />
+
+      {/* Språkvelger */}
       {visSprak && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
           <p className="font-bold mb-2">Velg språk:</p>
@@ -124,6 +112,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
+      {/* Talehjelp */}
       {visTale && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm space-y-2">
           <p className="font-bold mb-2">Talehjelp:</p>
@@ -135,6 +124,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
+      {/* Piler */}
       {visPiler && (
         <div className="absolute top-6 left-6 z-50">
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
@@ -148,9 +138,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       )}
 
       <main className="p-4 max-w-5xl mx-auto">
-        <div suppressHydrationWarning>
-          <AutoOversett>{children}</AutoOversett>
-        </div>
+        {children}
       </main>
     </div>
   );
