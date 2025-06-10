@@ -1,33 +1,58 @@
-// components/Oversetter.tsx – isolasjonstest uten faktisk oversettelse
-import { ReactNode } from "react";
+// components/Oversetter.tsx
+import { useEffect } from "react";
+import { translateTekst } from "@/lib/translate";
 
-export function AutoOversett({ children }: { children: ReactNode }) {
-  // Midlertidig: returner kun children for å teste event-propagation
-  return <>{children}</>;
+function hentTekstnoder(node: Node): Text[] {
+  const tekstnoder: Text[] = [];
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => {
+      if (!n.textContent?.trim()) return NodeFilter.FILTER_REJECT;
+      if (n.parentElement?.tagName === "SCRIPT") return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  let current: Node | null;
+  while ((current = walker.nextNode())) {
+    tekstnoder.push(current as Text);
+  }
+  return tekstnoder;
 }
 
-interface AutoInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  placeholder?: string;
-  title?: string;
-  "aria-label"?: string;
-}
+export function AutoOversett() {
+  useEffect(() => {
+    const språk = localStorage.getItem("sprak") || "no";
+    if (språk === "no") return;
 
-export function AutoInput(props: AutoInputProps) {
-  return <input {...props} />;
-}
+    const oversatt = new WeakSet<Node>();
 
-interface AutoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: string;
-}
+    async function oversettAlt(node: Node) {
+      const noder = hentTekstnoder(node);
+      for (const tekstnode of noder) {
+        if (oversatt.has(tekstnode)) continue;
+        const original = tekstnode.textContent || "";
+        const nyTekst = await translateTekst(original, språk);
+        if (nyTekst && nyTekst !== original) {
+          tekstnode.textContent = nyTekst;
+          oversatt.add(tekstnode);
+        }
+      }
+    }
 
-export function AutoButton({ children, ...rest }: AutoButtonProps) {
-  return <button {...rest}>{children}</button>;
-}
+    const observer = new MutationObserver((mutasjoner) => {
+      for (const mut of mutasjoner) {
+        for (const node of mut.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+            oversettAlt(node);
+          }
+        }
+      }
+    });
 
-interface AutoTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  placeholder?: string;
-}
+    oversettAlt(document.body);
+    observer.observe(document.body, { childList: true, subtree: true });
 
-export function AutoTextarea(props: AutoTextareaProps) {
-  return <textarea {...props} />;
+    return () => observer.disconnect();
+  }, []);
+
+  return null;
 }
