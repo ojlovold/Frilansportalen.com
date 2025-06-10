@@ -14,7 +14,7 @@ export default function Login() {
   const handleLogin = async () => {
     setStatus("Logger inn...");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
@@ -22,10 +22,10 @@ export default function Login() {
     if (error) {
       setStatus("Feil: " + error.message);
     } else {
+      // Vent litt, og hard redirect
       setStatus("Innlogging vellykket!");
-      // Sørger for at session blir satt og dashboard lastes riktig
       setTimeout(() => {
-        window.location.href = "/dashboard"; // Hard redirect
+        window.location.href = "/dashboard";
       }, 1000);
     }
   };
