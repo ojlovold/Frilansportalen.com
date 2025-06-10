@@ -1,4 +1,4 @@
-// components/Layout.tsx – med AutoOversett, språkvalg med flagg og talehjelp koblet til valgt språk
+// components/Layout.tsx – FIX: AutoOversett flyttet for å bevare ikonklikk
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
@@ -148,7 +148,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       )}
 
       <main className="p-4 max-w-5xl mx-auto">
-        <AutoOversett>{children}</AutoOversett>
+        <div suppressHydrationWarning>
+          <AutoOversett>{children}</AutoOversett>
+        </div>
       </main>
     </div>
   );
