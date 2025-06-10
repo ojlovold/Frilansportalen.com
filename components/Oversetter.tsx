@@ -2,56 +2,46 @@
 import { useEffect } from "react";
 import { translateTekst } from "@/lib/translate";
 
-function hentTekstnoder(node: Node): Text[] {
-  const tekstnoder: Text[] = [];
-  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
-    acceptNode: (n) => {
-      if (!n.textContent?.trim()) return NodeFilter.FILTER_REJECT;
-      if (n.parentElement?.tagName === "SCRIPT") return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  let current: Node | null;
-  while ((current = walker.nextNode())) {
-    tekstnoder.push(current as Text);
-  }
-  return tekstnoder;
-}
-
 export function AutoOversett() {
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const språk = localStorage.getItem("sprak") || "no";
-    if (språk === "no") return;
+    const oversettAlt = async () => {
+      const noder = document.querySelectorAll("body *");
+      const tekster: string[] = [];
 
-    const oversatt = new WeakSet<Node>();
-
-    async function oversettAlt(node: Node) {
-      const noder = hentTekstnoder(node);
-      for (const tekstnode of noder) {
-        if (oversatt.has(tekstnode)) continue;
-        const original = tekstnode.textContent || "";
-        const nyTekst = await translateTekst(original, språk);
-        if (nyTekst && nyTekst !== original) {
-          tekstnode.textContent = nyTekst;
-          oversatt.add(tekstnode);
+      noder.forEach((el) => {
+        if (
+          el.childNodes.length === 1 &&
+          el.childNodes[0].nodeType === Node.TEXT_NODE &&
+          el.textContent?.trim()
+        ) {
+          tekster.push(el.textContent.trim());
         }
-      }
-    }
+      });
 
-    const observer = new MutationObserver((mutasjoner) => {
-      for (const mut of mutasjoner) {
-        for (const node of mut.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
-            oversettAlt(node);
-          }
+      const unike = [...new Set(tekster)];
+      const oversatte = await Promise.all(
+        unike.map((t) => translateTekst(t, språk))
+      );
+
+      const oversettMap = new Map(unike.map((t, i) => [t, oversatte[i]]));
+
+      noder.forEach((el) => {
+        if (
+          el.childNodes.length === 1 &&
+          el.childNodes[0].nodeType === Node.TEXT_NODE
+        ) {
+          const opprinnelig = el.textContent?.trim() || "";
+          const ny = oversettMap.get(opprinnelig);
+          if (ny && ny !== opprinnelig) el.textContent = ny;
         }
-      }
-    });
+      });
+    };
 
-    oversettAlt(document.body);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
+    // Bruk idle-tid for å sikre popupene fungerer først
+    window.requestIdleCallback(oversettAlt, { timeout: 3000 });
   }, []);
 
   return null;
