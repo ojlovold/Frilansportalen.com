@@ -30,7 +30,7 @@ export function AutoOversett() {
       }
     };
 
-    setTimeout(oversettAlt, 100); // Liten delay etter render
+    setTimeout(oversettAlt, 100);
   }, []);
 
   return null;
