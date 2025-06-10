@@ -8,40 +8,29 @@ export function AutoOversett() {
 
     const språk = localStorage.getItem("sprak") || "no";
     const oversettAlt = async () => {
-      const noder = document.querySelectorAll("body *");
-      const tekster: string[] = [];
+      const rot = document.querySelector("main");
+      if (!rot) return;
 
-      noder.forEach((el) => {
-        if (
-          el.childNodes.length === 1 &&
-          el.childNodes[0].nodeType === Node.TEXT_NODE &&
-          el.textContent?.trim()
-        ) {
-          tekster.push(el.textContent.trim());
+      const walker = document.createTreeWalker(rot, NodeFilter.SHOW_TEXT);
+      const unike = new Map<string, Text[]>();
+
+      while (walker.nextNode()) {
+        const node = walker.currentNode as Text;
+        const tekst = node.textContent?.trim();
+        if (!tekst || tekst.length < 2) continue;
+        if (!unike.has(tekst)) unike.set(tekst, []);
+        unike.get(tekst)!.push(node);
+      }
+
+      for (const [tekst, noder] of unike.entries()) {
+        const oversatt = await translateTekst(tekst, språk);
+        if (oversatt && oversatt !== tekst) {
+          for (const n of noder) n.textContent = oversatt;
         }
-      });
-
-      const unike = [...new Set(tekster)];
-      const oversatte = await Promise.all(
-        unike.map((t) => translateTekst(t, språk))
-      );
-
-      const oversettMap = new Map(unike.map((t, i) => [t, oversatte[i]]));
-
-      noder.forEach((el) => {
-        if (
-          el.childNodes.length === 1 &&
-          el.childNodes[0].nodeType === Node.TEXT_NODE
-        ) {
-          const opprinnelig = el.textContent?.trim() || "";
-          const ny = oversettMap.get(opprinnelig);
-          if (ny && ny !== opprinnelig) el.textContent = ny;
-        }
-      });
+      }
     };
 
-    // Bruk idle-tid for å sikre popupene fungerer først
-    window.requestIdleCallback(oversettAlt, { timeout: 3000 });
+    setTimeout(oversettAlt, 100); // Liten delay etter render
   }, []);
 
   return null;
