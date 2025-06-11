@@ -1,21 +1,13 @@
 // lib/redirectAfterLogin.ts
-import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
-import { NextApiRequest, NextApiResponse } from "next";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { NextRouter } from "next/router";
 
-export async function redirectEtterInnlogging(req: NextApiRequest, res: NextApiResponse) {
-  const supabase = createServerSupabaseClient({ req, res });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.user) return "/login";
-
-  const brukerId = session.user.id;
-  const { data: profil } = await supabase
-    .from("profiler")
-    .select("navn")
-    .eq("id", brukerId)
-    .single();
-
-  return profil?.navn ? "/dashboard" : "/registrer-informasjon";
+export function redirectAfterLogin(userId: string, router: NextRouter) {
+  // Midlertidig spesialtilfelle – gi tilgang direkte hvis ID matcher eier
+  if (userId === "890ebf4a-bbdc-4424-be87-341c0b34972e") {
+    router.push("/dashboard");
+  } else {
+    // Vanlig flyt: send bruker til utfyllingsside etter første innlogging
+    router.push("/registrer");
+  }
 }
