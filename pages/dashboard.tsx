@@ -22,9 +22,11 @@ export default function Dashboard() {
   // 🚦 Sjekk om brukerens profilinfo er fullført
   useEffect(() => {
     const hentProfil = async () => {
+      if (!user) return;
+
       const { data: profil } = await supabase
         .from("profiler")
-        .select("navn") // utvid gjerne
+        .select("navn")
         .eq("id", user.id)
         .single();
 
@@ -33,7 +35,7 @@ export default function Dashboard() {
       }
     };
 
-    if (user) hentProfil();
+    hentProfil();
   }, [user]);
 
   useEffect(() => {
