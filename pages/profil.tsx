@@ -2,98 +2,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSupabaseClient, useUser } from "@supabase/auth-helpers-react";
+import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Head from "next/head";
 
 export default function Profil() {
-  const supabase = useSupabaseClient();
   const user = useUser();
+  const supabase = useSupabaseClient();
 
-  const [data, setData] = useState<any>(null);
+  const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("");
-  const [omMeg, setOmMeg] = useState("");
-  const [ekstraBilder, setEkstraBilder] = useState<File[]>([]);
-  const [visning, setVisning] = useState(true);
+
+  const hentProfil = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("profiler").select("*").eq("id", user.id).single();
+    setProfil(data);
+  };
 
   useEffect(() => {
-    const hentProfil = async () => {
-      if (!user) return;
-      const { data } = await supabase.from("profiler").select("*")
-
-        .eq("id", user.id).single();
-      if (data) {
-        setData(data);
-        setOmMeg(data.om_meg || "");
-      }
-    };
     hentProfil();
   }, [user]);
 
-  const lagreOmMeg = async () => {
-    if (!user) return;
-    const { error } = await supabase.from("profiler").update({ om_meg: omMeg }).eq("id", user.id);
-    setStatus(error ? "❌ Feil" : "✅ Lagret");
+  const oppdaterFelt = (felt: string, verdi: any) => {
+    setProfil((prev: any) => ({ ...prev, [felt]: verdi }));
   };
 
-  const lastOppEkstraBilder = async () => {
-    if (!user || ekstraBilder.length === 0) return;
-    const urls: string[] = [];
-    for (const bilde of ekstraBilder) {
-      const filnavn = `${user.id}/galleri/${Date.now()}_${bilde.name}`;
-      const { error } = await supabase.storage.from("profilbilder").upload(filnavn, bilde, {
-        upsert: false,
-        contentType: bilde.type || "image/jpeg"
-      });
-      if (!error) {
-        const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
-        urls.push(url);
-      }
-    }
-    const { error } = await supabase.from("profiler").update({ ekstra_bilder: urls }).eq("id", user.id);
-    setStatus(error ? "❌ Feil ved opplasting" : "✅ Bilder lagret");
+  const lagre = async () => {
+    if (!profil || !user) return;
+    setStatus("Lagrer...");
+    const { error } = await supabase.from("profiler").update(profil).eq("id", user.id);
+    setStatus(error ? "❌ " + error.message : "✅ Lagret");
   };
 
-  if (!user) return <div className="p-8">Laster bruker...</div>;
+  if (!profil) return <div className="p-6">Laster...</div>;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-400 via-yellow-300 to-yellow-100 text-black p-6">
+    <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] p-6 text-black">
       <Head>
         <title>Min profil | Frilansportalen</title>
       </Head>
+      <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur p-6 rounded-xl shadow-xl">
+        <h1 className="text-2xl font-bold mb-6">Min profil</h1>
 
-      <div className="max-w-4xl mx-auto bg-white/90 p-6 rounded-xl shadow-xl">
-        <div className="flex flex-col md:flex-row gap-6">
-          <img
-            src={data?.bilde || "/default.jpg"}
-            alt="Profilbilde"
-            className="w-32 h-32 rounded-full object-cover border"
-          />
-          <div>
-            <h1 className="text-2xl font-bold">{data?.navn}</h1>
-            <p className="text-sm text-gray-600">{data?.epost}</p>
-            <p className="text-sm">📞 {data?.telefon}</p>
-            <p className="text-sm">🎂 {data?.fodselsdato}</p>
-            <p className="text-sm">🏳️ {data?.nasjonalitet}</p>
-            <p className="text-sm">📍 {data?.adresse}, {data?.postnummer} {data?.poststed}</p>
-            <p className="text-sm">👤 {data?.kjonn}</p>
-            <div className="mt-2 flex gap-2 flex-wrap">
-              {(data?.roller || [])?.split(',').map((r: string, i: number) => (
-                <span key={i} className="bg-yellow-200 text-black text-xs px-2 py-1 rounded-full">
-                  {r}
-                </span>
-              ))}
-            </div>
-          </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <label>
+            Navn:
+            <input value={profil.navn || ""} onChange={e => oppdaterFelt("navn", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Telefonnummer:
+            <input value={profil.telefon || ""} onChange={e => oppdaterFelt("telefon", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Adresse:
+            <input value={profil.adresse || ""} onChange={e => oppdaterFelt("adresse", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Postnummer:
+            <input value={profil.postnummer || ""} onChange={e => oppdaterFelt("postnummer", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Poststed:
+            <input value={profil.poststed || ""} onChange={e => oppdaterFelt("poststed", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Fødselsdato:
+            <input type="date" value={profil.fodselsdato || ""} onChange={e => oppdaterFelt("fodselsdato", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label>
+            Kjønn:
+            <select value={profil.kjonn || ""} onChange={e => oppdaterFelt("kjonn", e.target.value)} className="w-full p-2 border rounded">
+              <option value="">Velg...</option>
+              <option value="kvinne">Kvinne</option>
+              <option value="mann">Mann</option>
+              <option value="ikke-binær">Ikke-binær</option>
+              <option value="transperson">Transperson</option>
+              <option value="annet">Annet</option>
+              <option value="vil ikke oppgi">Vil ikke oppgi</option>
+            </select>
+          </label>
+
+          <label>
+            Nasjonalitet:
+            <input value={profil.nasjonalitet || ""} onChange={e => oppdaterFelt("nasjonalitet", e.target.value)} className="w-full p-2 border rounded" />
+          </label>
+
+          <label className="md:col-span-2">
+            Om meg:
+            <textarea value={profil.om_meg || ""} onChange={e => oppdaterFelt("om_meg", e.target.value)} className="w-full p-2 border rounded h-32" />
+          </label>
         </div>
 
-        <hr className="my-6" />
-
-        <h2 className="text-lg font-semibold mb-2">Om meg</h2>
-        {visning ? (
-          <div className="bg-gray-100 p-4 rounded mb-4 whitespace-pre-line">
-            {data?.om_meg || "Ingen tekst lagt inn ennå."}
-          </div>
-        ) : (
-          <textarea
-            value={omMeg}
-            onChange
+        <button onClick={lagre} className="mt-6 bg-black text-white px-6 py-2 rounded hover:bg-gray-800">
+          Lagre endringer
+        </button>
+        {status && <p className="mt-4 text-sm text-center">{status}</p>}
+      </div>
+    </main>
+  );
+}
