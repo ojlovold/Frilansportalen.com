@@ -1,4 +1,3 @@
-// pages/dashboard.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,6 +18,23 @@ export default function Dashboard() {
   const [fakturaer, setFakturaer] = useState<any[]>([]);
   const [rapporter, setRapporter] = useState<any[]>([]);
   const [kjorebok, setKjorebok] = useState<any[]>([]);
+
+  // 🚦 Sjekk om brukerens profilinfo er fullført
+  useEffect(() => {
+    const hentProfil = async () => {
+      const { data: profil } = await supabase
+        .from("profiler")
+        .select("navn") // utvid gjerne
+        .eq("id", user.id)
+        .single();
+
+      if (!profil?.navn) {
+        router.push("/profil-info");
+      }
+    };
+
+    if (user) hentProfil();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,18 +92,18 @@ export default function Dashboard() {
           <p className="text-sm text-black/70 mb-6">Velkommen tilbake til Frilansportalen</p>
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-[6px_8px_18px_rgba(0,0,0,0.4)] border border-white/10 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-lg border border-white/10 rounded-xl p-6">
               <h2 className="font-semibold text-lg mb-2">Fakturaer</h2>
               <p className="text-sm mb-2">Du har {fakturaer.length} fakturaer</p>
               <Link href="/faktura" className="underline text-blue-300">Send ny faktura</Link>
             </div>
 
-            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-[6px_8px_18px_rgba(0,0,0,0.4)] border border-white/10 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-lg border border-white/10 rounded-xl p-6">
               <h2 className="font-semibold text-lg mb-2">Rapporter</h2>
               <p className="text-sm mb-2">Totalt: {rapporter.length}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-[6px_8px_18px_rgba(0,0,0,0.4)] border border-white/10 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A2A2C] text-white shadow-lg border border-white/10 rounded-xl p-6">
               <h2 className="font-semibold text-lg mb-2">Kjørebok</h2>
               <p className="text-sm mb-2">Totalt: {kjorebok.length} turer</p>
             </div>
@@ -102,14 +118,12 @@ export default function Dashboard() {
                   kolonner={["Dato", "Beskrivelse", "Beløp"]}
                   rader={fakturaer.map((f) => [f.dato, f.beskrivelse, `${f.belop} kr`])}
                 />
-
                 <AutoPDFKnapp
                   tittel="Rapportoversikt"
                   filnavn="rapporter"
                   kolonner={["Dato", "Innhold"]}
                   rader={rapporter.map((r) => [r.dato, r.innhold])}
                 />
-
                 <AutoPDFKnapp
                   tittel="Kjørebok"
                   filnavn="kjorebok"
