@@ -18,7 +18,7 @@ export default function ProfilSide() {
       try {
         const { data, error } = await supabase
           .from("profiler")
-          .select("id, navn, telefon, adresse, postnummer, poststed, fodselsdato, kjonn, nasjonalitet, rolle, bilde, om_meg, cv, epost")
+          .select("id, navn, epost, telefon, adresse, postnummer, poststed, fodselsdato, kjonn, nasjonalitet, rolle, bilde, om_meg, cv, ekstra_bilder")
           .eq("id", user.id)
           .single();
 
@@ -105,13 +105,13 @@ export default function ProfilSide() {
           <div className="bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
             <h2 className="text-xl font-semibold mb-4">CV og roller</h2>
             <textarea
-              value={profil.cv || "Ingen CV registrert."}
+              value={profil.cv || ""}
               onChange={(e) => oppdaterFelt("cv", e.target.value)}
               placeholder="Din erfaring, utdanning, prosjekter..."
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
             <input
-              value={profil.rolle || "Roller ikke valgt"}
+              value={profil.rolle || ""}
               onChange={(e) => oppdaterFelt("rolle", e.target.value)}
               placeholder="Roller / kompetanseområder"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
