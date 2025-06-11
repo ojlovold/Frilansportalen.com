@@ -20,6 +20,7 @@ export default function ProfilInfo() {
   const [adresse, setAdresse] = useState("");
   const [postnummer, setPostnummer] = useState("");
   const [poststed, setPoststed] = useState("");
+  const [rolle, setRolle] = useState<string[]>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -41,7 +42,9 @@ export default function ProfilInfo() {
   const hentPoststed = async (postnr: string) => {
     if (postnr.length === 4) {
       try {
-        const res = await fetch(`https://api.bring.com/shippingguide/api/postalCode.json?clientUrl=frilansportalen.com&pnr=${postnr}`);
+        const res = await fetch(
+          `https://api.bring.com/shippingguide/api/postalCode.json?clientUrl=frilansportalen.com&pnr=${postnr}`
+        );
         const data = await res.json();
         if (data.result) setPoststed(data.result);
       } catch {
@@ -94,6 +97,7 @@ export default function ProfilInfo() {
       adresse,
       postnummer,
       poststed,
+      rolle: rolle.join(","),
       epost: user.email,
     });
 
@@ -176,6 +180,26 @@ export default function ProfilInfo() {
           <option value="annet">Annet</option>
           <option value="vil ikke oppgi">Vil ikke oppgi</option>
         </select>
+
+        <label className="block font-semibold mb-2">Roller</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          {["arbeidsgiver", "frilanser", "jobbsoker", "tjenestetilbyder"].map((r) => (
+            <label key={r} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={rolle.includes(r)}
+                onChange={(e) =>
+                  setRolle((prev) =>
+                    e.target.checked
+                      ? [...prev, r]
+                      : prev.filter((val) => val !== r)
+                  )
+                }
+              />
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </label>
+          ))}
+        </div>
 
         <label className="block font-semibold">Nasjonalitet</label>
         <input
