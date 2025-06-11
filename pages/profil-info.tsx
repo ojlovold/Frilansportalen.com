@@ -97,7 +97,7 @@ export default function ProfilInfo() {
       adresse,
       postnummer,
       poststed,
-      roller: roller.join(","),
+      roller: roller,
       epost: user.email,
     });
 
