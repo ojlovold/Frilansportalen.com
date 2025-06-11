@@ -1,9 +1,9 @@
+// pages/login.tsx
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
-import { redirectAfterLogin } from "@/lib/redirectAfterLogin";
 
 export default function Login() {
   const router = useRouter();
@@ -13,16 +13,16 @@ export default function Login() {
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
 
     if (error) {
-      setStatus("Feil: " + error.message);
+      setStatus("❌ Feil: " + error.message);
     } else {
-      setStatus("Innlogging vellykket!");
-      await redirectAfterLogin(router); // ← Bruker korrekt redirect basert på profil
+      setStatus("✅ Innlogging vellykket!");
+      setTimeout(() => router.push("/profil-info"), 1000);
     }
   };
 
