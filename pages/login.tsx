@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
+import { redirectAfterLogin } from "@/lib/redirectAfterLogin";
 
 export default function Login() {
   const router = useRouter();
@@ -12,16 +13,17 @@ export default function Login() {
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
-    const { error } = await supabase.auth.signInWithPassword({
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
 
     if (error) {
       setStatus("Feil: " + error.message);
-    } else {
-      console.log("✅ Login success, redirecting");
-      router.push("/dashboard");
+    } else if (data.user) {
+      setStatus("Innlogging vellykket!");
+      redirectAfterLogin(data.user.id, router);
     }
   };
 
