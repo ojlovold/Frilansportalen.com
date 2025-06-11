@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import type { AppProps } from "next/app";
+import type { AppProps, AppContext, AppInitialProps } from "next/app";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Layout from "@/components/Layout";
@@ -11,6 +11,7 @@ import { LayoutProvider } from "@/context/LayoutContext";
 import "leaflet/dist/leaflet.css";
 import "../styles/globals.css";
 
+// Bare til nettleser
 const GlobalToolbar = dynamic(() => import("@/components/GlobalToolbar"), { ssr: false });
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -35,3 +36,16 @@ export default function App({ Component, pageProps }: AppProps) {
     </SessionContextProvider>
   );
 }
+
+App.getInitialProps = async (appContext: AppContext): Promise<AppInitialProps> => {
+  const supabase = createBrowserSupabaseClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return {
+    pageProps: {
+      initialSession: session,
+    },
+  };
+};
