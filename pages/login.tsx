@@ -1,5 +1,3 @@
-// pages/login.tsx
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
@@ -20,10 +18,10 @@ export default function Login() {
     });
 
     if (error) {
-      setStatus("❌ Feil: " + error.message);
+      setStatus("Feil: " + error.message);
     } else {
-      setStatus("✅ Innlogging vellykket!");
-      setTimeout(() => router.push("/dashboard"), 1200);
+      console.log("✅ Login success, redirecting");
+      router.push("/dashboard");
     }
   };
 
@@ -63,15 +61,7 @@ export default function Login() {
           Logg inn
         </button>
 
-        {status && (
-          <p
-            className={`text-center text-sm mt-4 ${
-              status.startsWith("✅") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {status}
-          </p>
-        )}
+        {status && <p className="text-center text-sm mt-4">{status}</p>}
 
         <Link href="/" className="block text-center text-sm text-blue-600 underline mt-6">
           Tilbake til forsiden
