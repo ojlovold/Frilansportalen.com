@@ -1,13 +1,16 @@
 // lib/redirectAfterLogin.ts
-import { SupabaseClient } from "@supabase/supabase-js";
-import { NextRouter } from "next/router";
+import { supabase } from "@/lib/supabaseClient";
 
-export function redirectAfterLogin(userId: string, router: NextRouter) {
-  // Midlertidig spesialtilfelle – gi tilgang direkte hvis ID matcher eier
-  if (userId === "890ebf4a-bbdc-4424-be87-341c0b34972e") {
-    router.push("/dashboard");
+export async function redirectAfterLogin(userId: string, router: any) {
+  const { data: profil } = await supabase
+    .from("profiler")
+    .select("navn")
+    .eq("id", userId)
+    .single();
+
+  if (!profil?.navn) {
+    router.push("/profil-info");
   } else {
-    // Vanlig flyt: send bruker til utfyllingsside etter første innlogging
-    router.push("/registrer");
+    router.push("/dashboard");
   }
 }
