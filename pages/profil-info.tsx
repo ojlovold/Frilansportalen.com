@@ -20,7 +20,7 @@ export default function ProfilInfo() {
   const [adresse, setAdresse] = useState("");
   const [postnummer, setPostnummer] = useState("");
   const [poststed, setPoststed] = useState("");
-  const [rolle, setRolle] = useState<string[]>([]);
+  const [roller, setRoller] = useState<string[]>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function ProfilInfo() {
       adresse,
       postnummer,
       poststed,
-      rolle: rolle.join(","),
+      roller: roller.join(","),
       epost: user.email,
     });
 
@@ -183,13 +183,13 @@ export default function ProfilInfo() {
 
         <label className="block font-semibold mb-2">Roller</label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-          {["arbeidsgiver", "frilanser", "jobbsoker", "tjenestetilbyder"].map((r) => (
+          {["arbeidsgiver", "frilanser", "jobbsøker", "tjenestetilbyder"].map((r) => (
             <label key={r} className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={rolle.includes(r)}
+                checked={roller.includes(r)}
                 onChange={(e) =>
-                  setRolle((prev) =>
+                  setRoller((prev) =>
                     e.target.checked
                       ? [...prev, r]
                       : prev.filter((val) => val !== r)
