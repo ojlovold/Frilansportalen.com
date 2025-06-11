@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
 import TilbakeKnapp from "@/components/TilbakeKnapp";
 import Link from "next/link";
-import { AutoOversett } from "@/components/Oversetter";
+// import { AutoOversett } from "@/components/Oversetter"; // ← Kommentert ut
 
 const getFlagg = (lang: string) => {
   const landkode = lang.split("-")[1]?.toLowerCase() || lang.slice(-2).toLowerCase();
@@ -115,11 +115,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      {/* Innhold */}
-      <main className="p-4 w-full max-w-7xl mx-auto">
-        <AutoOversett>{children}</AutoOversett>
-      </main>
-
       {/* Språkvelger */}
       {visSprak && (
         <div className="fixed top-20 right-6 z-[9999] bg-black text-yellow-300 p-4 rounded shadow-xl text-sm max-h-[40vh] overflow-y-auto space-y-1">
@@ -159,6 +154,11 @@ export default function Layout({ children }: { children: ReactNode }) {
           <TilbakeKnapp retning="høyre" className="w-12 h-12" />
         </div>
       )}
+
+      <main className="p-4 max-w-5xl mx-auto">
+        {/* <AutoOversett>{children}</AutoOversett> */} {/* ← Oversetter skrudd av */}
+        {children}
+      </main>
     </div>
   );
 }
