@@ -19,7 +19,21 @@ export default function ProfilInfo() {
   const [nasjonalitet, setNasjonalitet] = useState("");
   const [fodsel, setFodsel] = useState("");
   const [adresse, setAdresse] = useState("");
+  const [postnummer, setPostnummer] = useState("");
+  const [poststed, setPoststed] = useState("");
   const [status, setStatus] = useState("");
+
+  const hentPoststed = async (postnr: string) => {
+    if (postnr.length === 4) {
+      try {
+        const res = await fetch(`https://api.bring.com/shippingguide/api/postalCode.json?clientUrl=frilansportalen.com&pnr=${postnr}`);
+        const data = await res.json();
+        if (data.result) setPoststed(data.result);
+      } catch {
+        setPoststed("");
+      }
+    }
+  };
 
   const lagre = async () => {
     if (!user) return;
@@ -49,6 +63,8 @@ export default function ProfilInfo() {
       nasjonalitet,
       fodselsdato: fodsel,
       adresse,
+      postnummer,
+      poststed,
       epost: user.email
     });
 
@@ -92,6 +108,21 @@ export default function ProfilInfo() {
           onChange={(e) => setAdresse(e.target.value)}
           className="w-full p-3 rounded border border-gray-300 mb-4"
         />
+
+        <label className="block font-semibold">Postnummer</label>
+        <input
+          type="text"
+          value={postnummer}
+          onChange={(e) => {
+            setPostnummer(e.target.value);
+            hentPoststed(e.target.value);
+          }}
+          className="w-full p-3 rounded border border-gray-300 mb-4"
+        />
+
+        {poststed && (
+          <p className="text-sm text-black/60 mb-4">Poststed: {poststed}</p>
+        )}
 
         <label className="block font-semibold">Fødselsdato</label>
         <input
