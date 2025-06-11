@@ -115,7 +115,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      <AutoOversett>{children}</AutoOversett>
+      {/* Innhold */}
+      <main className="p-4 w-full max-w-7xl mx-auto">
+        <AutoOversett>{children}</AutoOversett>
+      </main>
 
       {/* Språkvelger */}
       {visSprak && (
@@ -151,7 +154,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           <TilbakeKnapp retning="venstre" className="w-12 h-12" />
         </div>
       )}
-
       {visPiler && (
         <div className="absolute top-6 right-6 z-50">
           <TilbakeKnapp retning="høyre" className="w-12 h-12" />
