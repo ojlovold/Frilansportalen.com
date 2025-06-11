@@ -1,7 +1,7 @@
 // pages/profil-info.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -13,6 +13,7 @@ export default function ProfilInfo() {
 
   const [navn, setNavn] = useState("");
   const [telefon, setTelefon] = useState("");
+  const [rolle, setRolle] = useState("");
   const [bilde, setBilde] = useState<File | null>(null);
   const [kjonn, setKjonn] = useState("");
   const [nasjonalitet, setNasjonalitet] = useState("");
@@ -20,31 +21,12 @@ export default function ProfilInfo() {
   const [adresse, setAdresse] = useState("");
   const [postnummer, setPostnummer] = useState("");
   const [poststed, setPoststed] = useState("");
-  const [roller, setRoller] = useState<string[]>([]);
   const [status, setStatus] = useState("");
-
-  useEffect(() => {
-    const hentProfil = async () => {
-      const { data: profil } = await supabase
-        .from("profiler")
-        .select("navn")
-        .eq("id", user?.id)
-        .single();
-
-      if (profil?.navn) {
-        router.push("/dashboard");
-      }
-    };
-
-    if (user) hentProfil();
-  }, [user]);
 
   const hentPoststed = async (postnr: string) => {
     if (postnr.length === 4) {
       try {
-        const res = await fetch(
-          `https://api.bring.com/shippingguide/api/postalCode.json?clientUrl=frilansportalen.com&pnr=${postnr}`
-        );
+        const res = await fetch(`https://api.bring.com/shippingguide/api/postalCode.json?clientUrl=frilansportalen.com&pnr=${postnr}`);
         const data = await res.json();
         if (data.result) setPoststed(data.result);
       } catch {
@@ -53,43 +35,29 @@ export default function ProfilInfo() {
     }
   };
 
-  const lastOppBilde = async (): Promise<string | null> => {
-    if (!bilde || !user) return null;
-
-    try {
-      const fileExt = bilde.name.split(".").pop();
-      const filnavn = `${user.id}/profilbilde.${fileExt}`;
-      const { error } = await supabase.storage
-        .from("profilbilder")
-        .upload(filnavn, bilde, {
-          upsert: true,
-          contentType: bilde.type || "image/jpeg",
-        });
-
-      if (error) {
-        console.error("Opplasting feilet:", error.message);
-        setStatus("❌ Feil ved opplasting av bilde: " + error.message);
-        return null;
-      }
-
-      return supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
-    } catch (err: any) {
-      console.error("Feil ved bildebehandling:", err);
-      setStatus("❌ Bildeopplasting mislyktes.");
-      return null;
-    }
-  };
-
   const lagre = async () => {
     if (!user) return;
     setStatus("Lagrer...");
 
-    const bildeUrl = await lastOppBilde();
+    let bildeUrl = null;
+    if (bilde) {
+      const filnavn = `${user.id}/profilbilde.${bilde.name.split(".").pop()}`;
+      const { data, error } = await supabase.storage.from("profilbilder").upload(filnavn, bilde, {
+        upsert: true,
+        contentType: bilde.type,
+      });
+      if (error) {
+        setStatus("❌ Feil ved opplasting av bilde");
+        return;
+      }
+      bildeUrl = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
+    }
 
     const { error } = await supabase.from("profiler").upsert({
       id: user.id,
       navn,
       telefon,
+      rolle,
       bilde: bildeUrl,
       kjonn,
       nasjonalitet,
@@ -97,16 +65,14 @@ export default function ProfilInfo() {
       adresse,
       postnummer,
       poststed,
-      roller: roller,
-      epost: user.email,
+      epost: user.email
     });
 
     if (error) {
-      console.error("Feil ved lagring:", error.message);
       setStatus("❌ Feil ved lagring: " + error.message);
     } else {
       setStatus("✅ Lagret");
-      router.push("/dashboard");
+      router.push("/profil");
     }
   };
 
@@ -181,26 +147,6 @@ export default function ProfilInfo() {
           <option value="vil ikke oppgi">Vil ikke oppgi</option>
         </select>
 
-        <label className="block font-semibold mb-2">Roller</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-          {["arbeidsgiver", "frilanser", "jobbsøker", "tjenestetilbyder"].map((r) => (
-            <label key={r} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={roller.includes(r)}
-                onChange={(e) =>
-                  setRoller((prev) =>
-                    e.target.checked
-                      ? [...prev, r]
-                      : prev.filter((val) => val !== r)
-                  )
-                }
-              />
-              {r.charAt(0).toUpperCase() + r.slice(1)}
-            </label>
-          ))}
-        </div>
-
         <label className="block font-semibold">Nasjonalitet</label>
         <input
           type="text"
@@ -208,6 +154,19 @@ export default function ProfilInfo() {
           onChange={(e) => setNasjonalitet(e.target.value)}
           className="w-full p-3 rounded border border-gray-300 mb-4"
         />
+
+        <label className="block font-semibold">Rolle</label>
+        <select
+          value={rolle}
+          onChange={(e) => setRolle(e.target.value)}
+          className="w-full p-3 rounded border border-gray-300 mb-4"
+        >
+          <option value="">Velg...</option>
+          <option value="arbeidsgiver">Arbeidsgiver</option>
+          <option value="frilanser">Frilanser</option>
+          <option value="jobbsøker">Jobbsøker</option>
+          <option value="tjenestetilbyder">Tjenestetilbyder</option>
+        </select>
 
         <label className="block font-semibold">Profilbilde</label>
         <input
