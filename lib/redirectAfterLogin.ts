@@ -7,21 +7,17 @@ export async function redirectAfterLogin(router: NextRouter) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    router.push("/login");
-    return;
-  }
+  if (!user) return router.push("/");
 
-  // Sjekk om brukeren har lagret profilinfo (som navn)
   const { data: profil } = await supabase
     .from("profiler")
     .select("navn")
     .eq("id", user.id)
     .single();
 
-  if (!profil || !profil.navn) {
-    router.push("/profil-info"); // Send til profilsiden første gang
+  if (!profil || !profil.navn || profil.navn.trim() === "") {
+    return router.push("/profil-info");
   } else {
-    router.push("/dashboard"); // Send videre til hoveddashboard
+    return router.push("/dashboard");
   }
 }
