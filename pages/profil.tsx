@@ -41,35 +41,46 @@ export default function ProfilSide() {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
   };
 
-  const lastOppBilde = async (fil: File) => {
-    if (!user) return;
-
-    const filnavn = `${user.id}-${Date.now()}`;
-    const { data, error: opplastingError } = await supabase.storage.from("profilbilder").upload(filnavn, fil);
-
-    if (opplastingError) {
-      console.error("Feil ved opplasting:", opplastingError);
-      return;
-    }
-
-    const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
-
-    const { error: updateError } = await supabase.from("profiler").update({ bilde: url }).eq("id", user.id);
-
-    if (updateError) {
-      console.error("Feil ved oppdatering av profil:", updateError);
-    } else {
-      console.log("✅ Profilbilde oppdatert med URL:", url);
-      setProfil((p: any) => ({ ...p, bilde: url }));
-    }
-  };
-
   const lagre = async () => {
     if (!user || !profil) return;
     setStatus("Lagrer...");
     const { error } = await supabase.from("profiler").update(profil).eq("id", user.id);
     if (error) setStatus("❌ Feil: " + error.message);
     else setStatus("✅ Lagret");
+  };
+
+  const lastOppBilde = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0 || !user) return;
+    const fil = event.target.files[0];
+    const filnavn = `${user.id}-${Date.now()}`;
+    const { error: uploadError } = await supabase.storage
+      .from("profilbilder")
+      .upload(filnavn, fil, { upsert: true });
+
+    if (uploadError) {
+      setStatus("❌ Feil ved opplasting: " + uploadError.message);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("profilbilder")
+      .getPublicUrl(filnavn);
+
+    const bildeUrl = data?.publicUrl;
+
+    if (bildeUrl) {
+      const { error: updateError } = await supabase
+        .from("profiler")
+        .update({ bilde: bildeUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
+      } else {
+        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl }));
+        setStatus("✅ Bilde lastet opp og lagret!");
+      }
+    }
   };
 
   if (!profil) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
@@ -95,7 +106,6 @@ export default function ProfilSide() {
                   Ingen bilde
                 </div>
               )}
-              <input type="file" onChange={(e) => e.target.files?.[0] && lastOppBilde(e.target.files[0])} className="mt-2 text-sm" />
             </div>
 
             <div className="flex-1">
@@ -107,6 +117,12 @@ export default function ProfilSide() {
                 onChange={(e) => oppdaterFelt("om_meg", e.target.value)}
                 placeholder="Skriv noe om deg selv..."
                 className="w-full mt-4 p-3 border border-gray-700 rounded bg-gray-900 text-white"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={lastOppBilde}
+                className="mt-4"
               />
             </div>
           </div>
