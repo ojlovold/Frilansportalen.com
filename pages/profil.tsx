@@ -18,7 +18,7 @@ export default function ProfilSide() {
       try {
         const { data, error } = await supabase
           .from("profiler")
-          .select("id, navn, epost, telefon, adresse, postnummer, poststed, fodselsdato, kjonn, nasjonalitet, rolle, bilde, om_meg, cv, ekstra_bilder")
+          .select("id, navn, telefon, adresse, postnummer, poststed, fodselsdato, kjonn, nasjonalitet, rolle, bilde, om_meg, cv, epost")
           .eq("id", user.id)
           .single();
 
@@ -39,6 +39,29 @@ export default function ProfilSide() {
 
   const oppdaterFelt = (felt: string, verdi: string) => {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
+  };
+
+  const lastOppBilde = async (fil: File) => {
+    if (!user) return;
+
+    const filnavn = `${user.id}-${Date.now()}`;
+    const { data, error: opplastingError } = await supabase.storage.from("profilbilder").upload(filnavn, fil);
+
+    if (opplastingError) {
+      console.error("Feil ved opplasting:", opplastingError);
+      return;
+    }
+
+    const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
+
+    const { error: updateError } = await supabase.from("profiler").update({ bilde: url }).eq("id", user.id);
+
+    if (updateError) {
+      console.error("Feil ved oppdatering av profil:", updateError);
+    } else {
+      console.log("✅ Profilbilde oppdatert med URL:", url);
+      setProfil((p: any) => ({ ...p, bilde: url }));
+    }
   };
 
   const lagre = async () => {
@@ -72,6 +95,7 @@ export default function ProfilSide() {
                   Ingen bilde
                 </div>
               )}
+              <input type="file" onChange={(e) => e.target.files?.[0] && lastOppBilde(e.target.files[0])} className="mt-2 text-sm" />
             </div>
 
             <div className="flex-1">
