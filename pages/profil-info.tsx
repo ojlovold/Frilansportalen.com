@@ -50,23 +50,38 @@ export default function ProfilInfo() {
     }
   };
 
+  const lastOppBilde = async (): Promise<string | null> => {
+    if (!bilde || !user) return null;
+
+    try {
+      const fileExt = bilde.name.split(".").pop();
+      const filnavn = `${user.id}/profilbilde.${fileExt}`;
+      const { error } = await supabase.storage
+        .from("profilbilder")
+        .upload(filnavn, bilde, {
+          upsert: true,
+          contentType: bilde.type || "image/jpeg",
+        });
+
+      if (error) {
+        console.error("Opplasting feilet:", error.message);
+        setStatus("❌ Feil ved opplasting av bilde: " + error.message);
+        return null;
+      }
+
+      return supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
+    } catch (err: any) {
+      console.error("Feil ved bildebehandling:", err);
+      setStatus("❌ Bildeopplasting mislyktes.");
+      return null;
+    }
+  };
+
   const lagre = async () => {
     if (!user) return;
     setStatus("Lagrer...");
 
-    let bildeUrl = null;
-    if (bilde) {
-      const filnavn = `${user.id}/profilbilde.${bilde.name.split(".").pop()}`;
-      const { data, error } = await supabase.storage.from("profilbilder").upload(filnavn, bilde, {
-        upsert: true,
-        contentType: bilde.type,
-      });
-      if (error) {
-        setStatus("❌ Feil ved opplasting av bilde");
-        return;
-      }
-      bildeUrl = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
-    }
+    const bildeUrl = await lastOppBilde();
 
     const { error } = await supabase.from("profiler").upsert({
       id: user.id,
@@ -83,6 +98,7 @@ export default function ProfilInfo() {
     });
 
     if (error) {
+      console.error("Feil ved lagring:", error.message);
       setStatus("❌ Feil ved lagring: " + error.message);
     } else {
       setStatus("✅ Lagret");
