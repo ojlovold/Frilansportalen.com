@@ -1,7 +1,7 @@
 // pages/profil-info.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -13,7 +13,6 @@ export default function ProfilInfo() {
 
   const [navn, setNavn] = useState("");
   const [telefon, setTelefon] = useState("");
-  const [rolle, setRolle] = useState("");
   const [bilde, setBilde] = useState<File | null>(null);
   const [kjonn, setKjonn] = useState("");
   const [nasjonalitet, setNasjonalitet] = useState("");
@@ -22,6 +21,22 @@ export default function ProfilInfo() {
   const [postnummer, setPostnummer] = useState("");
   const [poststed, setPoststed] = useState("");
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    const hentProfil = async () => {
+      const { data: profil } = await supabase
+        .from("profiler")
+        .select("navn")
+        .eq("id", user?.id)
+        .single();
+
+      if (profil?.navn) {
+        router.push("/dashboard");
+      }
+    };
+
+    if (user) hentProfil();
+  }, [user]);
 
   const hentPoststed = async (postnr: string) => {
     if (postnr.length === 4) {
@@ -57,7 +72,6 @@ export default function ProfilInfo() {
       id: user.id,
       navn,
       telefon,
-      rolle,
       bilde: bildeUrl,
       kjonn,
       nasjonalitet,
@@ -65,7 +79,7 @@ export default function ProfilInfo() {
       adresse,
       postnummer,
       poststed,
-      epost: user.email
+      epost: user.email,
     });
 
     if (error) {
@@ -154,19 +168,6 @@ export default function ProfilInfo() {
           onChange={(e) => setNasjonalitet(e.target.value)}
           className="w-full p-3 rounded border border-gray-300 mb-4"
         />
-
-        <label className="block font-semibold">Rolle</label>
-        <select
-          value={rolle}
-          onChange={(e) => setRolle(e.target.value)}
-          className="w-full p-3 rounded border border-gray-300 mb-4"
-        >
-          <option value="">Velg...</option>
-          <option value="arbeidsgiver">Arbeidsgiver</option>
-          <option value="frilanser">Frilanser</option>
-          <option value="jobbsoker">Jobbsøker</option>
-          <option value="tjenestetilbyder">Tjenestetilbyder</option>
-        </select>
 
         <label className="block font-semibold">Profilbilde</label>
         <input
