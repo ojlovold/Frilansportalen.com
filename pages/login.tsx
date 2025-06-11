@@ -1,5 +1,4 @@
-// pages/login.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -9,16 +8,16 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [passord, setPassord] = useState("");
-  const [huskMeg, setHuskMeg] = useState(false);
   const [status, setStatus] = useState("");
+  const [huskMeg, setHuskMeg] = useState(false);
+
+  useEffect(() => {
+    const lagret = localStorage.getItem("huskMeg");
+    if (lagret === "true") setHuskMeg(true);
+  }, []);
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
-
-    await supabase.auth.setSession({
-      access_token: "",
-      refresh_token: "",
-    }); // nullstill gammel session før ny
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -26,15 +25,11 @@ export default function Login() {
     });
 
     if (error) {
-      setStatus("❌ Feil: " + error.message);
+      setStatus("❌ " + error.message);
     } else {
-      if (huskMeg) {
-        await supabase.auth.updateUser({
-          data: { remember: true },
-        });
-      }
+      localStorage.setItem("huskMeg", huskMeg.toString());
       setStatus("✅ Innlogging vellykket!");
-      setTimeout(() => router.push("/profil-info"), 1000);
+      setTimeout(() => router.push("/profil"), 1000);
     }
   };
 
@@ -63,20 +58,21 @@ export default function Login() {
           className="w-full p-3 rounded border border-gray-300 mb-2"
         />
 
-        <div className="flex items-center mb-4">
-          <input
-            id="husk"
-            type="checkbox"
-            checked={huskMeg}
-            onChange={() => setHuskMeg(!huskMeg)}
-            className="mr-2"
-          />
-          <label htmlFor="husk" className="text-sm">Husk meg</label>
-        </div>
+        <div className="flex items-center justify-between mb-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={huskMeg}
+              onChange={() => setHuskMeg(!huskMeg)}
+              className="accent-black"
+            />
+            Husk meg
+          </label>
 
-        <Link href="/reset-passord" className="text-sm text-blue-600 underline mb-4 inline-block">
-          Glemt passord?
-        </Link>
+          <Link href="/reset-passord" className="text-sm text-blue-600 underline">
+            Glemt passord?
+          </Link>
+        </div>
 
         <button
           onClick={handleLogin}
