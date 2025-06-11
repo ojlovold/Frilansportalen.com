@@ -1,137 +1,99 @@
 // pages/profil.tsx
-import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { useUser } from '@supabase/auth-helpers-react'
-import supabase from '../lib/supabaseClient'
-import { hentUtkast, lagreUtkast, slettUtkast } from '../lib/utkast'
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSupabaseClient, useUser } from "@supabase/auth-helpers-react";
+import Head from "next/head";
 
 export default function Profil() {
-  const rawUser = useUser()
-  const userId = typeof rawUser === 'object' && rawUser && 'id' in rawUser ? String(rawUser.id) : null
+  const supabase = useSupabaseClient();
+  const user = useUser();
 
-  const [profil, setProfil] = useState<any>(null)
-  const [synlighet, setSynlighet] = useState('alle')
-  const [status, setStatus] = useState<'klar' | 'lagrer' | 'lagret' | 'feil'>('klar')
-
-  const mottaker = 'profil'
-  const modul = 'profil_redigering'
+  const [data, setData] = useState<any>(null);
+  const [status, setStatus] = useState("");
+  const [omMeg, setOmMeg] = useState("");
+  const [ekstraBilder, setEkstraBilder] = useState<File[]>([]);
+  const [visning, setVisning] = useState(true);
 
   useEffect(() => {
-    const hent = async () => {
-      if (!userId) return
+    const hentProfil = async () => {
+      if (!user) return;
+      const { data } = await supabase.from("profiler").select("*")
 
-      const { data } = await supabase
-        .from('brukerprofiler')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
+        .eq("id", user.id).single();
       if (data) {
-        setProfil(data)
-        setSynlighet(data.synlighet || 'alle')
+        setData(data);
+        setOmMeg(data.om_meg || "");
       }
+    };
+    hentProfil();
+  }, [user]);
 
-      const utkast = await hentUtkast(userId, mottaker, modul)
-      if (utkast) {
-        try {
-          const parsed = JSON.parse(utkast)
-          setProfil((p: any) => ({ ...p, ...parsed }))
-        } catch {}
+  const lagreOmMeg = async () => {
+    if (!user) return;
+    const { error } = await supabase.from("profiler").update({ om_meg: omMeg }).eq("id", user.id);
+    setStatus(error ? "❌ Feil" : "✅ Lagret");
+  };
+
+  const lastOppEkstraBilder = async () => {
+    if (!user || ekstraBilder.length === 0) return;
+    const urls: string[] = [];
+    for (const bilde of ekstraBilder) {
+      const filnavn = `${user.id}/galleri/${Date.now()}_${bilde.name}`;
+      const { error } = await supabase.storage.from("profilbilder").upload(filnavn, bilde, {
+        upsert: false,
+        contentType: bilde.type || "image/jpeg"
+      });
+      if (!error) {
+        const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
+        urls.push(url);
       }
     }
+    const { error } = await supabase.from("profiler").update({ ekstra_bilder: urls }).eq("id", user.id);
+    setStatus(error ? "❌ Feil ved opplasting" : "✅ Bilder lagret");
+  };
 
-    hent()
-  }, [userId])
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (userId && profil) {
-        lagreUtkast(userId, mottaker, modul, JSON.stringify(profil))
-      }
-    }, 1000)
-    return () => clearTimeout(delay)
-  }, [profil, userId])
-
-  const lagre = async () => {
-    if (!userId || !profil) return
-    setStatus('lagrer')
-
-    const { error } = await supabase
-      .from('brukerprofiler')
-      .update({ ...profil, synlighet })
-      .eq('id', userId)
-
-    if (error) {
-      setStatus('feil')
-    } else {
-      setStatus('lagret')
-      slettUtkast(userId, mottaker, modul)
-    }
-  }
-
-  if (!profil) return null
+  if (!user) return <div className="p-8">Laster bruker...</div>;
 
   return (
-    <>
+    <main className="min-h-screen bg-gradient-to-b from-orange-400 via-yellow-300 to-yellow-100 text-black p-6">
       <Head>
         <title>Min profil | Frilansportalen</title>
-        <meta name="description" content="Se og oppdater din brukerprofil" />
       </Head>
-      <main className="min-h-screen bg-portalGul text-black p-8">
-        <h1 className="text-3xl font-bold mb-6">Min profil</h1>
 
-        <div className="bg-white p-6 rounded-xl shadow max-w-xl">
-          <label className="block mb-2">Navn</label>
-          <input
-            type="text"
-            value={profil.navn || ''}
-            onChange={(e) => setProfil({ ...profil, navn: e.target.value })}
-            className="w-full p-2 border rounded mb-4"
+      <div className="max-w-4xl mx-auto bg-white/90 p-6 rounded-xl shadow-xl">
+        <div className="flex flex-col md:flex-row gap-6">
+          <img
+            src={data?.bilde || "/default.jpg"}
+            alt="Profilbilde"
+            className="w-32 h-32 rounded-full object-cover border"
           />
-
-          <label className="block mb-2">E-post</label>
-          <input
-            type="email"
-            value={profil.epost || ''}
-            onChange={(e) => setProfil({ ...profil, epost: e.target.value })}
-            className="w-full p-2 border rounded mb-4"
-          />
-
-          <label className="block mb-2">Telefon</label>
-          <input
-            type="tel"
-            value={profil.telefon || ''}
-            onChange={(e) => setProfil({ ...profil, telefon: e.target.value })}
-            className="w-full p-2 border rounded mb-4"
-          />
-
-          <label className="block mb-2">Synlighet</label>
-          <select
-            value={synlighet}
-            onChange={(e) => setSynlighet(e.target.value)}
-            className="w-full p-2 border rounded mb-4"
-          >
-            <option value="alle">Synlig for alle</option>
-            <option value="arbeidsgivere">Kun arbeidsgivere</option>
-            <option value="frilansere">Kun frilansere</option>
-            <option value="privat">Skjult</option>
-          </select>
-
-          <button
-            onClick={lagre}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Lagre profil
-          </button>
-
-          {status === 'lagret' && (
-            <p className="text-green-600 mt-2">Profil oppdatert!</p>
-          )}
-          {status === 'feil' && (
-            <p className="text-red-600 mt-2">Noe gikk galt.</p>
-          )}
+          <div>
+            <h1 className="text-2xl font-bold">{data?.navn}</h1>
+            <p className="text-sm text-gray-600">{data?.epost}</p>
+            <p className="text-sm">📞 {data?.telefon}</p>
+            <p className="text-sm">🎂 {data?.fodselsdato}</p>
+            <p className="text-sm">🏳️ {data?.nasjonalitet}</p>
+            <p className="text-sm">📍 {data?.adresse}, {data?.postnummer} {data?.poststed}</p>
+            <p className="text-sm">👤 {data?.kjonn}</p>
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {(data?.roller || [])?.split(',').map((r: string, i: number) => (
+                <span key={i} className="bg-yellow-200 text-black text-xs px-2 py-1 rounded-full">
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
-    </>
-  )
-}
+
+        <hr className="my-6" />
+
+        <h2 className="text-lg font-semibold mb-2">Om meg</h2>
+        {visning ? (
+          <div className="bg-gray-100 p-4 rounded mb-4 whitespace-pre-line">
+            {data?.om_meg || "Ingen tekst lagt inn ennå."}
+          </div>
+        ) : (
+          <textarea
+            value={omMeg}
+            onChange
