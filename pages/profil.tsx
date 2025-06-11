@@ -1,120 +1,110 @@
 // pages/profil.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
 
-export default function Profil() {
-  const user = useUser();
+export default function ProfilSide() {
   const supabase = useSupabaseClient();
-  const [profil, setProfil] = useState<any>(null);
-  const [omMeg, setOmMeg] = useState("");
-  const [redigerer, setRedigerer] = useState(false);
+  const user = useUser();
+  const [profil, setProfil] = useState<any>({});
   const [status, setStatus] = useState("");
 
   useEffect(() => {
+    if (!user) return;
     const hentProfil = async () => {
-      if (!user) return;
       const { data } = await supabase.from("profiler").select("*").eq("id", user.id).single();
-      if (data) {
-        setProfil(data);
-        setOmMeg(data.om_meg || "");
-      }
+      setProfil(data || {});
     };
     hentProfil();
   }, [user]);
 
-  const lagreOmMeg = async () => {
-    if (!user) return;
-    setStatus("Lagrer...");
-    const { error } = await supabase.from("profiler").update({ om_meg: omMeg }).eq("id", user.id);
-    if (error) setStatus("❌ Kunne ikke lagre");
-    else {
-      setStatus("✅ Lagret");
-      setRedigerer(false);
-    }
+  const oppdaterFelt = (felt: string, verdi: string) => {
+    setProfil((p: any) => ({ ...p, [felt]: verdi }));
   };
 
-  if (!profil) return <div className="p-6">Laster profil...</div>;
+  const lagre = async () => {
+    if (!user) return;
+    setStatus("Lagrer...");
+    const { error } = await supabase.from("profiler").update(profil).eq("id", user.id);
+    if (error) setStatus("❌ Feil: " + error.message);
+    else setStatus("✅ Lagret");
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#FF7E05] via-[#FEC83C] to-[#FFF0B8] text-black p-6">
-      <Head>
-        <title>Min profil</title>
-      </Head>
+      <Head><title>Min profil</title></Head>
 
-      <div className="max-w-5xl mx-auto bg-white/80 rounded-xl shadow-xl p-6">
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div className="w-full md:w-1/3 space-y-4">
-            {profil.bilde && (
-              <Image
-                src={profil.bilde}
-                alt="Profilbilde"
-                width={300}
-                height={300}
-                className="w-full h-auto object-cover rounded-md"
-              />
+      <div className="max-w-6xl mx-auto">
+        <div className="flex gap-6 items-start flex-wrap">
+          <div className="w-64 h-64 bg-white/80 rounded-xl shadow-xl overflow-hidden border border-black/10">
+            {profil.bilde ? (
+              <Image src={profil.bilde} alt="Profilbilde" width={300} height={300} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-500">Ingen bilde</div>
             )}
-            <div>
-              <h2 className="text-2xl font-bold">{profil.navn}</h2>
-              <p className="text-sm text-gray-600">{profil.rolle}</p>
-            </div>
-            <div className="text-sm text-gray-800">
-              <p><strong>E-post:</strong> {profil.epost}</p>
-              <p><strong>Telefon:</strong> {profil.telefon}</p>
-              <p><strong>Adresse:</strong> {profil.adresse}, {profil.postnummer} {profil.poststed}</p>
-              <p><strong>Fødselsdato:</strong> {profil.fodselsdato}</p>
-              <p><strong>Kjønn:</strong> {profil.kjonn}</p>
-              <p><strong>Nasjonalitet:</strong> {profil.nasjonalitet}</p>
+          </div>
+
+          <div className="flex-1 bg-white/90 backdrop-blur p-6 rounded-xl shadow-xl border border-black/10">
+            <h1 className="text-3xl font-bold mb-2">{profil.navn || "Navn mangler"}</h1>
+            <p className="text-sm text-black/60">{profil.epost}</p>
+
+            <textarea
+              value={profil.om_meg || ""}
+              onChange={(e) => oppdaterFelt("om_meg", e.target.value)}
+              placeholder="Skriv noe om deg selv..."
+              className="w-full mt-4 p-3 border border-gray-300 rounded resize-none h-24"
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white/80 p-4 rounded-xl shadow-xl">
+            <h2 className="font-bold text-lg mb-2">Personalia</h2>
+            <div className="space-y-2">
+              <input value={profil.telefon || ""} onChange={(e) => oppdaterFelt("telefon", e.target.value)} placeholder="Telefon" className="w-full p-2 border rounded" />
+              <input value={profil.adresse || ""} onChange={(e) => oppdaterFelt("adresse", e.target.value)} placeholder="Adresse" className="w-full p-2 border rounded" />
+              <input value={profil.postnummer || ""} onChange={(e) => oppdaterFelt("postnummer", e.target.value)} placeholder="Postnummer" className="w-full p-2 border rounded" />
+              <input value={profil.poststed || ""} onChange={(e) => oppdaterFelt("poststed", e.target.value)} placeholder="Poststed" className="w-full p-2 border rounded" />
+              <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-2 border rounded" />
+              <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} placeholder="Fødselsdato" type="date" className="w-full p-2 border rounded" />
+              <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-2 border rounded" />
             </div>
           </div>
 
-          <div className="w-full md:w-2/3 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Om meg</h3>
-              {redigerer ? (
-                <div>
-                  <textarea
-                    className="w-full p-3 border rounded"
-                    rows={6}
-                    value={omMeg}
-                    onChange={(e) => setOmMeg(e.target.value)}
-                  />
-                  <button
-                    onClick={lagreOmMeg}
-                    className="bg-black text-white px-4 py-2 rounded mt-2"
-                  >
-                    Lagre
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <p className="whitespace-pre-line">{omMeg || "Ingen informasjon lagt inn."}</p>
-                  <button
-                    onClick={() => setRedigerer(true)}
-                    className="text-blue-600 text-sm mt-2 underline"
-                  >
-                    Rediger
-                  </button>
-                </div>
-              )}
-              {status && <p className="text-sm mt-2">{status}</p>}
-            </div>
+          <div className="bg-white/80 p-4 rounded-xl shadow-xl">
+            <h2 className="font-bold text-lg mb-2">CV og roller</h2>
+            <textarea
+              value={profil.cv || ""}
+              onChange={(e) => oppdaterFelt("cv", e.target.value)}
+              placeholder="Beskriv din erfaring, utdanning og relevante prosjekter..."
+              className="w-full h-48 p-3 border rounded resize-none"
+            />
 
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Flere bilder</h3>
-              <p className="text-sm text-gray-600">Denne funksjonen kommer snart...</p>
-            </div>
-
-            <div>
-              <Link href="/dashboard" className="text-sm text-blue-600 underline">
-                Gå til dashboard
-              </Link>
-            </div>
+            <input
+              value={profil.rolle || ""}
+              onChange={(e) => oppdaterFelt("rolle", e.target.value)}
+              placeholder="Roller / kompetanseområder"
+              className="w-full mt-4 p-2 border rounded"
+            />
           </div>
+        </div>
+
+        <div className="mt-8 bg-white/80 p-4 rounded-xl shadow-xl">
+          <h2 className="font-bold text-lg mb-2">Galleri</h2>
+          <p className="text-sm mb-2 text-black/60">Flere bilder kommer her senere</p>
+        </div>
+
+        <div className="mt-8 text-center">
+          <button
+            onClick={lagre}
+            className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
+          >
+            Lagre endringer
+          </button>
+          {status && <p className="mt-2 text-sm">{status}</p>}
         </div>
       </div>
     </main>
