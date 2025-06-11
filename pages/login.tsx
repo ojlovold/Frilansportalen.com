@@ -9,11 +9,18 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [passord, setPassord] = useState("");
+  const [huskMeg, setHuskMeg] = useState(false);
   const [status, setStatus] = useState("");
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
-    const { data, error } = await supabase.auth.signInWithPassword({
+
+    await supabase.auth.setSession({
+      access_token: "",
+      refresh_token: "",
+    }); // nullstill gammel session før ny
+
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
     });
@@ -21,6 +28,11 @@ export default function Login() {
     if (error) {
       setStatus("❌ Feil: " + error.message);
     } else {
+      if (huskMeg) {
+        await supabase.auth.updateUser({
+          data: { remember: true },
+        });
+      }
       setStatus("✅ Innlogging vellykket!");
       setTimeout(() => router.push("/profil-info"), 1000);
     }
@@ -50,6 +62,17 @@ export default function Login() {
           onChange={(e) => setPassord(e.target.value)}
           className="w-full p-3 rounded border border-gray-300 mb-2"
         />
+
+        <div className="flex items-center mb-4">
+          <input
+            id="husk"
+            type="checkbox"
+            checked={huskMeg}
+            onChange={() => setHuskMeg(!huskMeg)}
+            className="mr-2"
+          />
+          <label htmlFor="husk" className="text-sm">Husk meg</label>
+        </div>
 
         <Link href="/reset-passord" className="text-sm text-blue-600 underline mb-4 inline-block">
           Glemt passord?
