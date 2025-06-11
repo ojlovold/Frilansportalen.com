@@ -1,3 +1,4 @@
+// pages/login.tsx
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
@@ -13,7 +14,6 @@ export default function Login() {
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: passord,
@@ -21,9 +21,11 @@ export default function Login() {
 
     if (error) {
       setStatus("Feil: " + error.message);
-    } else if (data.user) {
+    } else {
       setStatus("Innlogging vellykket!");
-      redirectAfterLogin(data.user.id, router);
+      setTimeout(async () => {
+        await redirectAfterLogin(router);
+      }, 1000);
     }
   };
 
