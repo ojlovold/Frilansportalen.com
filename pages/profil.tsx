@@ -136,7 +136,7 @@ export default function ProfilSide() {
               <input value={profil.adresse || ""} onChange={(e) => oppdaterFelt("adresse", e.target.value)} placeholder="Adresse" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.postnummer || ""} onChange={(e) => oppdaterFelt("postnummer", e.target.value)} placeholder="Postnummer" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.poststed || ""} onChange={(e) => oppdaterFelt("poststed", e.target.value)} placeholder="Poststed" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
+              <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjonn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
             </div>
@@ -153,7 +153,7 @@ export default function ProfilSide() {
             <input
               value={profil.rolle || ""}
               onChange={(e) => oppdaterFelt("rolle", e.target.value)}
-              placeholder="Roller / kompetanseområder"
+              placeholder="Roller / kompetanseomrader"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
           </div>
