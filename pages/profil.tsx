@@ -13,7 +13,6 @@ export default function ProfilSide() {
   const router = useRouter();
   const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("");
-  const [fil, setFil] = useState<File | null>(null);
 
   useEffect(() => {
     const hentProfil = async () => {
@@ -40,7 +39,7 @@ export default function ProfilSide() {
     hentProfil();
   }, [user, supabase]);
 
-  const oppdaterFelt = (felt: string, verdi: string) => {
+  const oppdaterFelt = (felt: string, verdi: any) => {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
   };
 
@@ -48,31 +47,30 @@ export default function ProfilSide() {
     if (!user || !profil) return;
     setStatus("Lagrer...");
 
-    let bildeUrl = profil.bilde;
-    if (fil) {
-      const { error: uploadError } = await supabase.storage
-        .from("profilbilder")
-        .upload(`brukere/${user.id}/profilbilde.jpg`, fil, { upsert: true });
+    try {
+      let bildeUrl = profil.bilde;
+      if (profil.fil) {
+        const filnavn = "profilbilde.jpg";
+        const { error: uploadError } = await supabase.storage
+          .from("profilbilder")
+          .upload(`${user.id}/${filnavn}`, profil.fil, { upsert: true });
 
-      if (uploadError) {
-        setStatus("❌ Feil ved opplasting av bilde");
-        return;
+        if (uploadError) throw new Error("Opplasting feilet");
+
+        bildeUrl = `https://[ditt-supabase-url]/storage/v1/object/public/profilbilder/${user.id}/${filnavn}`;
       }
 
-      const { data: urlData } = supabase.storage
-        .from("profilbilder")
-        .getPublicUrl(`brukere/${user.id}/profilbilde.jpg`);
+      const { error } = await supabase
+        .from("profiler")
+        .update({ ...profil, bilde: bildeUrl })
+        .eq("id", user.id);
 
-      bildeUrl = urlData?.publicUrl || "";
+      if (error) setStatus("❌ Feil: " + error.message);
+      else setStatus("✅ Lagret");
+    } catch (err) {
+      setStatus("❌ Feil ved lagring");
+      console.error(err);
     }
-
-    const { error } = await supabase
-      .from("profiler")
-      .update({ ...profil, bilde: bildeUrl })
-      .eq("id", user.id);
-
-    if (error) setStatus("❌ Feil: " + error.message);
-    else setStatus("✅ Lagret");
   };
 
   if (!profil) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
@@ -98,6 +96,15 @@ export default function ProfilSide() {
                   Ingen bilde
                 </div>
               )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const fil = e.target.files?.[0];
+                  if (fil) oppdaterFelt("fil", fil);
+                }}
+                className="mt-2"
+              />
             </div>
 
             <div className="flex-1">
@@ -127,7 +134,6 @@ export default function ProfilSide() {
               <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input type="file" accept="image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded text-white" />
             </div>
           </div>
 
