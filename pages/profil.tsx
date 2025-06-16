@@ -11,9 +11,9 @@ export default function ProfilSide() {
   const supabase = useSupabaseClient();
   const user = useUser();
   const router = useRouter();
-  const [profil, setProfil] = useState<any | null>(null);
+  const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [fil, setFil] = useState<File | null>(null);
 
   useEffect(() => {
     const hentProfil = async () => {
@@ -25,38 +25,19 @@ export default function ProfilSide() {
           .eq("id", user.id)
           .single();
 
-        if (error && error.code !== "PGRST116") {
+        if (error) {
           console.error("Feil ved henting av profil:", error);
           setStatus("❌ Kunne ikke hente profilinfo");
         } else {
-          setProfil(
-            data || {
-              id: user.id,
-              navn: "",
-              telefon: "",
-              adresse: "",
-              postnummer: "",
-              poststed: "",
-              fodselsdato: "",
-              kjonn: "",
-              nasjonalitet: "",
-              rolle: "",
-              bilde: "",
-              om_meg: "",
-              cv: "",
-              epost: user.email,
-            }
-          );
+          setProfil(data);
         }
       } catch (err) {
         console.error("Uventet feil:", err);
         setStatus("❌ Uventet feil ved henting av profil");
-      } finally {
-        setLoading(false);
       }
     };
 
-    if (user) hentProfil();
+    hentProfil();
   }, [user, supabase]);
 
   const oppdaterFelt = (felt: string, verdi: string) => {
@@ -66,17 +47,35 @@ export default function ProfilSide() {
   const lagre = async () => {
     if (!user || !profil) return;
     setStatus("Lagrer...");
-    const { error } = await supabase.from("profiler").upsert(profil);
-    if (error) {
-      setStatus("❌ Feil: " + error.message);
-    } else {
-      setStatus("✅ Lagret");
-      setTimeout(() => router.push("/dashboard"), 1000);
+
+    let bildeUrl = profil.bilde;
+    if (fil) {
+      const { error: uploadError } = await supabase.storage
+        .from("profilbilder")
+        .upload(`brukere/${user.id}/profilbilde.jpg`, fil, { upsert: true });
+
+      if (uploadError) {
+        setStatus("❌ Feil ved opplasting av bilde");
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("profilbilder")
+        .getPublicUrl(`brukere/${user.id}/profilbilde.jpg`);
+
+      bildeUrl = urlData?.publicUrl || "";
     }
+
+    const { error } = await supabase
+      .from("profiler")
+      .update({ ...profil, bilde: bildeUrl })
+      .eq("id", user.id);
+
+    if (error) setStatus("❌ Feil: " + error.message);
+    else setStatus("✅ Lagret");
   };
 
-  if (loading) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
-  if (!profil) return <div className="p-6 text-white">Ingen profildata funnet.</div>;
+  if (!profil) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#1f1f1f] via-[#2b2b2b] to-[#1f1f1f] text-white p-6">
@@ -128,6 +127,7 @@ export default function ProfilSide() {
               <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
+              <input type="file" accept="image/*" onChange={(e) => setFil(e.target.files?.[0] || null)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded text-white" />
             </div>
           </div>
 
