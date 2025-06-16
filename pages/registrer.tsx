@@ -12,17 +12,29 @@ export default function Registrer() {
   const [status, setStatus] = useState("");
 
   const handleRegistrering = async () => {
+    alert("Vi forsøker å registrere deg...");
     setStatus("Registrerer...");
-    const { error } = await supabase.auth.signUp({
-      email,
-      password: passord,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: passord,
+      });
 
-    if (error) {
-      setStatus("Feil: " + error.message);
-    } else {
-      setStatus("Registrert! Sender deg videre...");
-      setTimeout(() => router.push("/profil-info"), 1000);
+      console.log("Supabase-respons:", data);
+
+      if (error) {
+        console.error("Feil ved registrering:", error);
+        setStatus("❌ Feil: " + error.message);
+      } else if (data?.user) {
+        console.log("Bruker opprettet:", data.user);
+        setStatus("✅ Registrert! Sjekk e-posten din for bekreftelse.");
+      } else {
+        console.warn("Ukjent respons fra Supabase:", data);
+        setStatus("⚠️ Ukjent respons. Sjekk e-posten din.");
+      }
+    } catch (err) {
+      console.error("Uventet feil:", err);
+      setStatus("❌ Uventet feil. Se konsoll for detaljer.");
     }
   };
 
