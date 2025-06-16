@@ -13,6 +13,7 @@ export default function ProfilSide() {
   const router = useRouter();
   const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("");
+  const [bildeUrl, setBildeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const hentProfil = async () => {
@@ -29,6 +30,7 @@ export default function ProfilSide() {
           setStatus("❌ Kunne ikke hente profilinfo");
         } else {
           setProfil(data);
+          setBildeUrl(data.bilde);
         }
       } catch (err) {
         console.error("Uventet feil:", err);
@@ -39,38 +41,36 @@ export default function ProfilSide() {
     hentProfil();
   }, [user, supabase]);
 
-  const oppdaterFelt = (felt: string, verdi: any) => {
+  const oppdaterFelt = (felt: string, verdi: string) => {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
   };
 
   const lagre = async () => {
     if (!user || !profil) return;
     setStatus("Lagrer...");
+    const { error } = await supabase.from("profiler").update(profil).eq("id", user.id);
+    if (error) setStatus("❌ Feil: " + error.message);
+    else setStatus("✅ Lagret");
+  };
 
-    try {
-      let bildeUrl = profil.bilde;
-      if (profil.fil) {
-        const filnavn = "profilbilde.jpg";
-        const { error: uploadError } = await supabase.storage
-          .from("profilbilder")
-          .upload(`${user.id}/${filnavn}`, profil.fil, { upsert: true });
+  const lastOppBilde = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    const filnavn = `${user.id}/profilbilde-${Date.now()}`;
 
-        if (uploadError) throw new Error("Opplasting feilet");
+    const { data, error } = await supabase.storage
+      .from("profilbilder")
+      .upload(filnavn, file, { cacheControl: "3600", upsert: true });
 
-        bildeUrl = `https://[ditt-supabase-url]/storage/v1/object/public/profilbilder/${user.id}/${filnavn}`;
-      }
-
-      const { error } = await supabase
-        .from("profiler")
-        .update({ ...profil, bilde: bildeUrl })
-        .eq("id", user.id);
-
-      if (error) setStatus("❌ Feil: " + error.message);
-      else setStatus("✅ Lagret");
-    } catch (err) {
-      setStatus("❌ Feil ved lagring");
-      console.error(err);
+    if (error) {
+      setStatus("❌ Kunne ikke laste opp bilde");
+      return;
     }
+
+    const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
+    oppdaterFelt("bilde", url);
+    setBildeUrl(url);
+    setStatus("✅ Bilde lastet opp");
   };
 
   if (!profil) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
@@ -83,9 +83,9 @@ export default function ProfilSide() {
         <div className="relative bg-[#333] rounded-xl shadow-xl overflow-hidden p-6 border border-gray-700">
           <div className="flex gap-6 items-start flex-wrap">
             <div className="w-64 h-64 rounded-lg overflow-hidden border border-gray-600 shadow-lg">
-              {profil.bilde ? (
+              {bildeUrl ? (
                 <Image
-                  src={profil.bilde}
+                  src={bildeUrl}
                   alt="Profilbilde"
                   width={300}
                   height={300}
@@ -99,11 +99,8 @@ export default function ProfilSide() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const fil = e.target.files?.[0];
-                  if (fil) oppdaterFelt("fil", fil);
-                }}
-                className="mt-2"
+                onChange={lastOppBilde}
+                className="mt-2 text-sm"
               />
             </div>
 
@@ -132,7 +129,7 @@ export default function ProfilSide() {
               <input value={profil.postnummer || ""} onChange={(e) => oppdaterFelt("postnummer", e.target.value)} placeholder="Postnummer" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.poststed || ""} onChange={(e) => oppdaterFelt("poststed", e.target.value)} placeholder="Poststed" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
+              <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" placeholder="Fødselsdato" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
               <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
             </div>
           </div>
