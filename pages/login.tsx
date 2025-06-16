@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// pages/login.tsx
+import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -9,12 +10,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [passord, setPassord] = useState("");
   const [status, setStatus] = useState("");
-  const [huskMeg, setHuskMeg] = useState(false);
-
-  useEffect(() => {
-    const lagret = localStorage.getItem("huskMeg");
-    if (lagret === "true") setHuskMeg(true);
-  }, []);
 
   const handleLogin = async () => {
     setStatus("Logger inn...");
@@ -25,11 +20,30 @@ export default function Login() {
     });
 
     if (error) {
-      setStatus("❌ " + error.message);
+      setStatus("Feil: " + error.message);
     } else {
-      localStorage.setItem("huskMeg", huskMeg.toString());
-      setStatus("✅ Innlogging vellykket!");
-      setTimeout(() => router.push("/profil"), 1000);
+      setStatus("Innlogging vellykket!");
+
+      // Hent bruker og sjekk profilinfo
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profil } = await supabase
+          .from("profiler")
+          .select("navn")
+          .eq("id", user.id)
+          .single();
+
+        if (!profil?.navn) {
+          router.push("/profil");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setStatus("❌ Fant ikke bruker");
+      }
     }
   };
 
@@ -58,21 +72,9 @@ export default function Login() {
           className="w-full p-3 rounded border border-gray-300 mb-2"
         />
 
-        <div className="flex items-center justify-between mb-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={huskMeg}
-              onChange={() => setHuskMeg(!huskMeg)}
-              className="accent-black"
-            />
-            Husk meg
-          </label>
-
-          <Link href="/reset-passord" className="text-sm text-blue-600 underline">
-            Glemt passord?
-          </Link>
-        </div>
+        <Link href="/reset-passord" className="text-sm text-blue-600 underline mb-4 inline-block">
+          Glemt passord?
+        </Link>
 
         <button
           onClick={handleLogin}
