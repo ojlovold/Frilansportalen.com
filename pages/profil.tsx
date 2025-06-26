@@ -154,8 +154,8 @@ export default function ProfilSide() {
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
             <input
-              value={profil.rolle || ""}
-              onChange={(e) => oppdaterFelt("rolle", e.target.value)}
+              value={profil.roller || ""}
+              onChange={(e) => oppdaterFelt("roller", e.target.value)}
               placeholder="Roller / kompetanseområder"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
