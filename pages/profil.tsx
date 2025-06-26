@@ -5,41 +5,35 @@ import { useUser, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
-import { useRouter } from "next/router";
 
 export default function ProfilSide() {
   const supabase = useSupabaseClient();
   const user = useUser();
-  const router = useRouter();
   const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("");
-  const [bildeUrl, setBildeUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user?.id) return;
     const hentProfil = async () => {
-      if (!user) return;
       try {
         const { data, error } = await supabase
           .from("profiler")
-          .select("id, navn, telefon, adresse, postnummer, poststed, fodselsdato, kjonn, nasjonalitet, rolle, bilde, om_meg, cv, epost")
+          .select("*")
           .eq("id", user.id)
           .single();
 
-        if (error) {
-          console.error("Feil ved henting av profil:", error);
-          setStatus("❌ Kunne ikke hente profilinfo");
+        if (error || !data) {
+          setStatus("❌ Fant ikke profil. Du må kanskje fullføre registreringen.");
         } else {
           setProfil(data);
-          setBildeUrl(data.bilde);
         }
       } catch (err) {
-        console.error("Uventet feil:", err);
-        setStatus("❌ Uventet feil ved henting av profil");
+        console.error("Uventet feil ved henting av profil:", err);
+        setStatus("❌ Klarte ikke å hente profilen din");
       }
     };
-
     hentProfil();
-  }, [user, supabase]);
+  }, [user]);
 
   const oppdaterFelt = (felt: string, verdi: string) => {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
@@ -54,26 +48,41 @@ export default function ProfilSide() {
   };
 
   const lastOppBilde = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-    const filnavn = `${user.id}/profilbilde-${Date.now()}`;
-
-    const { data, error } = await supabase.storage
+    if (!event.target.files || event.target.files.length === 0 || !user) return;
+    const fil = event.target.files[0];
+    const filnavn = `${user.id}-${Date.now()}`;
+    const { error: uploadError } = await supabase.storage
       .from("profilbilder")
-      .upload(filnavn, file, { cacheControl: "3600", upsert: true });
+      .upload(filnavn, fil, { upsert: true });
 
-    if (error) {
-      setStatus("❌ Kunne ikke laste opp bilde");
+    if (uploadError) {
+      setStatus("❌ Feil ved opplasting: " + uploadError.message);
       return;
     }
 
-    const url = supabase.storage.from("profilbilder").getPublicUrl(filnavn).data.publicUrl;
-    oppdaterFelt("bilde", url);
-    setBildeUrl(url);
-    setStatus("✅ Bilde lastet opp");
+    const { data } = supabase.storage
+      .from("profilbilder")
+      .getPublicUrl(filnavn);
+
+    const bildeUrl = data?.publicUrl;
+
+    if (bildeUrl) {
+      const { error: updateError } = await supabase
+        .from("profiler")
+        .update({ bilde: bildeUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
+      } else {
+        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl }));
+        setStatus("✅ Bilde lastet opp og lagret!");
+      }
+    }
   };
 
-  if (!profil) return <div className="p-6 text-white">Laster profilinformasjon...</div>;
+  if (!user) return <div className="p-6 text-white">🔒 Du må være logget inn for å se profilen.</div>;
+  if (!profil) return <div className="p-6 text-white">⏳ {status || "Laster profilinformasjon..."}</div>;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#1f1f1f] via-[#2b2b2b] to-[#1f1f1f] text-white p-6">
@@ -83,9 +92,9 @@ export default function ProfilSide() {
         <div className="relative bg-[#333] rounded-xl shadow-xl overflow-hidden p-6 border border-gray-700">
           <div className="flex gap-6 items-start flex-wrap">
             <div className="w-64 h-64 rounded-lg overflow-hidden border border-gray-600 shadow-lg">
-              {bildeUrl ? (
+              {profil.bilde ? (
                 <Image
-                  src={bildeUrl}
+                  src={profil.bilde}
                   alt="Profilbilde"
                   width={300}
                   height={300}
@@ -96,12 +105,6 @@ export default function ProfilSide() {
                   Ingen bilde
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={lastOppBilde}
-                className="mt-2 text-sm"
-              />
             </div>
 
             <div className="flex-1">
@@ -114,6 +117,12 @@ export default function ProfilSide() {
                 placeholder="Skriv noe om deg selv..."
                 className="w-full mt-4 p-3 border border-gray-700 rounded bg-gray-900 text-white"
               />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={lastOppBilde}
+                className="mt-4"
+              />
             </div>
           </div>
         </div>
@@ -122,15 +131,16 @@ export default function ProfilSide() {
           <div className="bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
             <h2 className="text-xl font-semibold mb-4">Personalia</h2>
             <div className="space-y-3">
-              <input value={profil.navn || ""} onChange={(e) => oppdaterFelt("navn", e.target.value)} placeholder="Navn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.epost || ""} onChange={(e) => oppdaterFelt("epost", e.target.value)} placeholder="E-post" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.telefon || ""} onChange={(e) => oppdaterFelt("telefon", e.target.value)} placeholder="Telefon" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.adresse || ""} onChange={(e) => oppdaterFelt("adresse", e.target.value)} placeholder="Adresse" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.postnummer || ""} onChange={(e) => oppdaterFelt("postnummer", e.target.value)} placeholder="Postnummer" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.poststed || ""} onChange={(e) => oppdaterFelt("poststed", e.target.value)} placeholder="Poststed" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.kjonn || ""} onChange={(e) => oppdaterFelt("kjonn", e.target.value)} placeholder="Kjønn" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.fodselsdato || ""} onChange={(e) => oppdaterFelt("fodselsdato", e.target.value)} type="date" placeholder="Fødselsdato" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
-              <input value={profil.nasjonalitet || ""} onChange={(e) => oppdaterFelt("nasjonalitet", e.target.value)} placeholder="Nasjonalitet" className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white" />
+              {['telefon','adresse','postnummer','poststed','kjonn','fodselsdato','nasjonalitet'].map((felt) => (
+                <input
+                  key={felt}
+                  value={profil[felt] || ""}
+                  onChange={(e) => oppdaterFelt(felt, e.target.value)}
+                  placeholder={felt.charAt(0).toUpperCase() + felt.slice(1)}
+                  type={felt === 'fodselsdato' ? 'date' : 'text'}
+                  className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white"
+                />
+              ))}
             </div>
           </div>
 
@@ -145,15 +155,10 @@ export default function ProfilSide() {
             <input
               value={profil.rolle || ""}
               onChange={(e) => oppdaterFelt("rolle", e.target.value)}
-              placeholder="Roller / kompetanseområder"
+              placeholder="Roller / kompetanseomrader"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
           </div>
-        </div>
-
-        <div className="mt-8 bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
-          <h2 className="text-xl font-semibold mb-2">Galleri</h2>
-          <p className="text-sm text-gray-400">Her kommer dine opplastede bilder og medieinnhold...</p>
         </div>
 
         <div className="mt-8 text-center">
