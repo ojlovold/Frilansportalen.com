@@ -35,7 +35,7 @@ export default function ProfilSide() {
     hentProfil();
   }, [user]);
 
-  const oppdaterFelt = (felt: string, verdi: string) => {
+  const oppdaterFelt = (felt: string, verdi: any) => {
     setProfil((p: any) => ({ ...p, [felt]: verdi }));
   };
 
@@ -67,15 +67,16 @@ export default function ProfilSide() {
     const bildeUrl = data?.publicUrl;
 
     if (bildeUrl) {
+      const nyeBilder = [...(profil.bilder || []), bildeUrl];
       const { error: updateError } = await supabase
         .from("profiler")
-        .update({ bilde: bildeUrl })
+        .update({ bilde: bildeUrl, bilder: nyeBilder })
         .eq("id", user.id);
 
       if (updateError) {
         setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
       } else {
-        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl }));
+        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl, bilder: nyeBilder }));
         setStatus("✅ Bilde lastet opp og lagret!");
       }
     }
@@ -157,6 +158,39 @@ export default function ProfilSide() {
               onChange={(e) => oppdaterFelt("rolle", e.target.value)}
               placeholder="Roller / kompetanseomrader"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
+          <h2 className="text-xl font-semibold mb-4">Galleri</h2>
+          {profil.bilder && profil.bilder.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {profil.bilder.map((url: string, i: number) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Bilde ${i + 1}`}
+                  className="w-full h-40 object-cover rounded-lg border border-gray-600"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">Ingen bilder lagt til enda.</p>
+          )}
+
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Lim inn bildeadresse (URL)"
+              onBlur={(e) => {
+                const url = e.target.value.trim();
+                if (url && !profil.bilder?.includes(url)) {
+                  const nye = [...(profil.bilder || []), url];
+                  oppdaterFelt("bilder", nye);
+                }
+              }}
+              className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
           </div>
         </div>
