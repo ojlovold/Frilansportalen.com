@@ -156,7 +156,7 @@ export default function ProfilSide() {
             <input
               value={profil.rolle || ""}
               onChange={(e) => oppdaterFelt("rolle", e.target.value)}
-              placeholder="Roller / kompetanseomrader"
+              placeholder="Roller / kompetanseområder"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
           </div>
@@ -164,22 +164,23 @@ export default function ProfilSide() {
 
         <div className="mt-8 bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
           <h2 className="text-xl font-semibold mb-4">Galleri</h2>
-          {profil.bilder && profil.bilder.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {profil.bilder.map((url: string, i: number) => (
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {profil.bilder && profil.bilder.length > 0 ? (
+              profil.bilder.map((url: string, i: number) => (
                 <img
                   key={i}
                   src={url}
                   alt={`Bilde ${i + 1}`}
                   className="w-full h-40 object-cover rounded-lg border border-gray-600"
                 />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">Ingen bilder lagt til enda.</p>
-          )}
+              ))
+            ) : (
+              <p className="text-sm text-gray-400 col-span-full">Ingen bilder lagt til enda.</p>
+            )}
+          </div>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-3">
             <input
               type="text"
               placeholder="Lim inn bildeadresse (URL)"
@@ -191,6 +192,30 @@ export default function ProfilSide() {
                 }
               }}
               className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white"
+            />
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (event) => {
+                if (!event.target.files || !event.target.files.length) return;
+                const fil = event.target.files[0];
+                const filnavn = `${user.id}-galleri-${Date.now()}`;
+                const { error: uploadError } = await supabase.storage
+                  .from("profilbilder")
+                  .upload(filnavn, fil, { upsert: true });
+                if (uploadError) return alert("Feil ved opplasting: " + uploadError.message);
+
+                const { data } = supabase.storage.from("profilbilder").getPublicUrl(filnavn);
+                const url = data?.publicUrl;
+                if (url) {
+                  const nye = [...(profil.bilder || []), url];
+                  oppdaterFelt("bilder", nye);
+                  setProfil((prev: any) => ({ ...prev, bilder: nye }));
+                  setStatus("✅ Galleri-bilde lagt til");
+                }
+              }}
+              className="w-full"
             />
           </div>
         </div>
