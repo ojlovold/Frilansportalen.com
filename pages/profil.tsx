@@ -25,7 +25,11 @@ export default function ProfilSide() {
         if (error || !data) {
           setStatus("❌ Fant ikke profil. Du må kanskje fullføre registreringen.");
         } else {
-          setProfil(data);
+          console.log("🚨 Lest profil fra Supabase:", data);
+          setProfil({
+            ...data,
+            bilder: data.bilder ?? []
+          });
         }
       } catch (err) {
         console.error("Uventet feil ved henting av profil:", err);
@@ -154,8 +158,8 @@ export default function ProfilSide() {
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
             <input
-              value={profil.roller || ""}
-              onChange={(e) => oppdaterFelt("roller", e.target.value)}
+              value={profil.roller?.[0] || ""}
+              onChange={(e) => oppdaterFelt("roller", [e.target.value])}
               placeholder="Roller / kompetanseområder"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
@@ -166,7 +170,7 @@ export default function ProfilSide() {
           <h2 className="text-xl font-semibold mb-4">Galleri</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {profil.bilder && profil.bilder.length > 0 ? (
+            {Array.isArray(profil.bilder) && profil.bilder.length > 0 ? (
               profil.bilder.map((url: string, i: number) => (
                 <img
                   key={i}
