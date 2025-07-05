@@ -45,44 +45,16 @@ export default function ProfilSide() {
   const lagre = async () => {
     if (!user || !profil) return;
     setStatus("Lagrer...");
-    const { error } = await supabase.from("profiler").update(profil).eq("id", user.id);
+
+    const payload = {
+      ...profil,
+      roller: Array.isArray(profil.roller) ? profil.roller : [profil.roller || "bruker"],
+      bilder: Array.isArray(profil.bilder) ? profil.bilder : []
+    };
+
+    const { error } = await supabase.from("profiler").update(payload).eq("id", user.id);
     if (error) setStatus("❌ Feil: " + error.message);
     else setStatus("✅ Lagret");
-  };
-
-  const lastOppBilde = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0 || !user) return;
-    const fil = event.target.files[0];
-    const filnavn = `${user.id}-${Date.now()}`;
-    const { error: uploadError } = await supabase.storage
-      .from("profilbilder")
-      .upload(filnavn, fil, { upsert: true });
-
-    if (uploadError) {
-      setStatus("❌ Feil ved opplasting: " + uploadError.message);
-      return;
-    }
-
-    const { data } = supabase.storage
-      .from("profilbilder")
-      .getPublicUrl(filnavn);
-
-    const bildeUrl = data?.publicUrl;
-
-    if (bildeUrl) {
-      const nyeBilder = [...(profil.bilder || []), bildeUrl];
-      const { error: updateError } = await supabase
-        .from("profiler")
-        .update({ bilde: bildeUrl, bilder: nyeBilder })
-        .eq("id", user.id);
-
-      if (updateError) {
-        setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
-      } else {
-        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl, bilder: nyeBilder }));
-        setStatus("✅ Bilde lastet opp og lagret!");
-      }
-    }
   };
 
   if (!user) return <div className="p-6 text-white">🔒 Du må være logget inn for å se profilen.</div>;
@@ -120,12 +92,6 @@ export default function ProfilSide() {
                 onChange={(e) => oppdaterFelt("om_meg", e.target.value)}
                 placeholder="Skriv noe om deg selv..."
                 className="w-full mt-4 p-3 border border-gray-700 rounded bg-gray-900 text-white"
-              />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={lastOppBilde}
-                className="mt-4"
               />
             </div>
           </div>
@@ -184,9 +150,10 @@ export default function ProfilSide() {
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
+            <label className="text-white">Lim inn URL:</label>
             <input
               type="text"
-              placeholder="Lim inn bildeadresse (URL)"
+              placeholder="https://..."
               onBlur={(e) => {
                 const url = e.target.value.trim();
                 if (url && !profil.bilder?.includes(url)) {
@@ -197,6 +164,7 @@ export default function ProfilSide() {
               className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
 
+            <label className="text-white">Last opp bilde:</label>
             <input
               type="file"
               accept="image/*"
@@ -218,7 +186,7 @@ export default function ProfilSide() {
                   setStatus("✅ Galleri-bilde lagt til");
                 }
               }}
-              className="w-full"
+              className="w-full text-white"
             />
           </div>
 
