@@ -25,9 +25,6 @@ export default function ProfilSide() {
         if (error || !data) {
           setStatus("❌ Fant ikke profil. Du må kanskje fullføre registreringen.");
         } else {
-          console.log("🚨 Lest profil fra Supabase:", data);
-          console.log("📸 Bildefelt:", data.bilde);
-          console.log("🖼️ Galleri:", data.bilder);
           setProfil({
             ...data,
             bilder: Array.isArray(data.bilder) ? data.bilder : []
@@ -224,6 +221,10 @@ export default function ProfilSide() {
               className="w-full"
             />
           </div>
+
+          <pre className="text-sm bg-black text-green-400 mt-6 p-3 rounded max-h-96 overflow-auto">
+{JSON.stringify(profil, null, 2)}
+          </pre>
         </div>
 
         <div className="mt-8 text-center">
