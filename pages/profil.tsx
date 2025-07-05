@@ -26,9 +26,11 @@ export default function ProfilSide() {
           setStatus("❌ Fant ikke profil. Du må kanskje fullføre registreringen.");
         } else {
           console.log("🚨 Lest profil fra Supabase:", data);
+          console.log("📸 Bildefelt:", data.bilde);
+          console.log("🖼️ Galleri:", data.bilder);
           setProfil({
             ...data,
-            bilder: data.bilder ?? []
+            bilder: Array.isArray(data.bilder) ? data.bilder : []
           });
         }
       } catch (err) {
