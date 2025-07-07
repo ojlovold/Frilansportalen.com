@@ -50,10 +50,10 @@ export default function ProfilSide() {
     const payload = {
       ...profil,
       roller: Array.isArray(profil.roller)
-        ? profil.roller.filter((r: string) => r)
+        ? profil.roller
         : typeof profil.roller === "string"
         ? [profil.roller]
-        : ["ukjent"],
+        : ["frilanser"],
       bilder: Array.isArray(profil.bilder) ? profil.bilder : []
     };
 
@@ -155,7 +155,7 @@ export default function ProfilSide() {
           </div>
 
           <div className="bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">CV og roller</h2>
+            <h2 className="text-xl font-semibold mb-4">CV og rolle</h2>
             <textarea
               value={profil.cv || ""}
               onChange={(e) => oppdaterFelt("cv", e.target.value)}
