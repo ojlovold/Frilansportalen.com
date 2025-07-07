@@ -57,6 +57,41 @@ export default function ProfilSide() {
     else setStatus("✅ Lagret");
   };
 
+  const lastOppBilde = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0 || !user) return;
+    const fil = event.target.files[0];
+    const filnavn = `${user.id}-${Date.now()}`;
+    const { error: uploadError } = await supabase.storage
+      .from("profilbilder")
+      .upload(filnavn, fil, { upsert: true });
+
+    if (uploadError) {
+      setStatus("❌ Feil ved opplasting: " + uploadError.message);
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("profilbilder")
+      .getPublicUrl(filnavn);
+
+    const bildeUrl = data?.publicUrl;
+
+    if (bildeUrl) {
+      const nyeBilder = [...(profil.bilder || []), bildeUrl];
+      const { error: updateError } = await supabase
+        .from("profiler")
+        .update({ bilde: bildeUrl, bilder: nyeBilder })
+        .eq("id", user.id);
+
+      if (updateError) {
+        setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
+      } else {
+        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl, bilder: nyeBilder }));
+        setStatus("✅ Bilde lastet opp og lagret!");
+      }
+    }
+  };
+
   if (!user) return <div className="p-6 text-white">🔒 Du må være logget inn for å se profilen.</div>;
   if (!profil) return <div className="p-6 text-white">⏳ {status || "Laster profilinformasjon..."}</div>;
 
@@ -168,24 +203,7 @@ export default function ProfilSide() {
             <input
               type="file"
               accept="image/*"
-              onChange={async (event) => {
-                if (!event.target.files || !event.target.files.length) return;
-                const fil = event.target.files[0];
-                const filnavn = `${user.id}-galleri-${Date.now()}`;
-                const { error: uploadError } = await supabase.storage
-                  .from("profilbilder")
-                  .upload(filnavn, fil, { upsert: true });
-                if (uploadError) return alert("Feil ved opplasting: " + uploadError.message);
-
-                const { data } = supabase.storage.from("profilbilder").getPublicUrl(filnavn);
-                const url = data?.publicUrl;
-                if (url) {
-                  const nye = [...(profil.bilder || []), url];
-                  oppdaterFelt("bilder", nye);
-                  setProfil((prev: any) => ({ ...prev, bilder: nye }));
-                  setStatus("✅ Galleri-bilde lagt til");
-                }
-              }}
+              onChange={lastOppBilde}
               className="w-full text-white"
             />
           </div>
