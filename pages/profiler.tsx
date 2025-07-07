@@ -43,11 +43,20 @@ export default function Profiler() {
 
   const lagre = async () => {
     if (!user || !profil) return;
+    if (!profil.roller || profil.roller.length === 0) {
+      setStatus("❌ Du må velge minst én rolle");
+      return;
+    }
+
     setStatus("Lagrer...");
 
     const payload = {
       ...profil,
-      roller: Array.isArray(profil.roller) ? profil.roller : [],
+      roller: Array.isArray(profil.roller)
+        ? profil.roller
+        : typeof profil.roller === "string"
+        ? [profil.roller]
+        : [],
       bilder: Array.isArray(profil.bilder) ? profil.bilder : [],
     };
 
@@ -59,20 +68,14 @@ export default function Profiler() {
     if (!event.target.files?.length || !user) return;
     const fil = event.target.files[0];
     const filnavn = `${user.id}-${Date.now()}`;
-
     const { error: uploadError } = await supabase.storage
       .from("profilbilder")
       .upload(filnavn, fil, { upsert: true });
 
-    if (uploadError) {
-      return setStatus("❌ Opplasting feilet");
-    }
+    if (uploadError) return setStatus("❌ Opplasting feilet");
 
-    const { data: urlData } = supabase.storage
-      .from("profilbilder")
-      .getPublicUrl(filnavn);
-
-    const url = urlData?.publicUrl;
+    const { data } = supabase.storage.from("profilbilder").getPublicUrl(filnavn);
+    const url = data?.publicUrl;
     if (url) {
       const nye = [...(profil.bilder || []), url];
       oppdaterFelt("bilde", url);
@@ -125,7 +128,7 @@ export default function Profiler() {
           </div>
         </div>
 
-        {/* ROLLESEKSJON */}
+        {/* ROLLER – CHECKBOKSER 100% */}
         <div className="bg-[#222] border border-gray-700 rounded-xl p-6">
           <h2 className="text-xl font-semibold mb-4">Roller</h2>
           <div className="grid grid-cols-2 gap-3">
