@@ -66,6 +66,7 @@ export default function ProfilSide() {
     if (!event.target.files || event.target.files.length === 0 || !user) return;
     const fil = event.target.files[0];
     const filnavn = `${user.id}-${Date.now()}`;
+
     const { error: uploadError } = await supabase.storage
       .from("profilbilder")
       .upload(filnavn, fil, { upsert: true });
@@ -75,25 +76,17 @@ export default function ProfilSide() {
       return;
     }
 
-    const { data } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from("profilbilder")
       .getPublicUrl(filnavn);
 
-    const bildeUrl = data?.publicUrl;
+    const bildeUrl = urlData?.publicUrl;
 
     if (bildeUrl) {
       const nyeBilder = [...(profil.bilder || []), bildeUrl];
-      const { error: updateError } = await supabase
-        .from("profiler")
-        .update({ bilde: bildeUrl, bilder: nyeBilder })
-        .eq("id", user.id);
-
-      if (updateError) {
-        setStatus("❌ Klarte ikke å lagre bilde-URL: " + updateError.message);
-      } else {
-        setProfil((prev: any) => ({ ...prev, bilde: bildeUrl, bilder: nyeBilder }));
-        setStatus("✅ Bilde lastet opp og lagret!");
-      }
+      oppdaterFelt("bilder", nyeBilder);
+      oppdaterFelt("bilde", bildeUrl); // sett også som profilbilde
+      setStatus("✅ Bilde lastet opp!");
     }
   };
 
@@ -162,27 +155,27 @@ export default function ProfilSide() {
               placeholder="Din erfaring, utdanning, prosjekter..."
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
-            <div className="bg-gray-900 p-4 rounded border border-gray-700">
-  <p className="text-white font-semibold mb-2">Velg roller:</p>
-  <div className="space-y-2">
-    {["frilanser", "jobbsøker", "arbeidsgiver", "tilbyder"].map((rolle) => (
-      <label key={rolle} className="flex items-center text-white">
-        <input
-          type="checkbox"
-          className="mr-2"
-          checked={profil.roller?.includes(rolle)}
-          onChange={(e) => {
-            const oppdatert = e.target.checked
-              ? [...(profil.roller || []), rolle]
-              : (profil.roller || []).filter((r: string) => r !== rolle);
-            oppdaterFelt("roller", oppdatert);
-          }}
-        />
-        {rolle}
-      </label>
-    ))}
-  </div>
-</div>
+            <div className="bg-gray-900 p-4 rounded border border-gray-700 mt-4">
+              <p className="text-white font-semibold mb-2">Velg roller:</p>
+              <div className="space-y-2">
+                {["frilanser", "jobbsøker", "arbeidsgiver", "tilbyder"].map((rolle) => (
+                  <label key={rolle} className="flex items-center text-white">
+                    <input
+                      type="checkbox"
+                      className="mr-2"
+                      checked={profil.roller?.includes(rolle)}
+                      onChange={(e) => {
+                        const oppdatert = e.target.checked
+                          ? [...(profil.roller || []), rolle]
+                          : (profil.roller || []).filter((r: string) => r !== rolle);
+                        oppdaterFelt("roller", oppdatert);
+                      }}
+                    />
+                    {rolle}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -192,12 +185,22 @@ export default function ProfilSide() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Array.isArray(profil.bilder) && profil.bilder.length > 0 ? (
               profil.bilder.map((url: string, i: number) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Bilde ${i + 1}`}
-                  className="w-full h-40 object-cover rounded-lg border border-gray-600"
-                />
+                <div key={i} className="relative">
+                  <img
+                    src={url}
+                    alt={`Bilde ${i + 1}`}
+                    className="w-full h-40 object-cover rounded-lg border border-gray-600"
+                  />
+                  <button
+                    onClick={() => {
+                      const oppdatert = profil.bilder.filter((b: string) => b !== url);
+                      oppdaterFelt("bilder", oppdatert);
+                    }}
+                    className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))
             ) : (
               <p className="text-sm text-gray-400 col-span-full">Ingen bilder lagt til enda.</p>
