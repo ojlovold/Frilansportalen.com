@@ -82,9 +82,7 @@ export default function OffentligProfil() {
 
         {/* PERSONLIG INFO */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {profil.telefon && (
-            <p><strong>Telefon:</strong> {profil.telefon}</p>
-          )}
+          {profil.telefon && <p><strong>Telefon:</strong> {profil.telefon}</p>}
           {profil.epost && (
             <p>
               <strong>E-post:</strong>{" "}
