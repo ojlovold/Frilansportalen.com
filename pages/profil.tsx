@@ -50,7 +50,7 @@ export default function ProfilSide() {
     const payload = {
       ...profil,
       roller: Array.isArray(profil.roller)
-        ? profil.roller.filter((r) => r)
+        ? profil.roller.filter((r: string) => r)
         : typeof profil.roller === "string"
         ? [profil.roller]
         : ["ukjent"],
