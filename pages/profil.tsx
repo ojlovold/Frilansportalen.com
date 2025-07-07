@@ -27,7 +27,8 @@ export default function ProfilSide() {
         } else {
           setProfil({
             ...data,
-            bilder: Array.isArray(data.bilder) ? data.bilder : []
+            bilder: Array.isArray(data.bilder) ? data.bilder : [],
+            roller: Array.isArray(data.roller) ? data.roller : []
           });
         }
       } catch (err) {
@@ -48,10 +49,10 @@ export default function ProfilSide() {
 
     const payload = {
       ...profil,
-      roller: typeof profil.roller === "string"
+      roller: Array.isArray(profil.roller)
+        ? profil.roller.filter((r) => r)
+        : typeof profil.roller === "string"
         ? [profil.roller]
-        : Array.isArray(profil.roller)
-        ? profil.roller
         : ["ukjent"],
       bilder: Array.isArray(profil.bilder) ? profil.bilder : []
     };
@@ -163,7 +164,10 @@ export default function ProfilSide() {
             />
             <input
               value={profil.roller?.[0] || ""}
-              onChange={(e) => oppdaterFelt("roller", [e.target.value])}
+              onChange={(e) => {
+                const verdi = e.target.value.trim();
+                oppdaterFelt("roller", verdi ? [verdi] : ["ukjent"]);
+              }}
               placeholder="Roller / kompetanseområder"
               className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
