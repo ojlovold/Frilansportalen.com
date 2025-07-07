@@ -34,19 +34,29 @@ export default function OffentligProfil() {
   }, [id]);
 
   if (status) {
-    return <div className="min-h-screen flex items-center justify-center text-white bg-black p-10">{status}</div>;
+    return (
+      <main className="min-h-screen flex items-center justify-center text-white bg-black p-10">
+        <p>{status}</p>
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
       <Head><title>{profil?.navn || "Profil"}</title></Head>
 
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Topp */}
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div className="w-full md:w-64">
+      <div className="max-w-4xl mx-auto space-y-10">
+        {/* TOPPSEKSJON */}
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="md:w-64 w-full">
             {profil?.bilde ? (
-              <Image src={profil.bilde} alt="Profilbilde" width={400} height={400} className="rounded-xl border border-gray-700 object-cover" />
+              <Image
+                src={profil.bilde}
+                alt="Profilbilde"
+                width={400}
+                height={400}
+                className="rounded-xl border border-gray-700 object-cover"
+              />
             ) : (
               <div className="w-full h-64 bg-gray-800 flex items-center justify-center rounded-xl text-gray-400 border border-gray-700">
                 Ingen bilde
@@ -56,7 +66,7 @@ export default function OffentligProfil() {
 
           <div className="flex-1 space-y-2">
             <h1 className="text-3xl font-bold">{profil?.navn || "Navn ikke oppgitt"}</h1>
-            <p className="text-sm text-gray-400">{profil?.poststed}</p>
+            <p className="text-sm text-gray-400">{profil?.poststed || profil?.adresse}</p>
 
             {profil?.roller?.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
@@ -70,7 +80,28 @@ export default function OffentligProfil() {
           </div>
         </div>
 
-        {/* Om meg */}
+        {/* PERSONLIG INFO */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {profil.telefon && (
+            <p><strong>Telefon:</strong> {profil.telefon}</p>
+          )}
+          {profil.epost && (
+            <p>
+              <strong>E-post:</strong>{" "}
+              <a href={`mailto:${profil.epost}`} className="underline text-blue-400">
+                {profil.epost}
+              </a>
+            </p>
+          )}
+          {profil.adresse && <p><strong>Adresse:</strong> {profil.adresse}</p>}
+          {profil.postnummer && <p><strong>Postnummer:</strong> {profil.postnummer}</p>}
+          {profil.poststed && <p><strong>Poststed:</strong> {profil.poststed}</p>}
+          {profil.kjonn && <p><strong>Kjønn:</strong> {profil.kjonn}</p>}
+          {profil.fodselsdato && <p><strong>Fødselsdato:</strong> {profil.fodselsdato}</p>}
+          {profil.nasjonalitet && <p><strong>Nasjonalitet:</strong> {profil.nasjonalitet}</p>}
+        </div>
+
+        {/* OM MEG */}
         {profil.om_meg && (
           <div>
             <h2 className="text-xl font-semibold mb-2">Om meg</h2>
@@ -86,7 +117,7 @@ export default function OffentligProfil() {
           </div>
         )}
 
-        {/* Galleri */}
+        {/* GALLERI */}
         {profil.bilder?.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold mb-2">Galleri</h2>
