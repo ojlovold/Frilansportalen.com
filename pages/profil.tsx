@@ -85,8 +85,8 @@ export default function ProfilSide() {
     if (bildeUrl) {
       const nyeBilder = [...(profil.bilder || []), bildeUrl];
       oppdaterFelt("bilder", nyeBilder);
-      oppdaterFelt("bilde", bildeUrl); // sett også som profilbilde
-      setStatus("✅ Bilde lastet opp!");
+      oppdaterFelt("bilde", bildeUrl);
+      setStatus("✅ Bilde lagt til – husk å trykke Lagre");
     }
   };
 
@@ -99,8 +99,8 @@ export default function ProfilSide() {
 
       <div className="max-w-6xl mx-auto">
         <div className="relative bg-[#333] rounded-xl shadow-xl overflow-hidden p-6 border border-gray-700">
-          <div className="flex gap-6 items-start flex-wrap">
-            <div className="w-64 h-64 rounded-lg overflow-hidden border border-gray-600 shadow-lg">
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            <div className="w-full sm:w-64 h-64 rounded-lg overflow-hidden border border-gray-600 shadow-lg relative">
               {profil.bilde ? (
                 <Image
                   src={profil.bilde}
@@ -114,9 +114,17 @@ export default function ProfilSide() {
                   Ingen bilde
                 </div>
               )}
+              <div className="absolute bottom-2 left-2 right-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={lastOppBilde}
+                  className="w-full text-sm text-white bg-gray-700 rounded p-1"
+                />
+              </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <h1 className="text-3xl font-bold mb-2">{profil.navn || "Navn mangler"}</h1>
               <p className="text-sm text-gray-400 mb-4">{profil.epost}</p>
 
@@ -126,6 +134,28 @@ export default function ProfilSide() {
                 placeholder="Skriv noe om deg selv..."
                 className="w-full mt-4 p-3 border border-gray-700 rounded bg-gray-900 text-white"
               />
+            </div>
+          </div>
+
+          <div className="mt-4 bg-gray-900 p-4 rounded border border-gray-700">
+            <p className="text-white font-semibold mb-2">Velg roller:</p>
+            <div className="space-y-2">
+              {["frilanser", "jobbsøker", "arbeidsgiver", "tilbyder"].map((rolle) => (
+                <label key={rolle} className="flex items-center text-white">
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={profil.roller?.includes(rolle)}
+                    onChange={(e) => {
+                      const oppdatert = e.target.checked
+                        ? [...(profil.roller || []), rolle]
+                        : (profil.roller || []).filter((r: string) => r !== rolle);
+                      oppdaterFelt("roller", oppdatert);
+                    }}
+                  />
+                  {rolle}
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -148,34 +178,13 @@ export default function ProfilSide() {
           </div>
 
           <div className="bg-[#222] p-6 rounded-xl border border-gray-700 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">CV og rolle</h2>
+            <h2 className="text-xl font-semibold mb-4">CV</h2>
             <textarea
               value={profil.cv || ""}
               onChange={(e) => oppdaterFelt("cv", e.target.value)}
               placeholder="Din erfaring, utdanning, prosjekter..."
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
-            <div className="bg-gray-900 p-4 rounded border border-gray-700 mt-4">
-              <p className="text-white font-semibold mb-2">Velg roller:</p>
-              <div className="space-y-2">
-                {["frilanser", "jobbsøker", "arbeidsgiver", "tilbyder"].map((rolle) => (
-                  <label key={rolle} className="flex items-center text-white">
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={profil.roller?.includes(rolle)}
-                      onChange={(e) => {
-                        const oppdatert = e.target.checked
-                          ? [...(profil.roller || []), rolle]
-                          : (profil.roller || []).filter((r: string) => r !== rolle);
-                        oppdaterFelt("roller", oppdatert);
-                      }}
-                    />
-                    {rolle}
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -207,8 +216,8 @@ export default function ProfilSide() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-col gap-3">
-            <label className="text-white">Lim inn URL:</label>
+          <div className="mt-4">
+            <label className="text-white">Lim inn bilde-URL:</label>
             <input
               type="text"
               placeholder="https://..."
@@ -221,19 +230,7 @@ export default function ProfilSide() {
               }}
               className="w-full p-3 bg-gray-900 border border-gray-700 rounded text-white"
             />
-
-            <label className="text-white">Last opp bilde:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={lastOppBilde}
-              className="w-full text-white"
-            />
           </div>
-
-          <pre className="text-sm bg-black text-green-400 mt-6 p-3 rounded max-h-96 overflow-auto">
-{JSON.stringify(profil, null, 2)}
-          </pre>
         </div>
 
         <div className="mt-8 text-center">
