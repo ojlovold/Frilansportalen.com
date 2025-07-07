@@ -162,15 +162,29 @@ export default function ProfilSide() {
               placeholder="Din erfaring, utdanning, prosjekter..."
               className="w-full h-48 p-3 bg-gray-900 border border-gray-700 rounded resize-none text-white"
             />
-            <input
-              value={profil.roller?.[0] || ""}
-              onChange={(e) => {
-                const verdi = e.target.value.trim();
-                oppdaterFelt("roller", verdi ? [verdi] : ["ukjent"]);
-              }}
-              placeholder="Roller / kompetanseområder"
-              className="w-full mt-4 p-3 bg-gray-900 border border-gray-700 rounded text-white"
-            />
+            <div className="space-y-2 mt-4">
+  {[
+    "frilanser",
+    "jobbsøker",
+    "arbeidsgiver",
+    "tilbyder"
+  ].map((rolle) => (
+    <label key={rolle} className="block text-white">
+      <input
+        type="checkbox"
+        checked={profil.roller?.includes(rolle)}
+        onChange={(e) => {
+          const oppdatert = e.target.checked
+            ? [...(profil.roller || []), rolle]
+            : (profil.roller || []).filter((r: string) => r !== rolle);
+          oppdaterFelt("roller", oppdatert);
+        }}
+        className="mr-2"
+      />
+      {rolle}
+    </label>
+  ))}
+</div>
           </div>
         </div>
 
