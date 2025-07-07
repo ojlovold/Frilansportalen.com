@@ -48,7 +48,11 @@ export default function ProfilSide() {
 
     const payload = {
       ...profil,
-      roller: Array.isArray(profil.roller) ? profil.roller : [profil.roller || "bruker"],
+      roller: typeof profil.roller === "string"
+        ? [profil.roller]
+        : Array.isArray(profil.roller)
+        ? profil.roller
+        : ["ukjent"],
       bilder: Array.isArray(profil.bilder) ? profil.bilder : []
     };
 
