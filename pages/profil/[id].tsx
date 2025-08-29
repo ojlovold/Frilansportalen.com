@@ -5,12 +5,15 @@ import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import Head from "next/head";
 import Image from "next/image";
+import { format } from "date-fns";
 
 export default function OffentligProfil() {
   const router = useRouter();
   const { id } = router.query;
   const [profil, setProfil] = useState<any>(null);
   const [status, setStatus] = useState("Laster...");
+  const [tilgjengelighet, setTilgjengelighet] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"alle" | "ledig">("alle");
 
   useEffect(() => {
     const hentProfil = async () => {
@@ -30,7 +33,17 @@ export default function OffentligProfil() {
       }
     };
 
+    const hentTilgjengelighet = async () => {
+      if (!id || typeof id !== "string") return;
+      const { data } = await supabase
+        .from("tilgjengelighet")
+        .select("*")
+        .eq("id", id);
+      if (data) setTilgjengelighet(data);
+    };
+
     hentProfil();
+    hentTilgjengelighet();
   }, [id]);
 
   if (status) {
@@ -40,6 +53,10 @@ export default function OffentligProfil() {
       </main>
     );
   }
+
+  const filtrerteTider = filter === "ledig"
+    ? tilgjengelighet.filter((t) => t.status === "ledig")
+    : tilgjengelighet;
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
@@ -129,6 +146,45 @@ export default function OffentligProfil() {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* TILGJENGELIGHET */}
+        {filtrerteTider.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Tilgjengelighet</h2>
+            <div className="flex gap-4 mb-3">
+              <button
+                onClick={() => setFilter("alle")}
+                className={`px-3 py-1 rounded ${filter === "alle" ? "bg-gray-700 text-white" : "bg-gray-600 text-gray-300"}`}
+              >
+                Vis alle
+              </button>
+              <button
+                onClick={() => setFilter("ledig")}
+                className={`px-3 py-1 rounded ${filter === "ledig" ? "bg-green-700 text-white" : "bg-gray-600 text-gray-300"}`}
+              >
+                Kun ledige
+              </button>
+            </div>
+            <ul className="space-y-2 text-sm">
+              {filtrerteTider
+                .sort((a, b) => a.dato.localeCompare(b.dato) || a.fra_tid.localeCompare(b.fra_tid))
+                .map((t, i) => (
+                  <li key={`${t.dato}-${t.fra_tid}-${i}`} className="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
+                    <span>{format(new Date(t.dato), "dd.MM.yyyy")} kl. {t.fra_tid.slice(0, 5)}–{t.til_tid.slice(0, 5)}</span>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        t.status === "ledig"
+                          ? "bg-green-600 text-white"
+                          : "bg-red-600 text-white"
+                      }`}
+                    >
+                      {t.status}
+                    </span>
+                  </li>
+                ))}
+            </ul>
           </div>
         )}
       </div>
