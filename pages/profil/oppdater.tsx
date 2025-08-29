@@ -156,18 +156,7 @@ export default function OppdaterProfil() {
         </div>
 
         {/* Tilgjengelighet */}
-        <div className="mt-10">
-          <TilgjengelighetEditor
-            onEndre={async (ny) => {
-              const bruker = await supabase.auth.getUser();
-              const id = bruker.data.user?.id;
-              for (const oppføring of ny) {
-                await supabase.from("tilgjengelighet").insert([{ id, ...oppføring }]);
-              }
-              setMelding("✅ Tilgjengelighet lagret");
-            }}
-          />
-        </div>
+        <TilgjengelighetEditor brukerId={profil.id} />
 
         <button
           onClick={lagre}
