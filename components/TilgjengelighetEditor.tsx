@@ -11,13 +11,14 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
   const [tilgjengelighet, setTilgjengelighet] = useState<any[]>([]);
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<"alle" | "ledig">("alle");
-  const [adresse, setAdresse] = useState("");
-  const [telefon, setTelefon] = useState("");
 
   const [fraTime, setFraTime] = useState("08");
   const [fraMinutt, setFraMinutt] = useState("00");
   const [tilTime, setTilTime] = useState("09");
   const [tilMinutt, setTilMinutt] = useState("00");
+
+  const [adresse, setAdresse] = useState("");
+  const [telefon, setTelefon] = useState("");
 
   const alleDagerIMåned = (måned: number): string[] => {
     const nå = new Date();
@@ -64,7 +65,6 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
 
   const lagre = async () => {
     if (!valgteDager.length) return setStatus("Velg dager");
-
     const fraTid = `${fraTime}:${fraMinutt}:00`;
     const tilTid = `${tilTime}:${tilMinutt}:00`;
 
@@ -100,15 +100,20 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
 
   const eksporterPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Tilgjengelighet", 20, 20);
-
-    doc.setFontSize(10);
-    let y = 30;
-    doc.text(`Adresse: ${adresse}`, 20, y);
-    y += 7;
-    doc.text(`Telefon: ${telefon}`, 20, y);
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.text("Tilgjengelighet – Frilansportalen", 20, y);
     y += 10;
+    doc.setFont("helvetica", "normal");
+
+    if (adresse) {
+      doc.text(`Adresse: ${adresse}`, 20, y);
+      y += 7;
+    }
+    if (telefon) {
+      doc.text(`Telefon: ${telefon}`, 20, y);
+      y += 10;
+    }
 
     const grupperte = tilgjengelighet.reduce((acc: Record<string, any[]>, rad) => {
       (acc[rad.dato] ||= []).push(rad);
@@ -116,19 +121,20 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     }, {});
 
     for (const [dato, tider] of Object.entries(grupperte)) {
-      doc.setFont(undefined, "bold");
+      doc.setFont("helvetica", "bold");
       doc.text(dato, 20, y);
       y += 7;
-      doc.setFont(undefined, "normal");
+      doc.setFont("helvetica", "normal");
+
       for (const t of tider) {
-        doc.text(`⏰ ${t.fra_tid.slice(0, 5)}–${t.til_tid.slice(0, 5)} (${t.status})`, 25, y);
+        doc.text(
+          ` - ${t.fra_tid.slice(0, 5)}–${t.til_tid.slice(0, 5)} (${t.status})`,
+          25,
+          y
+        );
         y += 6;
       }
       y += 4;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
     }
 
     doc.save("tilgjengelighet.pdf");
@@ -150,22 +156,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     <div className="bg-[#222] text-white border border-gray-700 p-4 rounded-xl mt-10">
       <h2 className="text-xl font-semibold mb-4">Tilgjengelighet</h2>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <input
-          value={adresse}
-          onChange={(e) => setAdresse(e.target.value)}
-          placeholder="Adresse"
-          className="p-2 rounded bg-gray-800 text-white w-full"
-        />
-        <input
-          value={telefon}
-          onChange={(e) => setTelefon(e.target.value)}
-          placeholder="Telefon"
-          className="p-2 rounded bg-gray-800 text-white w-full"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
         <select
           value={valgtMåned ?? ""}
           onChange={(e) => {
@@ -199,6 +190,23 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
             <option key={i} value={i + 1}>Uke {i + 1}</option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <input
+          type="text"
+          value={adresse}
+          onChange={(e) => setAdresse(e.target.value)}
+          placeholder="Adresse"
+          className="p-2 rounded bg-gray-800 text-white w-full"
+        />
+        <input
+          type="text"
+          value={telefon}
+          onChange={(e) => setTelefon(e.target.value)}
+          placeholder="Telefon"
+          className="p-2 rounded bg-gray-800 text-white w-full"
+        />
       </div>
 
       <div className="mb-4">
@@ -235,36 +243,30 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
           const ukedag = new Date(dato).toLocaleDateString("no-NO", { weekday: "long" });
           return (
             <div key={dato} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={true}
-                onChange={() => toggleDag(dato)}
-              />
+              <input type="checkbox" checked={true} onChange={() => toggleDag(dato)} />
               <span className="font-semibold">{ukedag} {dato}</span>
             </div>
           );
         })}
       </div>
 
-      <div className="flex gap-4 mt-6">
-        <button onClick={lagre} className="bg-green-600 px-4 py-2 rounded">Lagre</button>
-        <button onClick={eksporterPDF} className="bg-blue-600 px-4 py-2 rounded">Eksporter PDF</button>
+      <div className="flex gap-4 mt-6 flex-wrap">
+        <button onClick={lagre} className="bg-green-600 px-4 py-2 rounded">
+          Lagre tilgjengelighet
+        </button>
+        <button onClick={eksporterPDF} className="bg-blue-600 px-4 py-2 rounded">
+          Eksporter som PDF
+        </button>
       </div>
 
       {status && <p className="mt-2 text-sm text-gray-300">{status}</p>}
 
       <div className="mt-10 border-t border-gray-600 pt-6">
         <div className="flex gap-3 mb-4">
-          <button
-            onClick={() => setFilter("alle")}
-            className={`px-3 py-1 rounded ${filter === "alle" ? "bg-gray-700" : "bg-gray-800"}`}
-          >
+          <button onClick={() => setFilter("alle")} className={`px-3 py-1 rounded ${filter === "alle" ? "bg-gray-700" : "bg-gray-800"}`}>
             Vis alle
           </button>
-          <button
-            onClick={() => setFilter("ledig")}
-            className={`px-3 py-1 rounded ${filter === "ledig" ? "bg-green-700" : "bg-gray-800"}`}
-          >
+          <button onClick={() => setFilter("ledig")} className={`px-3 py-1 rounded ${filter === "ledig" ? "bg-green-700" : "bg-gray-800"}`}>
             Kun ledige
           </button>
         </div>
@@ -276,7 +278,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
         <div className="space-y-4 max-h-[500px] overflow-y-scroll pr-2">
           {Object.entries(grupperte)
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([dato, tider]: [string, any[]]) => (
+            .map(([dato, tider]) => (
               <div key={dato}>
                 <h3 className="text-lg font-semibold mb-1">{dato}</h3>
                 <div className="flex flex-wrap gap-2">
