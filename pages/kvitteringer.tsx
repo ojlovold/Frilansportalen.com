@@ -62,56 +62,6 @@ export default function Kvitteringer() {
     document.body.removeChild(link);
   };
 
-  const eksporterTilAltinn = async () => {
-    try {
-      const { data: config } = await supabase.from("settings").select("altinn_url, altinn_key").single();
-      if (!config?.altinn_url || !config?.altinn_key) {
-        alert("Altinn-konfigurasjon mangler i adminpanelet.");
-        return;
-      }
-
-      const payload = {
-        bruker_id: user?.id,
-        eksportert: new Date().toISOString(),
-        kvitteringer: kvitteringer.map(k => ({
-          dato: k.dato,
-          tittel: k.tittel,
-          valuta: k.valuta,
-          belop: k.belop_original ?? k.belop,
-          nok: k.nok ?? (k.valuta === "NOK" ? k.belop : null),
-          fil_url: k.fil_url,
-          id: k.id
-        }))
-      };
-
-      const res = await fetch(config.altinn_url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.altinn_key}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        alert("Eksport til Altinn fullført.");
-      } else {
-        const err = await res.text();
-        alert("Feil ved eksport: " + err);
-      }
-    } catch (err) {
-      alert("Uventet feil: " + err);
-    }
-  };
-    const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
   const eksporterPDFmedVedlegg = async () => {
     const { PDFDocument, StandardFonts } = await import("pdf-lib");
 
@@ -185,7 +135,7 @@ export default function Kvitteringer() {
     siste.drawImage(logoDoc, { x: 230, y: 10, width: 130, height: 40 });
 
     const bytes = await samledoc.save();
-    const blob = new Blob([bytes], { type: "application/pdf" });
+    const blob = new Blob([new Uint8Array(bytes).buffer], { type: "application/pdf" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "kvitteringer-med-vedlegg.pdf";
@@ -193,7 +143,8 @@ export default function Kvitteringer() {
     link.click();
     document.body.removeChild(link);
   };
-    const aktive = kvitteringer.filter((k) => k.arkivert === false || k.arkivert === null);
+
+  const aktive = kvitteringer.filter((k) => k.arkivert === false || k.arkivert === null);
   const arkiv = kvitteringer.filter((k) => k.arkivert === true);
 
   return (
@@ -214,9 +165,6 @@ export default function Kvitteringer() {
           </button>
           <button onClick={eksporterPDFmedVedlegg} className="bg-black text-white px-4 py-2 rounded shadow">
             Eksporter bilder (PDF med vedlegg)
-          </button>
-          <button onClick={eksporterTilAltinn} className="bg-green-700 text-white px-4 py-2 rounded shadow">
-            Eksporter til Altinn
           </button>
         </div>
 
