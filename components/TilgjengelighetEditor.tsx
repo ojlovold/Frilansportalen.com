@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+} from "date-fns";
 import { supabase } from "@/lib/supabaseClient";
 
 type Props = {
@@ -18,22 +25,26 @@ const timeslots = Array.from({ length: 24 }, (_, i) => {
 });
 
 export default function TilgjengelighetEditor({ brukerId }: Props) {
-  const [tilgjengelighet, setTilgjengelighet] = useState<any[]>([]);
+  const [modus, setModus] = useState<"dag" | "uke" | "maaned">("dag");
+  const [fraDato, setFraDato] = useState<string>("");
   const [valgteDatoer, setValgteDatoer] = useState<string[]>([]);
   const [valgteBlokker, setValgteBlokker] = useState<Record<string, string[]>>({});
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
-    const hent = async () => {
-      const { data } = await supabase
-        .from("tilgjengelighet")
-        .select("*")
-        .eq("id", brukerId);
+    if (fraDato) kalkulerDatoer();
+  }, [fraDato, modus]);
 
-      if (data) setTilgjengelighet(data);
-    };
-    if (brukerId) hent();
-  }, [brukerId]);
+  const kalkulerDatoer = () => {
+    const start = new Date(fraDato);
+    let end = start;
+    if (modus === "uke") end = endOfWeek(start, { weekStartsOn: 1 });
+    else if (modus === "maaned") end = endOfMonth(start);
+
+    const alle = eachDayOfInterval({ start, end });
+    const isoDatoer = alle.map((d) => d.toISOString().split("T")[0]);
+    setValgteDatoer(isoDatoer);
+  };
 
   const toggleDato = (dato: string) => {
     setValgteDatoer((prev) =>
@@ -55,13 +66,18 @@ export default function TilgjengelighetEditor({ brukerId }: Props) {
     });
   };
 
-  const lagre = async (statusType: "ledig" | "opptatt") => {
-    if (!valgteDatoer.length) return;
-    const blokker: any[] = [];
+  const velgAlleBlokker = () => {
+    const ny = { ...valgteBlokker };
+    for (const dato of valgteDatoer) {
+      ny[dato] = timeslots.map((t) => t.fra);
+    }
+    setValgteBlokker(ny);
+  };
 
+  const lagre = async (statusType: "ledig" | "opptatt") => {
+    const blokker: any[] = [];
     for (const dato of valgteDatoer) {
       const blokkerForDato = valgteBlokker[dato] || [];
-
       for (const fra_tid of blokkerForDato) {
         const slot = timeslots.find((t) => t.fra === fra_tid);
         if (slot) {
@@ -75,12 +91,10 @@ export default function TilgjengelighetEditor({ brukerId }: Props) {
         }
       }
     }
-
-    if (blokker.length === 0) return setStatus("Ingen tider valgt");
-
+    if (!blokker.length) return setStatus("Ingen tider valgt");
     const { error } = await supabase.from("tilgjengelighet").upsert(blokker);
     if (!error) {
-      setStatus(`✅ Lagret som ${statusType}`);
+      setStatus("✅ Lagret!");
       setValgteDatoer([]);
       setValgteBlokker({});
     } else {
@@ -89,67 +103,81 @@ export default function TilgjengelighetEditor({ brukerId }: Props) {
   };
 
   return (
-    <div className="bg-[#222] text-white border border-gray-700 p-4 rounded-xl mt-10">
-      <h2 className="text-xl font-semibold mb-4">Tilgjengelighet (365 dager + halvtimer)</h2>
-      <p className="text-sm text-gray-400 mb-2">Velg datoer og marker halvtimer som ledig eller opptatt</p>
+    <div className="bg-[#222] border border-gray-700 text-white p-4 rounded-xl mt-10">
+      <h2 className="text-xl font-bold mb-4">Tilgjengelighetseditor</h2>
 
-      <div className="max-h-[300px] overflow-y-scroll border rounded p-3 space-y-2">
-        {[...Array(365)].map((_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() + i);
-          const iso = d.toISOString().split("T")[0];
-          const valgt = valgteDatoer.includes(iso);
+      <div className="flex flex-wrap gap-3 mb-4">
+        <select
+          value={modus}
+          onChange={(e) => setModus(e.target.value as any)}
+          className="p-2 border rounded"
+        >
+          <option value="dag">Enkeltdag</option>
+          <option value="uke">Uke</option>
+          <option value="maaned">Måned</option>
+        </select>
 
-          return (
-            <div key={iso}>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={valgt}
-                  onChange={() => toggleDato(iso)}
-                />
-                <span className="font-medium">{iso}</span>
-              </label>
+        <input
+          type="date"
+          value={fraDato}
+          onChange={(e) => setFraDato(e.target.value)}
+          className="p-2 border rounded"
+        />
 
-              {valgt && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 mt-1">
-                  {timeslots.map((slot) => {
-                    const aktiv = valgteBlokker[iso]?.includes(slot.fra);
-                    return (
-                      <button
-                        key={slot.fra}
-                        onClick={() => toggleBlokk(iso, slot.fra)}
-                        className={`text-xs px-2 py-1 rounded ${
-                          aktiv ? "bg-green-600" : "bg-gray-700"
-                        }`}
-                      >
-                        {slot.fra.slice(0, 5)}–{slot.til.slice(0, 5)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        <button onClick={velgAlleBlokker} className="bg-yellow-600 px-4 py-2 rounded text-white">
+          Merk alle halvtimer
+        </button>
       </div>
 
-      <div className="flex gap-3 mt-4">
+      {valgteDatoer.length > 0 && (
+        <div className="space-y-3 max-h-[300px] overflow-y-auto">
+          {valgteDatoer.map((dato) => (
+            <div key={dato}>
+              <label className="flex items-center gap-2 font-medium mb-1">
+                <input
+                  type="checkbox"
+                  checked={true}
+                  onChange={() => toggleDato(dato)}
+                />
+                {dato}
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
+                {timeslots.map((slot) => {
+                  const aktiv = valgteBlokker[dato]?.includes(slot.fra);
+                  return (
+                    <button
+                      key={slot.fra}
+                      onClick={() => toggleBlokk(dato, slot.fra)}
+                      className={`text-xs px-2 py-1 rounded ${
+                        aktiv ? "bg-green-600" : "bg-gray-700"
+                      }`}
+                    >
+                      {slot.fra.slice(0, 5)}–{slot.til.slice(0, 5)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-4 mt-4">
         <button
           onClick={() => lagre("ledig")}
           className="bg-green-600 px-4 py-2 rounded text-white"
         >
-          Merk som ledig
+          Lagre som ledig
         </button>
         <button
           onClick={() => lagre("opptatt")}
           className="bg-red-600 px-4 py-2 rounded text-white"
         >
-          Merk som opptatt
+          Lagre som opptatt
         </button>
       </div>
 
-      {status && <p className="text-sm text-gray-300 mt-2">{status}</p>}
+      {status && <p className="mt-3 text-sm text-white/80">{status}</p>}
     </div>
   );
 }
