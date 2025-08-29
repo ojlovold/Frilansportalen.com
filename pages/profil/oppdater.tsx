@@ -3,6 +3,7 @@ import Layout from "../../components/Layout";
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import SuccessBox from "../../components/SuccessBox";
+import TilgjengelighetEditor from "../../components/TilgjengelighetEditor";
 
 export default function OppdaterProfil() {
   const [profil, setProfil] = useState<any>({});
@@ -72,10 +73,8 @@ export default function OppdaterProfil() {
     <Layout>
       <Head><title>Oppdater profil</title></Head>
       <div className="max-w-3xl mx-auto py-10 space-y-6 text-sm">
-
         <h1 className="text-2xl font-bold mb-2">Oppdater profil</h1>
 
-        {/* Navn og kontakt */}
         <input
           value={profil.navn || ""}
           onChange={(e) => endre("navn", e.target.value)}
@@ -90,7 +89,6 @@ export default function OppdaterProfil() {
           className="w-full p-3 border rounded"
         />
 
-        {/* Roller (checkbokser) */}
         <div className="border p-4 rounded">
           <p className="font-semibold mb-2">Roller</p>
           <div className="grid grid-cols-2 gap-2">
@@ -112,7 +110,6 @@ export default function OppdaterProfil() {
           </div>
         </div>
 
-        {/* Timespris */}
         <input
           type="number"
           value={profil.timespris || ""}
@@ -121,7 +118,6 @@ export default function OppdaterProfil() {
           className="w-full p-3 border rounded"
         />
 
-        {/* Om meg og CV */}
         <textarea
           value={profil.om_meg || ""}
           onChange={(e) => endre("om_meg", e.target.value)}
@@ -136,7 +132,6 @@ export default function OppdaterProfil() {
           className="w-full p-3 border rounded h-40"
         />
 
-        {/* Profilbilde */}
         <div className="space-y-2">
           <p className="font-semibold">Profilbilde</p>
           {profil.bilde && (
@@ -145,7 +140,6 @@ export default function OppdaterProfil() {
           <input type="file" accept="image/*" onChange={lastOppBilde} />
         </div>
 
-        {/* Galleri */}
         <div className="space-y-2">
           <p className="font-semibold">Galleri</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -161,7 +155,20 @@ export default function OppdaterProfil() {
           </div>
         </div>
 
-        {/* Lagre-knapp */}
+        {/* Tilgjengelighet */}
+        <div className="mt-10">
+          <TilgjengelighetEditor
+            onEndre={async (ny) => {
+              const bruker = await supabase.auth.getUser();
+              const id = bruker.data.user?.id;
+              for (const oppføring of ny) {
+                await supabase.from("tilgjengelighet").insert([{ id, ...oppføring }]);
+              }
+              setMelding("✅ Tilgjengelighet lagret");
+            }}
+          />
+        </div>
+
         <button
           onClick={lagre}
           className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
@@ -169,7 +176,6 @@ export default function OppdaterProfil() {
           Lagre endringer
         </button>
 
-        {/* Tilbakemelding */}
         <SuccessBox melding={melding} />
       </div>
     </Layout>
