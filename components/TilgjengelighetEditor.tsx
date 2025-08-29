@@ -7,10 +7,12 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
   const [valgtMåned, setValgtMåned] = useState<number | null>(null);
   const [valgtUke, setValgtUke] = useState<number | null>(null);
   const [valgteDager, setValgteDager] = useState<string[]>([]);
-  const [valgteMinutter, setValgteMinutter] = useState<Record<string, string[]>>({});
-  const [status, setStatus] = useState("");
   const [tilgjengelighet, setTilgjengelighet] = useState<any[]>([]);
+  const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<"alle" | "ledig">("alle");
+
+  const [fraTid, setFraTid] = useState("08:00");
+  const [tilTid, setTilTid] = useState("09:00");
 
   const alleDagerIMåned = (måned: number): string[] => {
     const nå = new Date();
@@ -39,10 +41,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
 
   useEffect(() => {
     const hent = async () => {
-      const { data } = await supabase
-        .from("tilgjengelighet")
-        .select("*")
-        .eq("id", brukerId);
+      const { data } = await supabase.from("tilgjengelighet").select("*").eq("id", brukerId);
       if (data) setTilgjengelighet(data);
     };
     if (brukerId) hent();
@@ -54,50 +53,29 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     );
   };
 
-  const toggleMinutt = (dato: string, tid: string) => {
-    setValgteMinutter((prev) => {
-      const eksisterende = prev[dato] || [];
-      return {
-        ...prev,
-        [dato]: eksisterende.includes(tid)
-          ? eksisterende.filter((t) => t !== tid)
-          : [...eksisterende, tid],
-      };
-    });
-  };
-
-  const velgIntervall = (type: "arbeidstid" | "hele") => {
-    const alle = minuttsvalg;
-    const arbeidstid = alle.filter((t) => t >= "08:00" && t <= "16:59");
-
-    const valgt = type === "hele" ? alle : arbeidstid;
-    const nytt = { ...valgteMinutter };
-    for (const dato of valgteDager) {
-      nytt[dato] = valgt;
-    }
-    setValgteMinutter(nytt);
-  };
-
   const lagre = async () => {
-    const oppføringer = Object.entries(valgteMinutter).flatMap(([dato, tider]) =>
-      tider.map((tid) => ({ id: brukerId, dato, fra_tid: tid + ":00", til_tid: tid + ":59", status: "ledig" }))
-    );
+    if (!valgteDager.length || !fraTid || !tilTid) return setStatus("Velg dager og tid");
 
-    if (oppføringer.length === 0) return setStatus("Ingen minutter valgt");
+    const oppføringer = valgteDager.map((dato) => ({
+      id: brukerId,
+      dato,
+      fra_tid: fraTid + ":00",
+      til_tid: tilTid + ":00",
+      status: "ledig"
+    }));
 
     const { error } = await supabase.from("tilgjengelighet").upsert(oppføringer);
     if (!error) {
       setStatus("✅ Lagret");
       setValgteDager([]);
-      setValgteMinutter({});
     } else {
       setStatus("❌ Feil ved lagring");
     }
   };
 
-  const minuttsvalg = Array.from({ length: 24 * 60 }, (_, i) => {
-    const h = String(Math.floor(i / 60)).padStart(2, "0");
-    const m = String(i % 60).padStart(2, "0");
+  const tidsvalg = Array.from({ length: 24 * 2 }, (_, i) => {
+    const h = String(Math.floor(i / 2)).padStart(2, "0");
+    const m = i % 2 === 0 ? "00" : "30";
     return `${h}:${m}`;
   });
 
@@ -114,7 +92,6 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     <div className="bg-[#222] text-white border border-gray-700 p-4 rounded-xl mt-10">
       <h2 className="text-xl font-semibold mb-4">Tilgjengelighet</h2>
 
-      {/* Månedvelger og ukevelger */}
       <div className="flex gap-4 mb-4">
         <select
           value={valgtMåned ?? ""}
@@ -149,48 +126,42 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
             <option key={i} value={i + 1}>Uke {i + 1}</option>
           ))}
         </select>
-
-        <button
-          onClick={() => velgIntervall("arbeidstid")}
-          className="bg-blue-600 text-white px-3 rounded"
-        >
-          Velg arbeidstid (08–17)
-        </button>
-
-        <button
-          onClick={() => velgIntervall("hele")}
-          className="bg-yellow-600 text-black px-3 rounded"
-        >
-          Hele dagen
-        </button>
       </div>
 
-      {/* Dager og minuttvalg */}
+      <div className="mb-4">
+        <p className="text-sm mb-1">Velg tidsrom (fra og til):</p>
+        <div className="flex gap-3">
+          <select
+            value={fraTid}
+            onChange={(e) => setFraTid(e.target.value)}
+            className="p-2 rounded bg-gray-800 text-white"
+          >
+            {tidsvalg.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
+          <select
+            value={tilTid}
+            onChange={(e) => setTilTid(e.target.value)}
+            className="p-2 rounded bg-gray-800 text-white"
+          >
+            {tidsvalg.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="space-y-4 max-h-[400px] overflow-y-scroll">
         {valgteDager.map((dato) => (
-          <div key={dato}>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={true}
-                onChange={() => toggleDag(dato)}
-              />
-              <span className="font-semibold">{dato}</span>
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1 mt-2">
-              {minuttsvalg.map((tid) => {
-                const aktiv = valgteMinutter[dato]?.includes(tid);
-                return (
-                  <button
-                    key={tid}
-                    onClick={() => toggleMinutt(dato, tid)}
-                    className={`text-xs px-2 py-1 rounded ${aktiv ? "bg-green-600" : "bg-gray-700"}`}
-                  >
-                    {tid}
-                  </button>
-                );
-              })}
-            </div>
+          <div key={dato} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={true}
+              onChange={() => toggleDag(dato)}
+            />
+            <span className="font-semibold">{dato}</span>
           </div>
         ))}
       </div>
