@@ -1,183 +1,197 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-} from "date-fns";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-type Props = {
-  brukerId: string;
-};
+export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }) {
+  const [valgtMåned, setValgtMåned] = useState<number | null>(null);
+  const [valgteDager, setValgteDager] = useState<string[]>([]);
+  const [valgteMinutter, setValgteMinutter] = useState<Record<string, string[]>>({});
+  const [status, setStatus] = useState("");
+  const [tilgjengelighet, setTilgjengelighet] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"alle" | "ledig">("alle");
 
-const timeslots = Array.from({ length: 24 }, (_, i) => {
-  const hour = 8 + Math.floor(i / 2);
-  const minute = i % 2 === 0 ? "00" : "30";
-  const fra = `${String(hour).padStart(2, "0")}:${minute}:00`;
-  const til = i % 2 === 0
-    ? `${String(hour)}:30:00`
-    : `${String(hour + 1).padStart(2, "0")}:00:00`;
-  return { fra, til };
-});
-
-export default function TilgjengelighetEditor({ brukerId }: Props) {
-  const [modus, setModus] = useState<"dag" | "uke" | "maaned">("dag");
-  const [fraDato, setFraDato] = useState<string>("");
-  const [valgteDatoer, setValgteDatoer] = useState<string[]>([]);
-  const [valgteBlokker, setValgteBlokker] = useState<Record<string, string[]>>({});
-  const [status, setStatus] = useState<string>("");
-
-  useEffect(() => {
-    if (fraDato) kalkulerDatoer();
-  }, [fraDato, modus]);
-
-  const kalkulerDatoer = () => {
-    const start = new Date(fraDato);
-    let end = start;
-    if (modus === "uke") end = endOfWeek(start, { weekStartsOn: 1 });
-    else if (modus === "maaned") end = endOfMonth(start);
-
-    const alle = eachDayOfInterval({ start, end });
-    const isoDatoer = alle.map((d) => d.toISOString().split("T")[0]);
-    setValgteDatoer(isoDatoer);
+  const alleDagerIMåned = (måned: number): string[] => {
+    const nå = new Date();
+    const år = nå.getFullYear();
+    const start = new Date(år, måned, 1);
+    const dager: string[] = [];
+    while (start.getMonth() === måned) {
+      dager.push(start.toISOString().split("T")[0]);
+      start.setDate(start.getDate() + 1);
+    }
+    return dager;
   };
 
-  const toggleDato = (dato: string) => {
-    setValgteDatoer((prev) =>
-      prev.includes(dato)
-        ? prev.filter((d) => d !== dato)
-        : [...prev, dato]
+  useEffect(() => {
+    const hent = async () => {
+      const { data } = await supabase
+        .from("tilgjengelighet")
+        .select("*")
+        .eq("id", brukerId);
+      if (data) setTilgjengelighet(data);
+    };
+    if (brukerId) hent();
+  }, [brukerId, status]);
+
+  const toggleDag = (dato: string) => {
+    setValgteDager((prev) =>
+      prev.includes(dato) ? prev.filter((d) => d !== dato) : [...prev, dato]
     );
   };
 
-  const toggleBlokk = (dato: string, fra_tid: string) => {
-    setValgteBlokker((prev) => {
-      const valgt = prev[dato] || [];
+  const toggleMinutt = (dato: string, tid: string) => {
+    setValgteMinutter((prev) => {
+      const eksisterende = prev[dato] || [];
       return {
         ...prev,
-        [dato]: valgt.includes(fra_tid)
-          ? valgt.filter((tid) => tid !== fra_tid)
-          : [...valgt, fra_tid],
+        [dato]: eksisterende.includes(tid)
+          ? eksisterende.filter((t) => t !== tid)
+          : [...eksisterende, tid],
       };
     });
   };
 
-  const velgAlleBlokker = () => {
-    const ny = { ...valgteBlokker };
-    for (const dato of valgteDatoer) {
-      ny[dato] = timeslots.map((t) => t.fra);
-    }
-    setValgteBlokker(ny);
-  };
+  const lagre = async () => {
+    const oppføringer = Object.entries(valgteMinutter).flatMap(([dato, tider]) =>
+      tider.map((tid) => ({ id: brukerId, dato, fra_tid: tid + ":00", til_tid: tid + ":59", status: "ledig" }))
+    );
 
-  const lagre = async (statusType: "ledig" | "opptatt") => {
-    const blokker: any[] = [];
-    for (const dato of valgteDatoer) {
-      const blokkerForDato = valgteBlokker[dato] || [];
-      for (const fra_tid of blokkerForDato) {
-        const slot = timeslots.find((t) => t.fra === fra_tid);
-        if (slot) {
-          blokker.push({
-            id: brukerId,
-            dato,
-            fra_tid,
-            til_tid: slot.til,
-            status: statusType,
-          });
-        }
-      }
-    }
-    if (!blokker.length) return setStatus("Ingen tider valgt");
-    const { error } = await supabase.from("tilgjengelighet").upsert(blokker);
+    if (oppføringer.length === 0) return setStatus("Ingen minutter valgt");
+
+    const { error } = await supabase.from("tilgjengelighet").upsert(oppføringer);
     if (!error) {
-      setStatus("✅ Lagret!");
-      setValgteDatoer([]);
-      setValgteBlokker({});
+      setStatus("✅ Lagret");
+      setValgteDager([]);
+      setValgteMinutter({});
     } else {
       setStatus("❌ Feil ved lagring");
     }
   };
 
+  const minuttsvalg = Array.from({ length: 24 * 60 }, (_, i) => {
+    const h = String(Math.floor(i / 60)).padStart(2, "0");
+    const m = String(i % 60).padStart(2, "0");
+    return `${h}:${m}`;
+  });
+
+  const filtrerte = filter === "ledig"
+    ? tilgjengelighet.filter((t) => t.status === "ledig")
+    : tilgjengelighet;
+
+  const grupperte = filtrerte.reduce((acc: Record<string, any[]>, rad) => {
+    (acc[rad.dato] ||= []).push(rad);
+    return acc;
+  }, {});
+
   return (
-    <div className="bg-[#222] border border-gray-700 text-white p-4 rounded-xl mt-10">
-      <h2 className="text-xl font-bold mb-4">Tilgjengelighetseditor</h2>
+    <div className="bg-[#222] text-white border border-gray-700 p-4 rounded-xl mt-10">
+      <h2 className="text-xl font-semibold mb-4">Tilgjengelighet</h2>
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <select
-          value={modus}
-          onChange={(e) => setModus(e.target.value as any)}
-          className="p-2 border rounded"
-        >
-          <option value="dag">Enkeltdag</option>
-          <option value="uke">Uke</option>
-          <option value="maaned">Måned</option>
-        </select>
+      {/* Månedvelger */}
+      <select
+        value={valgtMåned ?? ""}
+        onChange={(e) => {
+          const valgt = parseInt(e.target.value);
+          if (!isNaN(valgt)) {
+            setValgtMåned(valgt);
+            setValgteDager(alleDagerIMåned(valgt));
+          }
+        }}
+        className="mb-4 p-2 rounded bg-gray-800 text-white"
+      >
+        <option value="">Velg måned</option>
+        {Array.from({ length: 12 }, (_, i) => (
+          <option key={i} value={i}>{new Date(0, i).toLocaleString("no-NO", { month: "long" })}</option>
+        ))}
+      </select>
 
-        <input
-          type="date"
-          value={fraDato}
-          onChange={(e) => setFraDato(e.target.value)}
-          className="p-2 border rounded"
-        />
-
-        <button onClick={velgAlleBlokker} className="bg-yellow-600 px-4 py-2 rounded text-white">
-          Merk alle halvtimer
-        </button>
-      </div>
-
-      {valgteDatoer.length > 0 && (
-        <div className="space-y-3 max-h-[300px] overflow-y-auto">
-          {valgteDatoer.map((dato) => (
-            <div key={dato}>
-              <label className="flex items-center gap-2 font-medium mb-1">
-                <input
-                  type="checkbox"
-                  checked={true}
-                  onChange={() => toggleDato(dato)}
-                />
-                {dato}
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
-                {timeslots.map((slot) => {
-                  const aktiv = valgteBlokker[dato]?.includes(slot.fra);
-                  return (
-                    <button
-                      key={slot.fra}
-                      onClick={() => toggleBlokk(dato, slot.fra)}
-                      className={`text-xs px-2 py-1 rounded ${
-                        aktiv ? "bg-green-600" : "bg-gray-700"
-                      }`}
-                    >
-                      {slot.fra.slice(0, 5)}–{slot.til.slice(0, 5)}
-                    </button>
-                  );
-                })}
-              </div>
+      {/* Dager */}
+      <div className="space-y-4 max-h-[400px] overflow-y-scroll">
+        {valgteDager.map((dato) => (
+          <div key={dato}>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={true}
+                onChange={() => toggleDag(dato)}
+              />
+              <span className="font-semibold">{dato}</span>
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-4 mt-4">
-        <button
-          onClick={() => lagre("ledig")}
-          className="bg-green-600 px-4 py-2 rounded text-white"
-        >
-          Lagre som ledig
-        </button>
-        <button
-          onClick={() => lagre("opptatt")}
-          className="bg-red-600 px-4 py-2 rounded text-white"
-        >
-          Lagre som opptatt
-        </button>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1 mt-2">
+              {minuttsvalg.map((tid) => {
+                const aktiv = valgteMinutter[dato]?.includes(tid);
+                return (
+                  <button
+                    key={tid}
+                    onClick={() => toggleMinutt(dato, tid)}
+                    className={`text-xs px-2 py-1 rounded ${aktiv ? "bg-green-600" : "bg-gray-700"}`}
+                  >
+                    {tid}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {status && <p className="mt-3 text-sm text-white/80">{status}</p>}
+      <button
+        onClick={lagre}
+        className="mt-6 bg-green-600 px-4 py-2 rounded"
+      >
+        Lagre tilgjengelighet
+      </button>
+
+      {status && <p className="mt-2 text-sm text-gray-300">{status}</p>}
+
+      {/* VISNINGSSØK */}
+      <div className="mt-10 border-t border-gray-600 pt-6">
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={() => setFilter("alle")}
+            className={`px-3 py-1 rounded ${filter === "alle" ? "bg-gray-700" : "bg-gray-800"}`}
+          >
+            Vis alle
+          </button>
+          <button
+            onClick={() => setFilter("ledig")}
+            className={`px-3 py-1 rounded ${filter === "ledig" ? "bg-green-700" : "bg-gray-800"}`}
+          >
+            Kun ledige
+          </button>
+        </div>
+
+        {Object.keys(grupperte).length === 0 && (
+          <p className="text-gray-400">Ingen tider registrert.</p>
+        )}
+
+        <div className="space-y-4 max-h-[500px] overflow-y-scroll pr-2">
+          {Object.entries(grupperte)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([dato, tider]: [string, any[]]) => (
+              <div key={dato}>
+                <h3 className="text-lg font-semibold mb-1">{dato}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {tider
+                    .sort((a, b) => a.fra_tid.localeCompare(b.fra_tid))
+                    .map((t) => (
+                      <span
+                        key={t.fra_tid + t.til_tid}
+                        className={`text-xs px-2 py-1 rounded border ${
+                          t.status === "ledig"
+                            ? "bg-green-700 border-green-600"
+                            : "bg-red-700 border-red-600"
+                        }`}
+                      >
+                        {t.fra_tid.slice(0, 5)}–{t.til_tid.slice(0, 5)}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }
