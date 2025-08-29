@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import jsPDF from "jspdf";
 
 export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }) {
   const [valgtMåned, setValgtMåned] = useState<number | null>(null);
@@ -11,8 +12,12 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<"alle" | "ledig">("alle");
 
-  const [fraTid, setFraTid] = useState("08:00");
-  const [tilTid, setTilTid] = useState("09:00");
+  const [fraTime, setFraTime] = useState("08");
+  const [fraMinutt, setFraMinutt] = useState("00");
+  const [tilTime, setTilTime] = useState("09");
+  const [tilMinutt, setTilMinutt] = useState("00");
+  const [adresse, setAdresse] = useState("");
+  const [telefon, setTelefon] = useState("");
 
   const alleDagerIMåned = (måned: number): string[] => {
     const nå = new Date();
@@ -34,16 +39,19 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     for (let i = 0; i < 7; i++) {
       const dag = new Date(ukeStart);
       dag.setDate(ukeStart.getDate() + i);
-      dager.push(dag.toISOString().split("T")[0]);
+      if (dag.getFullYear() === år) {
+        dager.push(dag.toISOString().split("T")[0]);
+      }
     }
     return dager;
   };
 
+  const hent = async () => {
+    const { data } = await supabase.from("tilgjengelighet").select("*").eq("id", brukerId);
+    if (data) setTilgjengelighet(data);
+  };
+
   useEffect(() => {
-    const hent = async () => {
-      const { data } = await supabase.from("tilgjengelighet").select("*").eq("id", brukerId);
-      if (data) setTilgjengelighet(data);
-    };
     if (brukerId) hent();
   }, [brukerId, status]);
 
@@ -54,14 +62,19 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
   };
 
   const lagre = async () => {
-    if (!valgteDager.length || !fraTid || !tilTid) return setStatus("Velg dager og tid");
+    if (!valgteDager.length) return setStatus("Velg dager");
+
+    const fraTid = `${fraTime}:${fraMinutt}:00`;
+    const tilTid = `${tilTime}:${tilMinutt}:00`;
 
     const oppføringer = valgteDager.map((dato) => ({
       id: brukerId,
       dato,
-      fra_tid: fraTid + ":00",
-      til_tid: tilTid + ":00",
-      status: "ledig"
+      fra_tid: fraTid,
+      til_tid: tilTid,
+      status: "ledig",
+      adresse,
+      telefon
     }));
 
     const { error } = await supabase.from("tilgjengelighet").upsert(oppføringer);
@@ -73,11 +86,37 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     }
   };
 
-  const tidsvalg = Array.from({ length: 24 * 12 }, (_, i) => {
-    const h = String(Math.floor(i / 12)).padStart(2, "0");
-    const m = String((i % 12) * 5).padStart(2, "0");
-    return `${h}:${m}`;
-  });
+  const eksportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(12);
+    doc.text("Tilgjengelighetsoversikt", 14, 20);
+    let y = 30;
+
+    tilgjengelighet.forEach((t, i) => {
+      doc.text(
+        `${t.dato} | ${t.fra_tid.slice(0, 5)}–${t.til_tid.slice(0, 5)} | ${t.status} | ${t.adresse || ""} | ${t.telefon || ""}`,
+        14,
+        y
+      );
+      y += 8;
+    });
+
+    doc.save("tilgjengelighet.pdf");
+  };
+
+  const slettOppføring = async (dato: string, fra_tid: string, til_tid: string) => {
+    await supabase.from("tilgjengelighet").delete().match({ id: brukerId, dato, fra_tid, til_tid });
+    setStatus("⛔ Fjernet tidspunkt");
+    hent();
+  };
+
+  const oppdaterStatus = async (dato: string, fra_tid: string, til_tid: string, nyStatus: string) => {
+    await supabase.from("tilgjengelighet").update({ status: nyStatus }).match({ id: brukerId, dato, fra_tid, til_tid });
+    hent();
+  };
+
+  const timer = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutter = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
   const filtrerte = filter === "ledig"
     ? tilgjengelighet.filter((t) => t.status === "ledig")
@@ -130,48 +169,81 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
 
       <div className="mb-4">
         <p className="text-sm mb-1">Velg tidsrom (fra og til):</p>
-        <div className="flex gap-3">
-          <select
-            value={fraTid}
-            onChange={(e) => setFraTid(e.target.value)}
-            className="p-2 rounded bg-gray-800 text-white font-mono"
-          >
-            {tidsvalg.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+        <div className="flex gap-3 flex-wrap">
+          <div>
+            <label className="block text-xs mb-1">Fra (time:minutt)</label>
+            <div className="flex gap-1">
+              <select value={fraTime} onChange={(e) => setFraTime(e.target.value)} className="p-2 rounded bg-gray-800 text-white font-mono">
+                {timer.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <select value={fraMinutt} onChange={(e) => setFraMinutt(e.target.value)} className="p-2 rounded bg-gray-800 text-white font-mono">
+                {minutter.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
 
-          <select
-            value={tilTid}
-            onChange={(e) => setTilTid(e.target.value)}
-            className="p-2 rounded bg-gray-800 text-white font-mono"
-          >
-            {tidsvalg.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+          <div>
+            <label className="block text-xs mb-1">Til (time:minutt)</label>
+            <div className="flex gap-1">
+              <select value={tilTime} onChange={(e) => setTilTime(e.target.value)} className="p-2 rounded bg-gray-800 text-white font-mono">
+                {timer.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <select value={tilMinutt} onChange={(e) => setTilMinutt(e.target.value)} className="p-2 rounded bg-gray-800 text-white font-mono">
+                {minutter.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4 max-h-[400px] overflow-y-scroll">
-        {valgteDager.map((dato) => (
-          <div key={dato} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={true}
-              onChange={() => toggleDag(dato)}
-            />
-            <span className="font-semibold">{dato}</span>
-          </div>
-        ))}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={adresse}
+          onChange={(e) => setAdresse(e.target.value)}
+          placeholder="Adresse (valgfritt)"
+          className="w-full p-2 rounded bg-gray-800 text-white"
+        />
+        <input
+          type="text"
+          value={telefon}
+          onChange={(e) => setTelefon(e.target.value)}
+          placeholder="Telefonnummer (valgfritt)"
+          className="w-full p-2 mt-2 rounded bg-gray-800 text-white"
+        />
       </div>
 
-      <button
-        onClick={lagre}
-        className="mt-6 bg-green-600 px-4 py-2 rounded"
-      >
-        Lagre tilgjengelighet
-      </button>
+      <div className="space-y-4 max-h-[400px] overflow-y-scroll">
+        {valgteDager.map((dato) => {
+          const ukedag = new Date(dato).toLocaleDateString("no-NO", { weekday: "long" });
+          return (
+            <div key={dato} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={true}
+                onChange={() => toggleDag(dato)}
+              />
+              <span className="font-semibold">{ukedag} {dato}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={lagre}
+          className="bg-green-600 px-4 py-2 rounded"
+        >
+          Lagre tilgjengelighet
+        </button>
+
+        <button
+          onClick={eksportPDF}
+          className="bg-yellow-500 text-black px-4 py-2 rounded"
+        >
+          Eksporter som PDF
+        </button>
+      </div>
 
       {status && <p className="mt-2 text-sm text-gray-300">{status}</p>}
 
@@ -212,9 +284,15 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
                           t.status === "ledig"
                             ? "bg-green-700 border-green-600"
                             : "bg-red-700 border-red-600"
-                        }`}
+                        } flex items-center gap-2`}
                       >
                         {t.fra_tid.slice(0, 5)}–{t.til_tid.slice(0, 5)}
+                        <span className="text-white/60">{t.adresse}</span>
+                        <span className="text-white/40">{t.telefon}</span>
+                        <button onClick={() => slettOppføring(t.dato, t.fra_tid, t.til_tid)} className="text-white/70 hover:text-red-300">✕</button>
+                        {t.status === "ledig" && (
+                          <button onClick={() => oppdaterStatus(t.dato, t.fra_tid, t.til_tid, "opptatt")} className="text-white/70 hover:text-yellow-300">✓</button>
+                        )}
                       </span>
                     ))}
                 </div>
