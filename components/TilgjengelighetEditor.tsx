@@ -73,9 +73,9 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     }
   };
 
-  const tidsvalg = Array.from({ length: 24 * 2 }, (_, i) => {
-    const h = String(Math.floor(i / 2)).padStart(2, "0");
-    const m = i % 2 === 0 ? "00" : "30";
+  const tidsvalg = Array.from({ length: 24 * 12 }, (_, i) => {
+    const h = String(Math.floor(i / 12)).padStart(2, "0");
+    const m = String((i % 12) * 5).padStart(2, "0");
     return `${h}:${m}`;
   });
 
@@ -134,7 +134,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
           <select
             value={fraTid}
             onChange={(e) => setFraTid(e.target.value)}
-            className="p-2 rounded bg-gray-800 text-white"
+            className="p-2 rounded bg-gray-800 text-white font-mono"
           >
             {tidsvalg.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -144,7 +144,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
           <select
             value={tilTid}
             onChange={(e) => setTilTid(e.target.value)}
-            className="p-2 rounded bg-gray-800 text-white"
+            className="p-2 rounded bg-gray-800 text-white font-mono"
           >
             {tidsvalg.map((t) => (
               <option key={t} value={t}>{t}</option>
