@@ -97,7 +97,8 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     await supabase.from("tilgjengelighet").update({ status: nyStatus }).match({ id: brukerId, dato, fra_tid, til_tid });
     hent();
   };
-    const eksporterPDF = () => {
+
+  const eksporterPDF = () => {
     const doc = new jsPDF();
     let y = 20;
     doc.setFont("helvetica", "bold");
@@ -126,7 +127,11 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
       doc.setFont("helvetica", "normal");
 
       for (const t of tider) {
-        doc.text(` - ${t.fra_tid.slice(0, 5)}–${t.til_tid.slice(0, 5)} (${t.status})`, 25, y);
+        doc.text(
+          ` - ${t.fra_tid.slice(0, 5)}–${t.til_tid.slice(0, 5)} (${t.status})`,
+          25,
+          y
+        );
         y += 6;
       }
       y += 4;
@@ -165,9 +170,7 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
         >
           <option value="">Velg måned</option>
           {Array.from({ length: 12 }, (_, i) => (
-            <option key={i} value={i}>
-              {new Date(0, i).toLocaleString("no-NO", { month: "long" })}
-            </option>
+            <option key={i} value={i}>{new Date(0, i).toLocaleString("no-NO", { month: "long" })}</option>
           ))}
         </select>
 
@@ -248,8 +251,12 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
       </div>
 
       <div className="flex gap-4 mt-6 flex-wrap">
-        <button onClick={lagre} className="bg-green-600 px-4 py-2 rounded">Lagre tilgjengelighet</button>
-        <button onClick={eksporterPDF} className="bg-blue-600 px-4 py-2 rounded">Eksporter som PDF</button>
+        <button onClick={lagre} className="bg-green-600 px-4 py-2 rounded">
+          Lagre tilgjengelighet
+        </button>
+        <button onClick={eksporterPDF} className="bg-blue-600 px-4 py-2 rounded">
+          Eksporter som PDF
+        </button>
       </div>
 
       {status && <p className="mt-2 text-sm text-gray-300">{status}</p>}
@@ -301,3 +308,4 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     </div>
   );
 }
+ Legg det til i denne i stedet
