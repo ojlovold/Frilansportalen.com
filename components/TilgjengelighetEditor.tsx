@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }) {
   const [valgtMåned, setValgtMåned] = useState<number | null>(null);
+  const [valgtUke, setValgtUke] = useState<number | null>(null);
   const [valgteDager, setValgteDager] = useState<string[]>([]);
   const [valgteMinutter, setValgteMinutter] = useState<Record<string, string[]>>({});
   const [status, setStatus] = useState("");
@@ -19,6 +20,19 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     while (start.getMonth() === måned) {
       dager.push(start.toISOString().split("T")[0]);
       start.setDate(start.getDate() + 1);
+    }
+    return dager;
+  };
+
+  const alleDagerIUke = (ukeNr: number): string[] => {
+    const nå = new Date();
+    const år = nå.getFullYear();
+    const ukeStart = new Date(år, 0, 1 + (ukeNr - 1) * 7);
+    const dager: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const dag = new Date(ukeStart);
+      dag.setDate(ukeStart.getDate() + i);
+      dager.push(dag.toISOString().split("T")[0]);
     }
     return dager;
   };
@@ -50,6 +64,18 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
           : [...eksisterende, tid],
       };
     });
+  };
+
+  const velgIntervall = (type: "arbeidstid" | "hele") => {
+    const alle = minuttsvalg;
+    const arbeidstid = alle.filter((t) => t >= "08:00" && t <= "16:59");
+
+    const valgt = type === "hele" ? alle : arbeidstid;
+    const nytt = { ...valgteMinutter };
+    for (const dato of valgteDager) {
+      nytt[dato] = valgt;
+    }
+    setValgteMinutter(nytt);
   };
 
   const lagre = async () => {
@@ -88,25 +114,58 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
     <div className="bg-[#222] text-white border border-gray-700 p-4 rounded-xl mt-10">
       <h2 className="text-xl font-semibold mb-4">Tilgjengelighet</h2>
 
-      {/* Månedvelger */}
-      <select
-        value={valgtMåned ?? ""}
-        onChange={(e) => {
-          const valgt = parseInt(e.target.value);
-          if (!isNaN(valgt)) {
-            setValgtMåned(valgt);
-            setValgteDager(alleDagerIMåned(valgt));
-          }
-        }}
-        className="mb-4 p-2 rounded bg-gray-800 text-white"
-      >
-        <option value="">Velg måned</option>
-        {Array.from({ length: 12 }, (_, i) => (
-          <option key={i} value={i}>{new Date(0, i).toLocaleString("no-NO", { month: "long" })}</option>
-        ))}
-      </select>
+      {/* Månedvelger og ukevelger */}
+      <div className="flex gap-4 mb-4">
+        <select
+          value={valgtMåned ?? ""}
+          onChange={(e) => {
+            const valgt = parseInt(e.target.value);
+            if (!isNaN(valgt)) {
+              setValgtMåned(valgt);
+              setValgteDager(alleDagerIMåned(valgt));
+            }
+          }}
+          className="p-2 rounded bg-gray-800 text-white"
+        >
+          <option value="">Velg måned</option>
+          {Array.from({ length: 12 }, (_, i) => (
+            <option key={i} value={i}>{new Date(0, i).toLocaleString("no-NO", { month: "long" })}</option>
+          ))}
+        </select>
 
-      {/* Dager */}
+        <select
+          value={valgtUke ?? ""}
+          onChange={(e) => {
+            const valgt = parseInt(e.target.value);
+            if (!isNaN(valgt)) {
+              setValgtUke(valgt);
+              setValgteDager(alleDagerIUke(valgt));
+            }
+          }}
+          className="p-2 rounded bg-gray-800 text-white"
+        >
+          <option value="">Velg uke</option>
+          {Array.from({ length: 52 }, (_, i) => (
+            <option key={i} value={i + 1}>Uke {i + 1}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => velgIntervall("arbeidstid")}
+          className="bg-blue-600 text-white px-3 rounded"
+        >
+          Velg arbeidstid (08–17)
+        </button>
+
+        <button
+          onClick={() => velgIntervall("hele")}
+          className="bg-yellow-600 text-black px-3 rounded"
+        >
+          Hele dagen
+        </button>
+      </div>
+
+      {/* Dager og minuttvalg */}
       <div className="space-y-4 max-h-[400px] overflow-y-scroll">
         {valgteDager.map((dato) => (
           <div key={dato}>
