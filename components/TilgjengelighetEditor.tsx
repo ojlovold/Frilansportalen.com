@@ -306,6 +306,4 @@ export default function TilgjengelighetEditor({ brukerId }: { brukerId: string }
         </div>
       </div>
     </div>
-  );
-}
- Legg det til i denne i stedet
+ 
